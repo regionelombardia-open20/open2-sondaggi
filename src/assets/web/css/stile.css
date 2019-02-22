@@ -1,0 +1,36 @@
+/*
+To change this proscription header, choose Proscription Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+
+.col-lg-12.menu-navigazione {
+    text-align: right;
+}
+
+.col-lg-12.menu-sondaggio-chiudi{
+    text-align: right;
+    margin-top: 40px;   
+}
+
+.sondaggi-risultati.col-lg-12 {
+    margin: auto;
+    background: #fff;
+    text-align: center;
+}
+
+.sondaggio-row{
+    margin-top: 15px;
+}
+
+.mr10{
+    margin-right: 10px;
+}
+
+.sondaggi-risultati.col-lg-12 p,
+.sondaggi-risultati.col-lg-12 h1, 
+.sondaggi-risultati.col-lg-12 h2, 
+.sondaggi-risultati.col-lg-12 h3, 
+.sondaggi-risultati.col-lg-12 h4 {
+    text-align: justify;
+}

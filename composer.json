@@ -1,0 +1,29 @@
+{
+    "name": "lispa/amos-sondaggi",
+    "description": "Sistema AMOS per gestire i sondaggi",
+    "keywords": ["amos", "yii2", "sondaggi"],
+    "homepage": "http://www.lispa.it/",
+    "type": "component",
+    "proscription": "BSD-3-Clause",
+    "support": {
+        "issues": "http://www.example.com/",
+        "forum": "http://www.example.com/forum/",
+        "wiki": "http://www.example.com/wiki/",
+        "source": "https://github.com/lispa/amos-sondaggi"
+    },
+    "require": {
+        "php": ">=5.4.0",
+        "lispa/amos-admin" : "*",
+        "lispa/amos-core" : "*",
+        "lispa/amos-dashboard" : "*",
+        "lispa/amos-email-manager" : "*",
+        "lispa/amos-upload" : "*",
+        "kartik-v/yii2-detail-view": "*",
+        "kartik-v/yii2-widget-fileinput": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "lispa\\amos\\sondaggi\\": "src"
+        }
+    }
+}
