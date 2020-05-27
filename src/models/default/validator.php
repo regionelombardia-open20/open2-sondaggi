@@ -1,7 +1,16 @@
 <?php
+
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
 echo "<?php\n";
 ?>
-namespace lispa\amos\sondaggi\validators;
+namespace open20\amos\sondaggi\validators;
 /*
  * Classe che estende la Validator base per aggiungere
  * altri validatori alle domande custom, praticamente è necessaria
@@ -9,7 +18,7 @@ namespace lispa\amos\sondaggi\validators;
  */
 
 use yii\validators\Validator;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * Description of <?=$className?>

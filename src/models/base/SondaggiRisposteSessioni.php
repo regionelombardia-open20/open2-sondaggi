@@ -1,18 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models\base
+ * @package    open20\amos\sondaggi\models\base
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models\base;
+namespace open20\amos\sondaggi\models\base;
 
+use open20\amos\core\user\User;
 use Yii;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * This is the base-model class for table "sondaggi_risposte_sessioni".
@@ -36,11 +37,11 @@ use lispa\amos\sondaggi\AmosSondaggi;
  * @property integer $deleted_by
  * @property integer $version
  *
- * @property \lispa\amos\sondaggi\models\SondaggiRisposte[] $sondaggiRispostes
- * @property \lispa\amos\sondaggi\models\Sondaggi $sondaggi
+ * @property \open20\amos\sondaggi\models\SondaggiRisposte[] $sondaggiRispostes
+ * @property \open20\amos\sondaggi\models\Sondaggi $sondaggi
  * @property \common\models\User $user
  */
-class SondaggiRisposteSessioni extends \lispa\amos\core\record\Record {
+class SondaggiRisposteSessioni extends \open20\amos\core\record\Record {
 
     /**
      * @inheritdoc
@@ -91,21 +92,21 @@ class SondaggiRisposteSessioni extends \lispa\amos\core\record\Record {
      * @return \yii\db\ActiveQuery
      */
     public function getSondaggiRispostes() {
-        return $this->hasMany(\lispa\amos\sondaggi\models\SondaggiRisposte::className(), ['sondaggi_risposte_sessioni_id' => 'id']);
+        return $this->hasMany(\open20\amos\sondaggi\models\SondaggiRisposte::className(), ['sondaggi_risposte_sessioni_id' => 'id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getSondaggi() {
-        return $this->hasOne(\lispa\amos\sondaggi\models\Sondaggi::className(), ['id' => 'sondaggi_id']);
+        return $this->hasOne(\open20\amos\sondaggi\models\Sondaggi::className(), ['id' => 'sondaggi_id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getUser() {
-        return $this->hasOne(\common\models\User::className(), ['id' => 'user_id']);
+        return $this->hasOne(User::className(), ['id' => 'user_id']);
     }
     
     /**

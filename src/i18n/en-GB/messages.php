@@ -1,14 +1,12 @@
 <?php
-
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\i18n\en-GB
+ * @package    open20\amos\sondaggi\i18n\en-GB
  * @category   CategoryName
  */
-
 return [
     'Aggiorna domanda' => 'Update the question',
     'Aggiorna {modelClass}' => 'Update {modelClass}',
@@ -34,6 +32,13 @@ return [
     'Attività' => 'Activities',
     'Attività formativa' => 'Training activity',
     'Attivo' => 'Enable',
+    '#BOZZA_buttonLabel' => '',
+    '#BOZZA_DAVALIDARE_buttonLabel' => '',
+    '#BOZZA_DAVALIDARE_description' => '',
+    '#BOZZA_description' => '',
+    '#BOZZA_label' => '',
+    '#BOZZA_VALIDATO_buttonLabel' => '',
+    '#BOZZA_VALIDATO_description' => '',
     'Cancella' => 'Cancel',
     'Cancellato da' => 'Deleted by',
     'Cancellato il' => 'Deleted at',
@@ -51,6 +56,10 @@ return [
     'Data fine' => 'Start date',
     'Data inizio' => 'Finish date',
     'Dati' => 'Data',
+    '#DAVALIDARE_buttonLabel' => '',
+    '#DAVALIDARE_description' => '',
+    '#DAVALIDARE_label' => '',
+    '#delete-all-risposte-predefinite-modal-message' => 'Warning! You are about to delete all the default answers for this question. Proceed?',
     'Descrizione' => 'Description',
     'Destinatari Pubblicazione non può essere vuoto' => 'Publication receivers cannot be blank',
     'Digita il nome della classe di utenti ...' => 'Discussions Answers ID',
@@ -66,8 +75,10 @@ return [
     'Domande del sondaggio' => 'Survey questions',
     'Dopo la seguente domanda' => 'After following question',
     'E-mail' => 'E-mail',
+    'Errore durante la cancellazione delle risposte predefinite' => 'Error while deleting default answers',
     'Fine compilazione' => 'End of compilation',
     'Generale ' => 'General',
+    'Generale' => 'General',
     'Gestione sondaggi' => 'Survey Management',
     'Gestisce i sondaggi' => 'Manages the survey',
     'Gestisci domande' => 'Manage questions',
@@ -125,6 +136,7 @@ return [
     'Obbligatoria' => 'Mandatory',
     'Oggetto della e-mail di notifica' => 'Subject of the notification e-mail',
     'Ordinamento' => 'Sorting',
+    '#page_title_own_interest' => 'Own interests surveys',
     'Pagina cancellata correttamente.' => 'Page successfully deleted.',
     'Pagina' => 'Page',
     'Pagine dei sondaggi' => 'Survey pages',
@@ -171,11 +183,16 @@ return [
     'Sondaggio pubblico' => 'Public survey',
     'Sondaggio' => 'Survey',
     'Sondaggio terminato' => 'Survey closed',
+    '#sondaggi_article_plural' => 'the',
+    '#sondaggi_article_singular' => 'the',
+    '#sondaggi_indefinite_article' => 'the',
+    '#sondaggi_plural' => 'Surveys',
     'Sondaggi pubblici compilabili' => 'Public compilable surveys',
     'Sondaggi pubblici' => 'Public survey',
     'Sondaggi Risposte Sessioni' => 'Polls Answers Sessions',
     'Sondaggi Rispostes' => 'Survey answers',
     'Sondaggi' => 'Surveys',
+    '#sondaggi_singular' => 'Survey',
     'SPIACENTI!!! SONDAGGIO GIA\' COMPILATO O NON COMPILABILE PER QUESTO PROFILO.' => 'SORRY !!! SURVEY ALREADY COMPLETED OR NOT COMPILABLE FOR THIS PROFILE.',
     'Stato' => 'State',
     'Tabella' => 'Table',
@@ -192,9 +209,23 @@ return [
     'Username' => 'Username',
     'Utente Cancellato' => 'User Deleted',
     'Utente' => 'User',
+    '#VALIDATO_buttonLabel' => '',
+    '#VALIDATO_description' => '',
+    '#VALIDATO_label' => '',
     'Versione numero' => 'Version number',
     'Versione' => 'Version',
     'Visualizza anteprima' => 'Preview',
     'Visualizza' => 'Show',
     'Visualizzazione risposte' => 'Display answers',
+    '#widget_icon_compila_sondaggi_own_interest_description' => 'It allows you to compile and complete the surveys you are interested in',
+    '#widget_icon_compila_sondaggi_own_interest_label' => 'Own interests surveys',
+    '#addSondaggio' => 'Add survey',
+    '#showAll' => 'View all',
+    '#noSondaggi' => 'No survey',
+    '#readMore' => 'Read more',
+    'Crea nuovo' => 'Create new',
+    'Importa risposte predefinite' => 'Import default answers',
+    'Sondaggio compilabile in frontend' => 'Compilable survey in frontend',
+    'campi obbligatori' => 'required fields',
+    'Grazie per aver compilato il questionario.' => 'Thank you for completing the questionnaire.',
 ];

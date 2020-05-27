@@ -1,33 +1,34 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi
+ * @package    open20\amos\sondaggi
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi;
+namespace open20\amos\sondaggi;
 
-use lispa\amos\core\module\AmosModule;
-use lispa\amos\core\module\ModuleInterface;
-use lispa\amos\sondaggi\widgets\icons\WidgetIconCompilaSondaggi;
-use lispa\amos\sondaggi\widgets\icons\WidgetIconPubblicaSondaggi;
-use lispa\amos\sondaggi\widgets\icons\WidgetIconSondaggi;
-use lispa\amos\sondaggi\widgets\icons\WidgetIconAmministraSondaggi;
+use open20\amos\core\module\AmosModule;
+use open20\amos\core\module\ModuleInterface;
+use open20\amos\sondaggi\widgets\icons\WidgetIconAmministraSondaggi;
+use open20\amos\sondaggi\widgets\icons\WidgetIconCompilaSondaggi;
+use open20\amos\sondaggi\widgets\icons\WidgetIconPubblicaSondaggi;
+use open20\amos\sondaggi\widgets\icons\WidgetIconSondaggi;
 use Yii;
 use yii\db\Connection;
+use yii\helpers\ArrayHelper;
 
 /**
  * Class AmosSondaggi
- * @package lispa\amos\sondaggi
+ * @package open20\amos\sondaggi
  */
 class AmosSondaggi extends AmosModule implements ModuleInterface
 {
     public static $CONFIG_FOLDER = 'config';
-    public $controllerNamespace = 'lispa\amos\sondaggi\controllers';
+    public $controllerNamespace = 'open20\amos\sondaggi\controllers';
     public $newFileMode = 0666;
     public $newDirMode = 0777;
 
@@ -73,6 +74,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface
      * @var Connection|array|string the DB connection object or the application component ID of the DB connection.
      */
     public $db = 'db';
+    
+    /**
+     * Hide the Option wheel in the graphic widget
+     * @var bool|false $hideWidgetGraphicsActions
+     */
+    public $hideWidgetGraphicsActions = false;
 
     /**
      * @inheritdoc
@@ -82,10 +89,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface
         parent::init();
         $this->db = Yii::$app->db;
 
-        \Yii::setAlias('@lispa/amos/' . static::getModuleName() . '/controllers/', __DIR__ . '/controllers/');
+        \Yii::setAlias('@open20/amos/' . static::getModuleName() . '/controllers/', __DIR__ . '/controllers/');
         // initialize the module with the configuration loaded from config.php
-        Yii::configure($this, require(__DIR__ . DIRECTORY_SEPARATOR . self::$CONFIG_FOLDER . DIRECTORY_SEPARATOR . 'config.php'));
+        $config = require(__DIR__ . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'config.php');
+        Yii::configure($this, ArrayHelper::merge($config, $this));
     }
+    
 
     /**
      * @inheritdoc

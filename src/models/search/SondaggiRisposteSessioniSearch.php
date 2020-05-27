@@ -1,14 +1,23 @@
 <?php
 
-namespace lispa\amos\sondaggi\models\search;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+namespace open20\amos\sondaggi\models\search;
 
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use lispa\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
 
 /**
-* SondaggiRisposteSessioniSearch represents the model behind the search form about `lispa\amos\sondaggi\models\SondaggiRisposteSessioni`.
+* SondaggiRisposteSessioniSearch represents the model behind the search form about `open20\amos\sondaggi\models\SondaggiRisposteSessioni`.
 */
 class SondaggiRisposteSessioniSearch extends SondaggiRisposteSessioni
 {

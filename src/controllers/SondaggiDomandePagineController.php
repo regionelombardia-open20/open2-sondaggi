@@ -1,23 +1,24 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\controllers
+ * @package    open20\amos\sondaggi\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\controllers;
+namespace open20\amos\sondaggi\controllers;
 
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch;
-use lispa\amos\sondaggi\models\SondaggiDomandePagine;
-use lispa\amos\upload\models\FilemanagerMediafile;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch;
+use open20\amos\sondaggi\models\Sondaggi;
+use open20\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\upload\models\FilemanagerMediafile;
 use Yii;
 use yii\helpers\Url;
 use yii\web\NotFoundHttpException;
@@ -27,9 +28,10 @@ use yii\web\UploadedFile;
  * Class SondaggiDomandePagineController
  * SondaggiDomandePagineController implements the CRUD actions for SondaggiDomandePagine model.
  *
- * @property \lispa\amos\sondaggi\models\SondaggiDomandePagine $model
+ * @property \open20\amos\sondaggi\models\SondaggiDomandePagine $model
+ * @property \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $modelSearch
  *
- * @package lispa\amos\sondaggi\controllers
+ * @package open20\amos\sondaggi\controllers
  */
 class SondaggiDomandePagineController extends CrudController
 {
@@ -60,6 +62,42 @@ class SondaggiDomandePagineController extends CrudController
     }
 
     /**
+     * Set a view param used in \open20\amos\core\forms\CreateNewButtonWidget
+     */
+    protected function setCreateNewBtnParams()
+    {
+        $get = Yii::$app->request->get();
+        $buttonLabel = AmosSondaggi::t('amossondaggi', 'Aggiungi pagina');
+
+        $urlCreateNew = ['create'];
+        if (isset($get['idSondaggio'])) {
+            $urlCreateNew['idSondaggio'] =  filter_input(INPUT_GET, 'idSondaggio');
+        }
+        if (isset($get['idPagina'])) {
+            $urlCreateNew['idPagina'] =  filter_input(INPUT_GET, 'idPagina');
+        }
+        if (isset($get['url'])) {
+            $urlCreateNew['url'] = $get['url'];
+        }
+        Yii::$app->view->params['createNewBtnParams'] = [
+            'urlCreateNew' => $urlCreateNew,
+            'createNewBtnLabel' => $buttonLabel
+
+        ];
+    }
+
+    /**
+     * This method is useful to set all common params for all list views.
+     */
+    protected function setListViewsParams()
+    {
+        $this->setCreateNewBtnParams();
+        $this->setUpLayout('list');
+        Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKey(), Url::previous());
+        Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKeyDateTime(), date('Y-m-d H:i:s'));
+    }
+
+    /**
      * Lists all SondaggiDomandePagine models.
      * @return mixed
      */
@@ -68,6 +106,7 @@ class SondaggiDomandePagineController extends CrudController
         Url::remember();
         $this->setUrl($url);
         $this->setDataProvider($this->getModelSearch()->search(Yii::$app->request->getQueryParams()));
+        $this->setListViewsParams();
 //        return parent::actionIndex($layout); // TODO sistemare questo punto cambiando totalmente la action in quanto non compatibile con gli standard di PHP 7
         return parent::actionIndex();
     }
@@ -84,22 +123,6 @@ class SondaggiDomandePagineController extends CrudController
             return $this->redirect(['view', 'id' => $this->model->id]);
         } else {
             return $this->render('view', ['model' => $this->model]);
-        }
-    }
-
-    /**
-     * Finds the SondaggiDomandePagine model based on its primary key value.
-     * If the model is not found, a 404 HTTP exception will be thrown.
-     * @param integer $id
-     * @return SondaggiDomandePagine the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel($id)
-    {
-        if (($this->model = SondaggiDomandePagine::findOne($id)) !== null) {
-            return $this->model;
-        } else {
-            throw new NotFoundHttpException(AmosSondaggi::t('amossondaggi', 'La pagina richiesta non è disponibile'));
         }
     }
 
@@ -132,7 +155,7 @@ class SondaggiDomandePagineController extends CrudController
             }
             //fine upload immagine
             $this->model->save();
-            /* $domanda = new \lispa\amos\sondaggi\models\SondaggiDomande();
+            /* $domanda = new \open20\amos\sondaggi\models\SondaggiDomande();
               $domanda->sondaggi_id = $this->model->sondaggi_id;
               $domanda->sondaggi_domande_pagine_id = $this->model->id; */
             if ($url) {
@@ -202,12 +225,10 @@ class SondaggiDomandePagineController extends CrudController
     {
         $this->model = $this->findModel($id);
         $domande = $this->model->getSondaggiDomandes()->count();
-        $pubbl = $this->model->getSondaggi()->one()['sondaggi_stato_id'];
-        $pubblicato = \lispa\amos\sondaggi\models\SondaggiStato::findOne(['stato' => 'BOZZA'])->id;
         if ($domande) {
             Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la pagina per la presenza di domande."));
         } else {
-            if ($pubblicato != $pubbl) {
+            if ($this->model->sondaggi->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
                 Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA."));
             } else {
                 $this->model->delete();

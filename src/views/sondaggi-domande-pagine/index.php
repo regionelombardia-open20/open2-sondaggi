@@ -1,21 +1,30 @@
 <?php
 
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\core\views\DataProviderView;
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\core\views\DataProviderView;
+use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\Html;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
- * @var \lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch $searchModel
+ * @var \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $searchModel
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Pagine dei sondaggi');
 if ($url) {
     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => '/' . $this->context->module->id . '/sondaggi/index'];
     $this->title = AmosSondaggi::t('amossondaggi', 'Pagine del sondaggio');
     if (filter_input(INPUT_GET, 'idSondaggio')) {
-        $this->title = AmosSondaggi::t('amossondaggi', 'Pagine del sondaggio: ' . lispa\amos\sondaggi\models\Sondaggi::findOne(['id' => filter_input(INPUT_GET, 'idSondaggio')])->titolo);
+        $this->title = AmosSondaggi::t('amossondaggi', 'Pagine del sondaggio') . ': ' . open20\amos\sondaggi\models\Sondaggi::findOne(['id' => filter_input(INPUT_GET, 'idSondaggio')])->titolo;
     }
 }
 $this->params['breadcrumbs'][] = $this->title;
@@ -69,19 +78,20 @@ $this->params['breadcrumbs'][] = $this->title;
 //            'deleted_by', 
 //            'version', 
                 [
-                    'class' => 'lispa\amos\core\views\grid\ActionColumn',
+                    'class' => 'open20\amos\core\views\grid\ActionColumn',
                     'template' => '{update} {domande} {aggdomande} {delete}',
                     'buttons' => [
                         'update' => function ($url, $model) {
-                            /** @var \lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
                             $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
-                                return Html::a(AmosIcons::show('edit', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDEPAGINE_UPDATE', ['model' => $model])) {
+                                return Html::a(AmosIcons::show('edit'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/sondaggi-domande-pagine/update',
                                     'id' => $model->id,
                                     'url' => $url,
                                 ]), [
                                         'title' => AmosSondaggi::t('amossondaggi', 'Modifica'),
+                                        'class' => 'btn btn-tool-secondary'
                                     ]
                                 );
                             } else {
@@ -89,48 +99,51 @@ $this->params['breadcrumbs'][] = $this->title;
                             }
                         },
                         'domande' => function ($url, $model) {
-                            /** @var \lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
                             $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
-                                return Html::a(AmosIcons::show('collection-text', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_READ', ['model' => $model])) {
+                                return Html::a(AmosIcons::show('collection-text'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/sondaggi-domande/index',
                                     'idSondaggio' => $model->getSondaggi()->one()['id'],
                                     'idPagina' => $model->id,
                                     'url' => $url,
                                 ]), [
                                     'title' => AmosSondaggi::t('amossondaggi', 'Gestisci domande'),
+                                    'class' => 'btn btn-tool-secondary'
                                 ]);
                             } else {
                                 return '';
                             }
                         },
                         'aggdomande' => function ($url, $model) {
-                            /** @var \lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
                             $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
-                                return Html::a(AmosIcons::show('plus', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
+                                return Html::a(AmosIcons::show('plus'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/sondaggi-domande/create',
                                     'idSondaggio' => $model->getSondaggi()->one()['id'],
                                     'idPagina' => $model->id,
                                     'url' => $url,
                                 ]), [
                                     'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi domanda'),
+                                    'class' => 'btn btn-tool-secondary'
                                 ]);
                             } else {
                                 return '';
                             }
                         },
                         'delete' => function ($url, $model) {
-                            /** @var \lispa\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch $model */
                             $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
-                                return Html::a(AmosIcons::show('delete', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDEPAGINE_DELETE', ['model' => $model])) {
+                                return Html::a(AmosIcons::show('delete'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/sondaggi-domande-pagine/delete',
                                     'id' => $model->id,
                                     'idSondaggio' => $model->sondaggi_id,
                                     'url' => $url,
                                 ]), [
                                     'title' => AmosSondaggi::t('amossondaggi', 'Cancella'),
+                                    'class' => 'btn btn-danger-inverse'
                                 ]);
                             } else {
                                 return '';
@@ -169,8 +182,8 @@ $this->params['breadcrumbs'][] = $this->title;
     ]);
     ?>
     <?php
-    if (isset($url)) :
-        echo Html::a(AmosSondaggi::t('amossondaggi', 'Aggiungi pagina'), ['create', 'idSondaggio' => filter_input(INPUT_GET, 'idSondaggio'), 'idPagina' => filter_input(INPUT_GET, 'idPagina'), 'url' => yii\helpers\Url::current()], ['class' => 'btn btn-success']);
-    endif;
+//    if (isset($url)) :
+//        echo Html::a(AmosSondaggi::t('amossondaggi', 'Aggiungi pagina'), ['create', 'idSondaggio' => filter_input(INPUT_GET, 'idSondaggio'), 'idPagina' => filter_input(INPUT_GET, 'idPagina'), 'url' => yii\helpers\Url::current()], ['class' => 'btn btn-success']);
+//    endif;
     ?>
-</div> 
+</div>

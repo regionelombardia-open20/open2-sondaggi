@@ -1,25 +1,26 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models
+ * @package    open20\amos\sondaggi\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models;
+namespace open20\amos\sondaggi\models;
 
+use open20\amos\sondaggi\AmosSondaggi;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
 
 /**
  * Class SondaggiRispostePredefinite
  * This is the model class for table "sondaggi_risposte_predefinite".
- * @package lispa\amos\sondaggi\models
+ * @package open20\amos\sondaggi\models
  */
-class SondaggiRispostePredefinite extends \lispa\amos\sondaggi\models\base\SondaggiRispostePredefinite
+class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\SondaggiRispostePredefinite
 {
     public $tipo_domanda;
     public $ordine;
@@ -107,5 +108,51 @@ class SondaggiRispostePredefinite extends \lispa\amos\sondaggi\models\base\Sonda
                 }
             }
         }
+    }
+
+    /**
+     * @param $idDomanda
+     * @throws \PHPExcel_Exception
+     * @throws \PHPExcel_Reader_Exception
+     */
+    public static function import($idDomanda){
+        $submitImport = \Yii::$app->request->post('submit-import');
+        $count = 0;
+        if (!empty($submitImport)) {
+            if ((isset($_FILES['import-file']['tmp_name']) && (!empty($_FILES['import-file']['tmp_name'])))) {
+                $inputFileName = $_FILES['import-file']['tmp_name'];
+                $inputFileType = \PHPExcel_IOFactory::identify($inputFileName);
+                $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
+                $objPHPExcel = $objReader->load($inputFileName);
+
+                $sheet = $objPHPExcel->getSheet(0);
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+                $ret['file'] = true;
+                $i = 1;
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $rowData = $sheet->rangeToArray('A' . $row . ':' . $highestColumn . $row,
+                        NULL,
+                        TRUE,
+                        FALSE);
+                    $Array = $rowData[0];
+                    $rispostaPredefinitaName = $Array[0];
+                    if(!empty($rispostaPredefinitaName)) {
+                        $rispostaPredefinita = new SondaggiRispostePredefinite();
+                        $rispostaPredefinita->risposta = $rispostaPredefinitaName;
+                        $rispostaPredefinita->sondaggi_domande_id = $idDomanda;
+                        $rispostaPredefinita->risposta = $rispostaPredefinitaName;
+                        $rispostaPredefinita->ordinamento = $i;
+                        $ok = $rispostaPredefinita->save();
+                        if($ok){
+                            $count ++;
+                            $i++;
+                        }
+                    }
+                }
+                \Yii::$app->session->addFlash('success', AmosSondaggi::t('amossondaggi', "Sono state inserite {n} risposte.", ['n' => $count]));
+            }
+        }
+        return $count > 0;
     }
 }

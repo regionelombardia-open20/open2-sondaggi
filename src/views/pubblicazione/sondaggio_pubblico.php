@@ -1,20 +1,29 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\pubblicazione
+ * @category   CategoryName
+ */
+
+use open20\amos\sondaggi\AmosSondaggi;
 
 if ($libero) {
     $link = "/" . $this->context->module->id . "/pubblicazione/sondaggi-pubblici";
     $testoLink = "Sondaggi pubblici";
-    $quest = lispa\amos\sondaggi\models\Sondaggi::findOne($id);
+    $quest = open20\amos\sondaggi\models\Sondaggi::findOne($id);
     $breadcrumb = $quest->titolo;
-    $this->title = AmosSondaggi::t('amossondaggi', $breadcrumb);
+    $this->title = $breadcrumb;
     $descrizione = $quest->descrizione;
 } else { //TODO PER ENTITA' SPECIFICHE
     $link = "/" . $this->context->module->id . "/pubblicazione/sondaggio-pubblico-attivita";
     $testoLink = "Sondaggio di gradimento";
-    $quest = lispa\amos\sondaggi\models\Sondaggi::findOne($id);
+    $quest = open20\amos\sondaggi\models\Sondaggi::findOne($id);
     $breadcrumb = 'DA CONFIGURARE';//backend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita])->titolo;
-    $this->title = AmosSondaggi::t('amossondaggi', $breadcrumb);
+    $this->title = $breadcrumb;
     $descrizione = $quest->descrizione;
 }
 ?>

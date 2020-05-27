@@ -1,10 +1,19 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\SondaggiRisposte $model
+ * @var open20\amos\sondaggi\models\SondaggiRisposte $model
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Create {modelClass}', [

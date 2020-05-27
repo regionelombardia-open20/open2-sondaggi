@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\controllers
+ * @package    open20\amos\sondaggi\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\controllers;
+namespace open20\amos\sondaggi\controllers;
 
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\models\search\SondaggiDomandeTipologieSearch;
-use lispa\amos\sondaggi\models\SondaggiDomandeTipologie;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\search\SondaggiDomandeTipologieSearch;
+use open20\amos\sondaggi\models\SondaggiDomandeTipologie;
 use Yii;
 use yii\helpers\Url;
 use yii\web\NotFoundHttpException;
@@ -25,9 +25,9 @@ use yii\web\NotFoundHttpException;
  * Class SondaggiDomandeTipologieController
  * SondaggiDomandeTipologieController implements the CRUD actions for SondaggiDomandeTipologie model.
  *
- * @property \lispa\amos\sondaggi\models\SondaggiDomandeTipologie $model
+ * @property \open20\amos\sondaggi\models\SondaggiDomandeTipologie $model
  *
- * @package lispa\amos\sondaggi\controllers
+ * @package open20\amos\sondaggi\controllers
  */
 class SondaggiDomandeTipologieController extends CrudController
 {

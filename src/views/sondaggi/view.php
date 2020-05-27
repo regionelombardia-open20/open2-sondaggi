@@ -1,11 +1,20 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
-use kartik\detail\DetailView;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\sondaggi
+ * @category   CategoryName
+ */
+
+use open20\amos\sondaggi\AmosSondaggi;
+use yii\widgets\DetailView;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\Sondaggi $model
+ * @var open20\amos\sondaggi\models\Sondaggi $model
  */
 
 $this->title = $model;
@@ -19,10 +28,13 @@ $this->params['breadcrumbs'][] = $this->title;
             //'id',
             'titolo:ntext',
             'descrizione:ntext',
-            'sondaggi_stato_id' => [
-                'attribute' => 'sondaggi_stato_id',
-                'value' => $model->sondaggiStato->descrizione,
-            ]
+            'status' => [
+                'attribute' => 'status',
+                'value' => function ($model) {
+                    /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                    return $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--';
+                }
+            ],
             //'filemanager_mediafile_id',
             /* [
               'attribute'=>'created_at',

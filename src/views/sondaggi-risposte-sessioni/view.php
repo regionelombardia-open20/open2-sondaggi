@@ -1,11 +1,21 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+use open20\amos\core\utilities\ViewUtility;
+use open20\amos\sondaggi\AmosSondaggi;
+
 use kartik\detail\DetailView;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\SondaggiRisposteSessioni $model
+ * @var open20\amos\sondaggi\models\SondaggiRisposteSessioni $model
  */
 
 $this->title = $model;
@@ -13,39 +23,24 @@ $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'So
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="sondaggi-risposte-sessioni-view">
-    <?= DetailView::widget([
-        'model' => $model,
-        'attributes' => [
-            'id',
-            'session_id',
-            'unique_id',
-            [
-                'attribute' => 'begin_date',
-                'format' => ['datetime', (isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A'],
-            ],
-            [
-                'attribute' => 'end_date',
-                'format' => ['datetime', (isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A'],
-            ],
-            'session_tmp:ntext',
-            'user_profile_id',
-            'sondaggi_id',
-            [
-                'attribute' => 'created_at',
-                'format' => ['datetime', (isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A'],
-            ],
-            [
-                'attribute' => 'updated_at',
-                'format' => ['datetime', (isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A'],
-            ],
-            [
-                'attribute' => 'deleted_at',
-                'format' => ['datetime', (isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A'],
-            ],
-            'created_by',
-            'updated_by',
-            'deleted_by',
-            'version',
-        ],
-    ]) ?>
+<?= DetailView::widget([
+    'model' => $model,
+    'attributes' => [
+        'id',
+        'session_id',
+        'unique_id',
+        ['attribute' => 'begin_date', 'format' => ['datetime', ViewUtility::formatDateTime()]],
+        ['attribute' => 'end_date', 'format' => ['datetime', ViewUtility::formatDateTime()]],
+        'session_tmp:ntext',
+        'user_profile_id',
+        'sondaggi_id',
+        ['attribute' => 'created_at', 'format' => ['datetime', ViewUtility::formatDateTime()]],
+        ['attribute' => 'updated_at', 'format' => ['datetime', ViewUtility::formatDateTime()]],
+        ['attribute' => 'deleted_at', 'format' => ['datetime', ViewUtility::formatDateTime()]],
+        'created_by',
+        'updated_by',
+        'deleted_by',
+        'version',
+    ],
+]) ?>
 </div>

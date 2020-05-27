@@ -1,11 +1,20 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\pubblicazione
+ * @category   CategoryName
+ */
+
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
- * @var lispa\amos\sondaggi\models\search\SondaggiSearch $searchModel
+ * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggi pubblici');
 ?>
@@ -29,7 +38,7 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggi pubblici');
                         <div class="clearfix"></div>
                     </section>
                 </div>
-                <?php
+            <?php
             else:
                 foreach ($model->all() as $Sondaggio) {
                     ?>

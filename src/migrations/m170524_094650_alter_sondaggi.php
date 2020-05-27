@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
 class m170524_094650_alter_sondaggi extends \yii\db\Migration {
 
     const TABLE_PERMISSION = '{{%sondaggi_pubblicazione}}';

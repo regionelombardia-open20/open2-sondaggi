@@ -1,12 +1,21 @@
 <?php
 
-use lispa\amos\core\views\DataProviderView;
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\core\views\DataProviderView;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
- * @var lispa\amos\sondaggi\models\search\SondaggiRisposteSearch $searchModel
+ * @var open20\amos\sondaggi\models\search\SondaggiRisposteSearch $searchModel
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggi Rispostes');
@@ -42,7 +51,7 @@ $this->params['breadcrumbs'][] = $this->title;
 //            'deleted_by', 
 //            'version', 
                 [
-                    'class' => 'lispa\amos\core\views\grid\ActionColumn',
+                    'class' => 'open20\amos\core\views\grid\ActionColumn',
                 ],
             ],
         ],

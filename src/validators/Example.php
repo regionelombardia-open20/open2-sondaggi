@@ -1,6 +1,15 @@
 <?php
 
-namespace lispa\amos\sondaggi\validators;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+namespace open20\amos\sondaggi\validators;
 
 /*
  * Classe che estende la Validator base per aggiungere
@@ -9,7 +18,7 @@ namespace lispa\amos\sondaggi\validators;
  */
 
 use yii\validators\Validator;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\AmosSondaggi;
 
 class Example extends Validator {
 

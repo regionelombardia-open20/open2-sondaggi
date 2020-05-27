@@ -1,38 +1,32 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\widgets\icons
+ * @package    open20\amos\sondaggi\widgets\icons
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\widgets\icons;
+namespace open20\amos\sondaggi\widgets\icons;
 
-use lispa\amos\core\widget\WidgetIcon;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\models\search\SondaggiSearch;
+use open20\amos\core\widget\WidgetIcon;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\core\widget\WidgetAbstract;
+
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\search\SondaggiSearch;
+
 use Yii;
 use yii\helpers\ArrayHelper;
 
 /**
  * Class WidgetIconSondaggi
- * @package lispa\amos\sondaggi\widgets\icons
+ * @package open20\amos\sondaggi\widgets\icons
  */
 class WidgetIconSondaggi extends WidgetIcon
 {
-    /**
-     * @inheritdoc
-     */
-    public function getOptions()
-    {
-        $options = parent::getOptions();
-
-        //aggiunge all'oggetto container tutti i widgets recuperati dal controller del modulo
-        return ArrayHelper::merge($options, ["children" => []]);
-    }
 
     /**
      * @inheritdoc
@@ -44,17 +38,52 @@ class WidgetIconSondaggi extends WidgetIcon
         $this->setLabel(AmosSondaggi::tHtml('amossondaggi', 'Gestione sondaggi'));
         $this->setDescription(AmosSondaggi::t('amossondaggi', 'Gestisce i sondaggi'));
 
-        $this->setIcon('quote-right');
+        if (!empty(Yii::$app->params['dashboardEngine']) && Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
+            $this->setIconFramework(AmosIcons::IC);
+            $this->setIcon('sondaggi');
+            $paramsClassSpan = [];
+        } else {
+            $this->setIcon('quote-right');
+        }
 
-        $this->setUrl(Yii::$app->urlManager->createUrl(['/sondaggi/sondaggi']));
+        $this->setUrl(['/sondaggi/sondaggi/index']);
         $this->setCode('SONDAGGI');
         $this->setModuleName('sondaggi');
         $this->setNamespace(__CLASS__);
-        $search = new SondaggiSearch();
-        $this->setBulletCount($search->searchSondaggiNonPartecipato(null)->count());
-        $this->setClassSpan(ArrayHelper::merge($this->getClassSpan(), [
-            'bk-backgroundIcon',
-            'color-primary'
-        ]));
+
+        $this->setClassSpan(
+            ArrayHelper::merge(
+                $this->getClassSpan(),
+                [
+                    'bk-backgroundIcon',
+                    'color-primary'
+                ]
+            )
+        );
+
+//        if ($this->disableBulletCounters == false) {
+//            $search = new SondaggiSearch();
+//            $this->setBulletCount(
+//                $this->makeBulletCounter(
+//                    Yii::$app->getUser()->getId(),
+//                    AmosSondaggi::className(),
+//                    $search->searchSondaggiNonPartecipato([])
+//                )
+//            );
+//        }
     }
+
+    /**
+     * Aggiunge all'oggetto container tutti i widgets recuperati dal controller del modulo
+     * 
+     * @inheritdoc
+     */
+    public function getOptions()
+    {
+        return ArrayHelper::merge(
+            parent::getOptions(),
+            ['children' => []]
+        );
+    }
+
 }

@@ -5,6 +5,7 @@ var Sondaggi = {
     'initCondizione': function () {
 
         $('#condizione_necessaria-id').prop('disabled', true);
+        $('#condizione_necessaria-libera-id').prop('disabled', true);
         //$('#ordina-dopo').prop('disabled', true);
         $('#ordina_dopo').prop('disabled', true);
         $(this.submitSelector).prop('disabled', true);
@@ -78,8 +79,10 @@ var Sondaggi = {
             var elpre = $('#domcond');
             if (elpre.prop('checked')) {
                 $('#condizione_necessaria-id').prop('disabled', false);
+                $('#condizione_necessaria-libera-id').prop('disabled', false);
             } else {
                 $('#condizione_necessaria-id').prop('disabled', true);
+                $('#condizione_necessaria-libera-id').prop('disabled', true);
             }
             var bc = $('#condizione_necessaria-id').prop('disabled');
         }, 500);
@@ -88,9 +91,10 @@ var Sondaggi = {
             var el = $('#domcond');
             if (el.prop('checked')) {
                 $('#condizione_necessaria-id').prop('disabled', false);
-            }
-            else {
+                $('#condizione_necessaria-libera-id').prop('disabled', false);
+            } else {
                 $('#condizione_necessaria-id').prop('disabled', true);
+                $('#condizione_necessaria-libera-id').prop('disabled', true);
             }
         });
         $('#ordinamento-radio').change(function (event, messages) {
@@ -98,8 +102,7 @@ var Sondaggi = {
             if (ord == "dopo") {
                 //$('#ordina-dopo').prop('disabled', false);
                 $('#ordina_dopo').prop('disabled', false);
-            }
-            else {
+            } else {
                 //$('#ordina-dopo').prop('disabled', true);
                 $('#ordina_dopo').prop('disabled', true);
             }
@@ -109,9 +112,10 @@ var Sondaggi = {
             setTimeout(function () {
                 if (ell.prop('checked')) {
                     $('#condizione_necessaria-id').prop('disabled', false);
-                }
-                else {
+                    $('#condizione_necessaria-libera-id').prop('disabled', false);
+                } else {
                     $('#condizione_necessaria-id').prop('disabled', true);
+                    $('#condizione_necessaria-libera-id').prop('disabled', true);
                 }
             }, 500);
         });

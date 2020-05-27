@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\controllers
+ * @package    open20\amos\sondaggi\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\controllers;
+namespace open20\amos\sondaggi\controllers;
 
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\models\SondaggiDomande;
-use lispa\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\SondaggiDomande;
+use open20\amos\sondaggi\models\SondaggiDomandePagine;
 use yii\db\Query;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
@@ -22,7 +22,7 @@ use yii\web\Controller;
 
 /**
  * Class AjaxController
- * @package lispa\amos\sondaggi\controllers
+ * @package open20\amos\sondaggi\controllers
  */
 class AjaxController extends Controller
 {
@@ -71,11 +71,10 @@ class AjaxController extends Controller
                     }
                 }
                 // Shows how you can preselect a value
-                echo Json::encode(['output' => $out, 'selected' => $selected]);
-                return;
+                return Json::encode(['output' => $out, 'selected' => $selected]);
             }
         }
-        echo Json::encode(['output' => '', 'selected' => '']);
+        return Json::encode(['output' => '', 'selected' => '']);
     }
 
     public function actionDomandeByPagine()
@@ -99,11 +98,10 @@ class AjaxController extends Controller
                     }
                 }
                 // Shows how you can preselect a value
-                echo Json::encode(['output' => $out, 'selected' => $selected]);
-                return;
+                return Json::encode(['output' => $out, 'selected' => $selected]);
             }
         }
-        echo Json::encode(['output' => '', 'selected' => '']);
+        return Json::encode(['output' => '', 'selected' => '']);
     }
 
     public function actionPagine($search = null, $id = null)
@@ -123,6 +121,6 @@ class AjaxController extends Controller
         } else {
             $out['results'] = ['id' => 0, 'text' => AmosSondaggi::t('amossondaggi', 'Nessun risultato trovato')];
         }
-        echo Json::encode($out);
+        return Json::encode($out);
     }
 }

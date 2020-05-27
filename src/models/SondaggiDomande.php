@@ -1,26 +1,26 @@
 <?php
-
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models
+ * @package    open20\amos\sondaggi\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models;
+namespace open20\amos\sondaggi\models;
 
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\AmosSondaggi;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
+use open20\amos\sondaggi\models\SondaggiDomandeRuleMm;
 
 /**
  * Class SondaggiDomande
  * This is the model class for table "sondaggi_domande".
- * @package lispa\amos\sondaggi\models
+ * @package open20\amos\sondaggi\models
  */
-class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
+class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
 {
     //public $regola_pubblicazione;
     //public $destinatari;
@@ -28,6 +28,7 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
     public $condizione_necessaria;
     public $ordine;
     public $ordina_dopo;
+    public $validazione;
 
     /**
      * @inheritdoc
@@ -44,18 +45,20 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
      */
     public function rules()
     {
-        return ArrayHelper::merge(parent::rules(), [
-            //[['regola_pubblicazione', 'destinatari', 'validatori'], 'safe'],
-            [['condizione_necessaria', 'ordina_dopo'], 'integer'],
-            ['ordine', 'string'],
-            ['min_int_multipla', 'number', 'min' => 0],
-            ['max_int_multipla', 'number', 'min' => 0],
-            ['max_int_multipla', 'checkIntervalloSelezioniMultiple'],
-            ['nome_classe_validazione', 'required', 'when' => function ($model) {
-                return $model->sondaggi_domande_tipologie_id == 9;
-            }, 'whenClient' => "function (attribute, value) {"
-                . "return $('#sondaggidomande-sondaggi_domande_tipologie_id').val() == 9;"
-                . "}"], //da aggiornare nel caso di modifiche alla tipologia custom
+        return ArrayHelper::merge(parent::rules(),
+                [
+                //[['regola_pubblicazione', 'destinatari', 'validatori'], 'safe'],
+                [['ordina_dopo'], 'integer'],
+                [['condizione_necessaria', 'validazione'], 'safe'],
+                ['ordine', 'string'],
+                ['min_int_multipla', 'number', 'min' => 0],
+                ['max_int_multipla', 'number', 'min' => 0],
+                ['max_int_multipla', 'checkIntervalloSelezioniMultiple'],
+                ['nome_classe_validazione', 'required', 'when' => function ($model) {
+                        return $model->sondaggi_domande_tipologie_id == 9;
+                    }, 'whenClient' => "function (attribute, value) {"
+                    ."return $('#sondaggidomande-sondaggi_domande_tipologie_id').val() == 9;"
+                    ."}"], //da aggiornare nel caso di modifiche alla tipologia custom
         ]);
     }
 
@@ -65,11 +68,12 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
         $max = $this->max_int_multipla;
         if ($min > $max) {
             if ($max != 0) {
-                $this->addError($model, AmosSondaggi::t('amossondaggi', 'Le selezioni massime non possono essere minori delle selezioni minime, se non si vogliono limiti massimi impostare il valore a 0'));
+                $this->addError($model,
+                    AmosSondaggi::t('amossondaggi',
+                        'Le selezioni massime non possono essere minori delle selezioni minime, se non si vogliono limiti massimi impostare il valore a 0'));
             }
         }
     }
-
     /*
       public function attributeLabels()
       {
@@ -110,6 +114,50 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
         return $this->find()->andWhere(['sondaggi_id' => $this->sondaggi->id]);
     }
 
+    public function getTutteDomandeLibere()
+    {
+        return $this->find()
+                ->andWhere(['sondaggi_id' => $this->sondaggi->id])
+                ->andWhere(['sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
+                ->andWhere(['!=', 'id', $this->id])
+                ->andWhere(['in', 'sondaggi_domande_tipologie_id', [5, 6]]);
+    }
+
+    public function getTutteDomandeDellePagine()
+    {
+        $idSondaggio     = $this->getSondaggi()->one()->id;
+        $idPaginaAttuale = $this->getSondaggiDomandePagine()->one()->id;
+        if ($this->id) {
+            $domande = $this->find()
+                ->andWhere(['sondaggi_domande.sondaggi_id' => $this->sondaggi->id])
+                //->andWhere(['sondaggi_domande.sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
+                ->andWhere(['!=', 'sondaggi_domande.id', $this->id])
+                ->andWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
+                ->andWhere(['in', 'sondaggi_domande_tipologie_id', [1, 2, 3, 4]]);
+        } else {
+            $domande = $this->find()
+                ->andWhere(['sondaggi_domande.sondaggi_id' => $this->sondaggi->id])
+                //->andWhere(['sondaggi_domande.sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
+                ->andWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
+                ->andWhere(['in', 'sondaggi_domande_tipologie_id', [1, 2, 3, 4]]);
+        }
+        $arrDomande = [];
+        foreach ($domande->all() as $Domande) {
+            $arrDomande[] = $Domande['id'];
+        }
+        $preQuery  = (new \yii\db\Query())->from('sondaggi_risposte_predefinite as R')->where(['IN', 'sondaggi_domande_id',
+            $arrDomande]);
+        $newExp    = new \yii\db\Expression("D.id as domandaid, concat('[', P.titolo, ']', ' - ' , D.id, ' - ', D.domanda) as domanda, R.id, R.risposta, R.ordinamento");
+        $risultato = $preQuery->innerJoin('sondaggi_domande as D', 'D.id = R.sondaggi_domande_id')
+            ->innerJoin('sondaggi_domande_pagine as P', 'P.id = D.sondaggi_domande_pagine_id')
+            ->andWhere(['R.deleted_at' => null])
+            ->andWhere(['P.deleted_at' => null])
+            ->orderBy('P.ordinamento, D.ordinamento, R.ordinamento')
+            ->select($newExp);
+
+        return $risultato;
+    }
+
     /**
      * Restituisce tutte le risposte predefinite tra le quali scegliere quella che condiziona la domanda
      */
@@ -125,7 +173,8 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
         foreach ($domande->all() as $Domande) {
             $arrDomande[] = $Domande['id'];
         }
-        $preQuery = (new \yii\db\Query())->from('sondaggi_risposte_predefinite as R')->where(['IN', 'sondaggi_domande_id', $arrDomande]);
+        $preQuery  = (new \yii\db\Query())->from('sondaggi_risposte_predefinite as R')->where(['IN', 'sondaggi_domande_id',
+            $arrDomande]);
         $risultato = $preQuery->innerJoin('sondaggi_domande as D', 'D.id = R.sondaggi_domande_id')
             ->select('D.id as domandaid, D.domanda as domanda, R.id, R.risposta, R.ordinamento');
         return $risultato;
@@ -140,7 +189,13 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
      */
     public function getSondaggiRispostePreCondMm()
     {
-        return $this->hasOne(SondaggiDomandeCondizionate::className(), ['sondaggi_domande_id' => 'id']);
+        return $this->hasMany(SondaggiDomandeCondizionate::className(), ['sondaggi_domande_id' => 'id']);
+    }
+
+    public function getSondaggiDomandaCondizionaLibera()
+    {
+        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiDomande::className(),
+                ['id' => 'domanda_condizionata_testo_libero']);
     }
 
     /**
@@ -151,36 +206,51 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
      */
     public function setOrdinamento($tipo, $dopo = 0, $condizionata = 0)
     {
-        if ($dopo > 0 && $dopo != NULL && $tipo == 'dopo') {
+        if ($dopo > 0 && $dopo != null && $tipo == 'dopo') {
             if ($condizionata == 0) {
-                $ordDopo = SondaggiDomande::findOne(['id' => $dopo])->ordinamento;
-                $DomandeDopo = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordDopo])->andWhere(['!=', 'id', $this->id]);
+                $ordDopo           = SondaggiDomande::findOne(['id' => $dopo])->ordinamento;
+                $DomandeDopo       = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordDopo])->andWhere([
+                    '!=', 'id', $this->id]);
                 $this->ordinamento = $ordDopo + 1;
                 $this->save();
                 foreach ($DomandeDopo->all() as $Domande) {
-                    $aggiorna = SondaggiDomande::findOne(['id' => $Domande['id']]);
+                    $aggiorna              = SondaggiDomande::findOne(['id' => $Domande['id']]);
                     $aggiorna->ordinamento = ($aggiorna->ordinamento + 1);
                     $aggiorna->save();
                 }
             } else {
-                $ordDopo = SondaggiDomande::findOne(['id' => $dopo])->ordinamento;
-                $condDom = SondaggiRispostePredefinite::findOne(['id' => $condizionata])->sondaggi_domande_id;
-                $ordCond = SondaggiDomande::findOne(['id' => $condDom])->ordinamento;
-                if ($ordDopo > $ordCond) {
-                    $DomandeDopo = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordDopo])->andWhere(['!=', 'id', $this->id]);
+                $ordDopoObj = SondaggiDomande::findOne(['id' => $dopo]);
+                $ordDopo    = $ordDopoObj->ordinamento;
+                $paginaId   = $ordDopoObj->sondaggi_domande_pagine_id;
+                $arrCond    = [];
+                foreach ($condizionata as $cond) {
+                    $condDom    = SondaggiRispostePredefinite::findOne(['id' => $cond])->sondaggi_domande_id;
+                    $ordCondObj = SondaggiDomande::find()
+                        ->andWhere(['id' => $condDom])
+                        ->andWhere(['sondaggi_domande_pagine_id' => $paginaId])
+                        ->one();
+                    if (!empty($ordCondObj)) {
+                        $ordCond   = $ordCondObj->ordinamento;
+                        $arrCond[] = $ordCond;
+                    }
+                }
+                if ($ordDopo > max($arrCond)) {
+                    $DomandeDopo       = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordDopo])->andWhere([
+                        '!=', 'id', $this->id]);
                     $this->ordinamento = $ordDopo + 1;
                     $this->save();
                     foreach ($DomandeDopo->all() as $Domande) {
-                        $aggiorna = SondaggiDomande::findOne(['id' => $Domande['id']]);
+                        $aggiorna              = SondaggiDomande::findOne(['id' => $Domande['id']]);
                         $aggiorna->ordinamento = ($aggiorna->ordinamento + 1);
                         $aggiorna->save();
                     }
                 } else {
-                    $DomandeDopo = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordCond])->andWhere(['!=', 'id', $this->id]);
-                    $this->ordinamento = $ordCond + 1;
+                    $DomandeDopo       = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', max($arrCond)])->andWhere([
+                        '!=', 'id', $this->id]);
+                    $this->ordinamento = max($arrCond) + 1;
                     $this->save();
                     foreach ($DomandeDopo->all() as $Domande) {
-                        $aggiorna = SondaggiDomande::findOne(['id' => $Domande['id']]);
+                        $aggiorna              = SondaggiDomande::findOne(['id' => $Domande['id']]);
                         $aggiorna->ordinamento = ($aggiorna->ordinamento + 1);
                         $aggiorna->save();
                     }
@@ -196,18 +266,34 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
                     $this->ordinamento = 1;
                     $this->save();
                     foreach ($TutteDomande->all() as $Domande) {
-                        $aggiorna = SondaggiDomande::findOne(['id' => $Domande['id']]);
+                        $aggiorna              = SondaggiDomande::findOne(['id' => $Domande['id']]);
                         $aggiorna->ordinamento = ($aggiorna->ordinamento + 1);
                         $aggiorna->save();
                     }
-                } else if ($tipo == 'inizio' && $condizionata > 0) {
-                    $condDom = SondaggiRispostePredefinite::findOne(['id' => $condizionata])->sondaggi_domande_id;
-                    $ordDopo = SondaggiDomande::findOne(['id' => $condDom])->ordinamento;
-                    $DomandeDopo = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', $ordDopo])->andWhere(['!=', 'id', $this->id]);
-                    $this->ordinamento = $ordDopo + 1;
+                } else if ($tipo == 'inizio' && !empty($condizionata)) {
+                    $arrDopo = [];
+
+                    $ordDopoObj = SondaggiDomande::findOne(['id' => $dopo]);
+                    $ordDopo    = $ordDopoObj->ordinamento;
+                    $paginaId   = $ordDopoObj->sondaggi_domande_pagine_id;
+
+                    foreach ($condizionata as $cond) {
+                        $condDom    = SondaggiRispostePredefinite::findOne(['id' => $cond])->sondaggi_domande_id;
+                        $ordCondObj = SondaggiDomande::find()
+                            ->andWhere(['id' => $condDom])
+                            ->andWhere(['sondaggi_domande_pagine_id' => $paginaId])
+                            ->one();
+                        if (!empty($ordCondObj)) {
+                            $ordDopo   = $ordCondObj->ordinamento;
+                            $arrDopo[] = $ordDopo;
+                        }
+                    }
+                    $DomandeDopo       = $this->getTutteDomandeSondaggio()->andWhere(['>', 'ordinamento', max($arrDopo)])->andWhere([
+                        '!=', 'id', $this->id]);
+                    $this->ordinamento = max($arrDopo) + 1;
                     $this->save();
                     foreach ($DomandeDopo->all() as $Domande) {
-                        $aggiorna = SondaggiDomande::findOne(['id' => $Domande['id']]);
+                        $aggiorna              = SondaggiDomande::findOne(['id' => $Domande['id']]);
                         $aggiorna->ordinamento = ($aggiorna->ordinamento + 1);
                         $aggiorna->save();
                     }
@@ -225,7 +311,7 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
     public function getDomandaPrecedente()
     {
         if ($this->ordinamento) {
-            $ordine = $this->ordinamento;
+            $ordine  = $this->ordinamento;
             $domande = SondaggiDomande::find()->andWhere(['<', 'ordinamento', $ordine])->andWhere(['sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])->orderBy('ordinamento DESC');
             if ($domande->count() > 0) {
                 if ($ordine > $domande->one()['ordinamento']) {
@@ -236,6 +322,43 @@ class SondaggiDomande extends \lispa\amos\sondaggi\models\base\SondaggiDomande
                 }
             }
         }
-        return NULL;
+        return null;
+    }
+
+    /**
+     * @param $user_id
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRispostePerUtente($user_id = null, $session_id)
+    {
+        $query = $this->getSondaggiRispostes()
+            ->leftJoin('sondaggi_risposte_sessioni',
+                'sondaggi_risposte_sessioni.id = sondaggi_risposte.sondaggi_risposte_sessioni_id')
+            ->andWhere(['sondaggi_risposte_sessioni.id' => $session_id]);
+        if (!empty($user_id)) {
+            $query->andWhere(['sondaggi_risposte_sessioni.user_id' => $user_id]);
+        }
+        return $query;
+    }
+
+    /**
+     *
+     * @param type $ids_validazioni
+     */
+    public function setValidazione($ids_validazioni)
+    { 
+        if (!empty($this->id)) {
+            SondaggiDomandeRuleMm::deleteAll(['sondaggi_domande_id' => $this->id]);
+            if (!empty($ids_validazioni)) {
+                if (in_array($this->sondaggiDomandeTipologie->id, [5, 6, 13])) {
+                    foreach ($ids_validazioni as $k => $v) {
+                        $model                           = new SondaggiDomandeRuleMm();
+                        $model->sondaggi_domande_id      = $this->id;
+                        $model->sondaggi_domande_rule_id = $v;
+                        $model->save();
+                    }
+                }
+            }
+        }
     }
 }

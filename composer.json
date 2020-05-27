@@ -1,29 +1,30 @@
 {
-    "name": "lispa/amos-sondaggi",
+    "name": "open20/amos-sondaggi",
     "description": "Sistema AMOS per gestire i sondaggi",
     "keywords": ["amos", "yii2", "sondaggi"],
-    "homepage": "http://www.lispa.it/",
+    "homepage": "http://www.open20.it/",
     "type": "component",
-    "proscription": "BSD-3-Clause",
+    "license": "BSD-3-Clause",
     "support": {
         "issues": "http://www.example.com/",
         "forum": "http://www.example.com/forum/",
         "wiki": "http://www.example.com/wiki/",
-        "source": "https://github.com/lispa/amos-sondaggi"
+        "source": "https://github.com/open20/amos-sondaggi"
     },
     "require": {
         "php": ">=5.4.0",
-        "lispa/amos-admin" : "*",
-        "lispa/amos-core" : "*",
-        "lispa/amos-dashboard" : "*",
-        "lispa/amos-email-manager" : "*",
-        "lispa/amos-upload" : "*",
+        "open20/amos-admin":">=1.8",
+        "open20/amos-core":"^1.9.57",
+        "open20/amos-dashboard":"^1.8",
+        "open20/amos-attachments":"^1.1.11",
+        "open20/amos-email-manager": "^1.1",
+        "open20/amos-upload": "*",
         "kartik-v/yii2-detail-view": "*",
         "kartik-v/yii2-widget-fileinput": "*"
     },
     "autoload": {
         "psr-4": {
-            "lispa\\amos\\sondaggi\\": "src"
+            "open20\\amos\\sondaggi\\": "src"
         }
     }
 }

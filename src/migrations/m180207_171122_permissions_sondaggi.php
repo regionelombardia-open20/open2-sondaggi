@@ -1,15 +1,15 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\community\migrations
+ * @package    open20\amos\community\migrations
  * @category   CategoryName
  */
 
-use lispa\amos\core\migration\AmosMigrationPermissions;
+use open20\amos\core\migration\AmosMigrationPermissions;
 use yii\rbac\Permission;
 
 /**
@@ -31,7 +31,7 @@ class m180207_171122_permissions_sondaggi extends AmosMigrationPermissions
                 'parent' => ['BASIC_USER']
             ],
             [
-                'name' => lispa\amos\sondaggi\widgets\icons\WidgetIconCompilaSondaggi::className(),
+                'name' => open20\amos\sondaggi\widgets\icons\WidgetIconCompilaSondaggi::className(),
                 'update' => true,
                 'newValues' => [
                     'addParents' => ['COMPILATORE_SONDAGGI']

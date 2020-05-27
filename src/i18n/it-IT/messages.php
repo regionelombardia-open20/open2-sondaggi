@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\i18n\it-IT
+ * @package    open20\amos\sondaggi\i18n\it-IT
  * @category   CategoryName
  */
 
@@ -34,6 +34,13 @@ return [
     'Attività' => 'Attività',
     'Attività formativa' => 'Attività formativa',
     'Attivo' => 'Attivo',
+    '#BOZZA_buttonLabel' => 'Salva in bozza',
+    '#BOZZA_DAVALIDARE_buttonLabel' => 'Rifiuta pubblicazione',
+    '#BOZZA_DAVALIDARE_description' => 'richiedi un intervento al redattore',
+    '#BOZZA_description' => 'potrai richiedere la pubblicazione in seguito',
+    '#BOZZA_label' => 'Puoi ancora modificare il sondaggio e inviare la richiesta di pubblicazione',
+    '#BOZZA_VALIDATO_buttonLabel' => 'Togli dalla pubblicazione',
+    '#BOZZA_VALIDATO_description' => 'riporta il sondaggio in "bozza" e richiedi un intervento al redattore',
     'Cancella' => 'Cancella',
     'Cancellato da' => 'Cancellato da',
     'Cancellato il' => 'Cancellato il',
@@ -51,6 +58,10 @@ return [
     'Data fine' => 'Data fine',
     'Data inizio' => 'Data inizio',
     'Dati' => 'Dati',
+    '#DAVALIDARE_buttonLabel' => 'Richiedi pubblicazione',
+    '#DAVALIDARE_description' => 'Invia la richiesta di validazione del sondaggio. Il sondaggio non potrà più essere modificato',
+    '#DAVALIDARE_label' => 'Il sondaggio è in fase di approvazione per la pubblicazione e non può essere modificato',
+    '#delete-all-risposte-predefinite-modal-message' => 'Attenzione! Si stanno per cancellare tutte le risposte predefinite per questa domanda. Procedere?',
     'Descrizione' => 'Descrizione',
     'Destinatari Pubblicazione non può essere vuoto' => 'Destinatari Pubblicazione non può essere vuoto',
     'Digita il nome della classe di utenti ...' => 'Digita il nome della classe di utenti ...',
@@ -66,8 +77,10 @@ return [
     'Domande del sondaggio' => 'Domande del sondaggio',
     'Dopo la seguente domanda' => 'Dopo la seguente domanda',
     'E-mail' => 'E-mail',
+    'Errore durante la cancellazione delle risposte predefinite' => 'Errore durante la cancellazione delle risposte predefinite',
     'Fine compilazione' => 'Fine compilazione',
     'Generale ' => 'Generale',
+    'Generale' => 'Generale',
     'Gestione sondaggi' => 'Gestione sondaggi',
     'Gestisce i sondaggi' => 'Gestisce i sondaggi',
     'Gestisci domande' => 'Gestisci domande',
@@ -125,6 +138,7 @@ return [
     'Obbligatoria' => 'Obbligatoria',
     'Oggetto della e-mail di notifica' => 'Oggetto della e-mail di notifica',
     'Ordinamento' => 'Ordinamento',
+    '#page_title_own_interest' => 'Sondaggi di mio interesse',
     'Pagina cancellata correttamente.' => 'Pagina cancellata correttamente.',
     'Pagina' => 'Pagina',
     'Pagine dei sondaggi' => 'Pagine dei sondaggi',
@@ -171,11 +185,16 @@ return [
     'Sondaggio pubblico' => 'Sondaggio pubblico',
     'Sondaggio' => 'Sondaggio',
     'Sondaggio terminato' => 'Sondaggio terminato',
+    '#sondaggi_article_plural' => 'i',
+    '#sondaggi_article_singular' => 'il',
+    '#sondaggi_indefinite_article' => 'un',
+    '#sondaggi_plural' => 'Sondaggi',
     'Sondaggi pubblici compilabili' => 'Sondaggi pubblici compilabili',
     'Sondaggi pubblici' => 'Sondaggi pubblici',
     'Sondaggi Risposte Sessioni' => 'Sondaggi Risposte Sessioni',
     'Sondaggi Rispostes' => 'Sondaggi Risposte',
     'Sondaggi' => 'Sondaggi',
+    '#sondaggi_singular' => 'Sondaggio',
     'SPIACENTI!!! SONDAGGIO GIA\' COMPILATO O NON COMPILABILE PER QUESTO PROFILO.' => 'SPIACENTI!!! SONDAGGIO GIA\' COMPILATO O NON COMPILABILE PER QUESTO PROFILO.',
     'Stato' => 'Stato',
     'Tabella' => 'Tabella',
@@ -192,9 +211,21 @@ return [
     'Username' => 'Username',
     'Utente Cancellato' => 'Utente Cancellato',
     'Utente' => 'Utente',
+    '#VALIDATO_buttonLabel' => 'Pubblica',
+    '#VALIDATO_description' => 'pubblica il sondaggio',
+    '#VALIDATO_label' => 'Il sondaggio è stato pubblicato con successo',
     'Versione numero' => 'Versione numero',
     'Versione' => 'Versione',
     'Visualizza anteprima' => 'Visualizza anteprima',
     'Visualizza' => 'Visualizza',
     'Visualizzazione risposte' => 'Visualizzazione risposte',
+    '#widget_icon_compila_sondaggi_own_interest_description' => 'Permette di compilare e completare i sondaggi di tuo interesse',
+    '#widget_icon_compila_sondaggi_own_interest_label' => 'Sondaggi di mio interesse',
+    '#addSondaggio' => 'Aggiungi sondaggio',
+    '#showAll' => 'Visualizza tutto',
+    '#noSondaggi' => 'Nessun sondaggio',
+    '#readMore' => 'Leggi tutto',
+    'Crea nuovo' => 'Crea nuovo',
+    'Sondaggio compilabile in frontend' => 'Sondaggio compilabile in frontend',
+    'Grazie per aver compilato il questionario.' => 'Grazie per aver compilato il questionario.',
 ];

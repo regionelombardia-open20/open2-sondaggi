@@ -1,22 +1,22 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models
+ * @package    open20\amos\sondaggi\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models;
+namespace open20\amos\sondaggi\models;
 
 /**
  * Class SondaggiDomandeTipologie
  * This is the model class for table "sondaggi_domande_tipologie".
- * @package lispa\amos\sondaggi\models
+ * @package open20\amos\sondaggi\models
  */
-class SondaggiDomandeTipologie extends \lispa\amos\sondaggi\models\base\SondaggiDomandeTipologie
+class SondaggiDomandeTipologie extends \open20\amos\sondaggi\models\base\SondaggiDomandeTipologie
 {
     /**
      * @inheritdoc

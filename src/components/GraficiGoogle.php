@@ -1,6 +1,15 @@
 <?php
 
-namespace lispa\amos\sondaggi\components;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+namespace open20\amos\sondaggi\components;
 
 use yii\base\Widget;
 use yii\helpers\Html;
@@ -13,6 +22,8 @@ use yii\web\View;
  * An widget to wrap google chart for Yii Framework 2
  * by Scott Huang
  *
+ * @see https://github.com/ScottHuangZL/yii2-google-chart
+ * @author Scott Huang <zhiliang.huang@gmail.com>
  * @since 0.2
  * @Xiamen China
  */
@@ -27,22 +38,26 @@ class GraficiGoogle extends Widget {
 
     /**
      * @var string $visualization the type of visualization -ie PieChart
+     * @see https://google-developers.appspot.com/chart/interactive/docs/gallery
      */
     public $visualization;
 
     /**
      * @var string $packages the type of packages, default is corechart
+     * @see https://google-developers.appspot.com/chart/interactive/docs/gallery
      */
     public $packages = 'corechart';  // such as 'orgchart' and so on.
     public $loadVersion = "1"; //such as 1 or 1.1  Calendar chart use 1.1.  Add at Sep 16
 
     /**
      * @var array $data the data to configure visualization
+     * @see https://google-developers.appspot.com/chart/interactive/docs/datatables_dataviews#arraytodatatable
      */
     public $data = array();
 
     /**
      * @var array $options additional configuration options
+     * @see https://google-developers.appspot.com/chart/interactive/docs/customizing_charts
      */
     public $options = array();
 

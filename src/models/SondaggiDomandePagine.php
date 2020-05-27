@@ -1,25 +1,25 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models
+ * @package    open20\amos\sondaggi\models
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models;
+namespace open20\amos\sondaggi\models;
 
-use lispa\amos\attachments\behaviors\FileBehavior;
+use open20\amos\attachments\behaviors\FileBehavior;
 use yii\helpers\ArrayHelper;
 
 /**
  * Class SondaggiDomandePagine
  * This is the model class for table "sondaggi_domande_pagine".
- * @package lispa\amos\sondaggi\models
+ * @package open20\amos\sondaggi\models
  */
-class SondaggiDomandePagine extends \lispa\amos\sondaggi\models\base\SondaggiDomandePagine
+class SondaggiDomandePagine extends \open20\amos\sondaggi\models\base\SondaggiDomandePagine
 {
     public $file;
 

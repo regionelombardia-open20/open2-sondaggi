@@ -1,11 +1,20 @@
 <?php
 
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\sondaggi\AmosSondaggi;
 use kartik\detail\DetailView;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\SondaggiRispostePredefinite $model
+ * @var open20\amos\sondaggi\models\SondaggiRispostePredefinite $model
  */
 $this->title = $model;
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Risposte predefinite del sondaggio'), 'url' => ['index']];

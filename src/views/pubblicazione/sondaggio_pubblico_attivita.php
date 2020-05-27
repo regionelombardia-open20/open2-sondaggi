@@ -1,13 +1,22 @@
 <?php
 
-use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\pubblicazione
+ * @category   CategoryName
+ */
+
+use open20\amos\core\forms\ActiveForm;
+use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\Html;
 
 /**
  * @var yii\web\View $this
  * @var yii\data\ActiveDataProvider $dataProvider
- * @var lispa\amos\sondaggi\models\search\SondaggiSearch $searchModel
+ * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggio di gradimento');
 ?>
@@ -17,7 +26,9 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggio di gradimento');
         <ol class="breadcrumb">
             <li><a href="/site/index"><?= AmosSondaggi::tHtml('amossondaggi', 'Home') ?></a></li>
             <?php if (isset($id) && isset($attivita)): ?>
-                <li><a href="/<?= $this->context->module->id ?>/pubblicazione/sondaggio-pubblico-attivita"><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></a></li>
+                <li>
+                    <a href="/<?= $this->context->module->id ?>/pubblicazione/sondaggio-pubblico-attivita"><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></a>
+                </li>
                 <li class="active"><?= backend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita])->titolo; ?></li>
             <?php else: ?>
                 <li><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></li>
@@ -32,10 +43,13 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggio di gradimento');
             <h1><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></h1>
             <?php if (isset($id) && isset($attivita)): ?>
                 <img src="/img/loading-sondaggio.gif" alt="Loading"/>
-                <meta http-equiv="refresh" content="0;URL=/<?= $this->context->module->id ?>/pubblicazione/sondaggio-pubblico?id=<?= $id ?>&attivita=<?= $attivita ?>">
+                <meta http-equiv="refresh"
+                      content="0;URL=/<?= $this->context->module->id ?>/pubblicazione/sondaggio-pubblico?id=<?= $id ?>&attivita=<?= $attivita ?>">
             <?php else: ?>
             <div class="marginTB">
-                <h3 class="green"><strong><?= AmosSondaggi::tHtml('amossondaggi', "Inserisci il codice dell'attività che hai trovato sul calendario che ti è stato fornito") ?></strong></h3>
+                <h3 class="green">
+                    <strong><?= AmosSondaggi::tHtml('amossondaggi', "Inserisci il codice dell'attività che hai trovato sul calendario che ti è stato fornito") ?></strong>
+                </h3>
                 <section>
                     <div class="sondaggi-index">
                         <?php

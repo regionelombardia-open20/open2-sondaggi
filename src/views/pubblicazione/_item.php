@@ -1,42 +1,36 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\documenti
+ * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
 
-use lispa\amos\core\forms\ContextMenuWidget;
-use lispa\amos\core\forms\ItemAndCardHeaderWidget;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\core\forms\ContextMenuWidget;
+use open20\amos\core\forms\ItemAndCardHeaderWidget;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
- * @var \lispa\amos\sondaggi\models\Sondaggi $model
+ * @var \open20\amos\sondaggi\models\Sondaggi $model
  */
 
 ?>
 
 <div class="listview-container documents">
     <div class="post-horizonatal">
-        <?php
-        $creatoreDocumenti = $model->getCreatedUserProfile()->one();
-        $dataPubblicazione = Yii::$app->getFormatter()->asDatetime($model->created_at);
-        $nomeCreatoreDocumenti = AmosSondaggi::tHtml('amossondaggi', 'Utente Cancellato');
-        ?>
         <?= ItemAndCardHeaderWidget::widget([
             'model' => $model,
             'publicationDateField' => 'created_at',
-        ]);
-        ?>
+        ]); ?>
         <div class="col-sm-7 col-xs-12 nop">
             <div class="post-content col-xs-12 nop">
                 <div class="post-title col-xs-10">
-                    <a href="/sondaggi/sondaggi/view?id=<?= $model->id ?>">
+                    <a href="<?= $model->getFullViewUrl() ?>">
                         <h2><?= $model->titolo ?></h2>
                     </a>
                 </div>
@@ -72,7 +66,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                             }
                             ?>
 
-                            <a class="underline" href=/sondaggi/sondaggi/view?id=<?= $model->id ?>><?= AmosSondaggi::tHtml('amossondaggi', 'Leggi tutto') ?></a>
+                            <a class="underline" href="<?= $model->getFullViewUrl() ?>"><?= AmosSondaggi::tHtml('amossondaggi', 'Leggi tutto') ?></a>
                         </p>
                     </div>
                 </div>
@@ -82,40 +76,23 @@ use lispa\amos\sondaggi\AmosSondaggi;
         <div class="sidebar col-sm-5 col-xs-12">
             <div class="container-sidebar">
                 <div class="box">
-                    <h4 class="title-sidebar-list"> Dettagli </h4>
-                    <p><strong>Partecipanti:</strong> <?= $model->getNumeroPartecipazioni() ?></p>
-                    <p><strong>Stato:</strong> <?= $model->sondaggiStato->descrizione ?></p>
-                    <p><strong>Tipologia:</strong>
-                        <?php
-                        /** @var \lispa\amos\sondaggi\models\search\SondaggiSearch $model */
-                        if (!is_array($model->getSondaggiPubblicaziones()->one()['ruolo'])) {
-                            if ($model->getSondaggiPubblicaziones()->one()['ruolo'] == 'PUBBLICO') {
-                                if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0) {
-                                    echo 'Pubblico per attività';
-                                } else {
-                                    echo 'PUBBLICO';
-                                }
-                            } else if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] == NULL) {
-                                echo 'Riservato';
-                            }
-                        }
-
-                        ?>
-
+                    <h4 class="title-sidebar-list"><?= AmosSondaggi::t('amossondaggi', 'Dettagli') ?></h4>
+                    <p><strong><?= AmosSondaggi::t('amossondaggi', 'Partecipanti') . ':' ?></strong> <?= $model->getNumeroPartecipazioni() ?></p>
+                    <p>
+                        <strong><?= \Yii::t('amossondaggi', 'Stato') ?>:</strong> <?= $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--'; ?>
                     </p>
-
                 </div>
 
                 <div class="box">
-                    <h4 class="title-sidebar-list"> Azioni </h4>
+                    <h4 class="title-sidebar-list"><?= AmosSondaggi::t('amossondaggi', 'Azioni') ?></h4>
                     <div class="clearfix"></div>
                     <div class="sidebar-actions">
                         <ul>
                             <li>
                                 <?php
-                                /** @var \lispa\amos\sondaggi\models\search\SondaggiSearch $model */
+                                /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                                 $url = \yii\helpers\Url::current();
-                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_READ', ['model' => $model])) {
                                     echo Html::a(AmosIcons::show('eye', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
                                         '/' . $this->context->module->id . '/sondaggi/view',
                                         'id' => $model->id,
@@ -128,10 +105,11 @@ use lispa\amos\sondaggi\AmosSondaggi;
                             </li>
                             <li>
                                 <?php
-                                /** @var \lispa\amos\sondaggi\models\search\SondaggiSearch $model */
+                                /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                                 $url = \yii\helpers\Url::current();
                                 //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
-                                if ( !$model->hasCompilazioniSuperate() ) {
+
+                                if (!$model->hasCompilazioniSuperate()) {
                                     echo Html::a(AmosIcons::show('spellcheck', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
                                         '/' . $this->context->module->id . '/pubblicazione/compila',
                                         'id' => $model->id,

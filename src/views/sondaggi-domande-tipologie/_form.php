@@ -1,7 +1,16 @@
 <?php
 
-use lispa\amos\core\forms\CreatedUpdatedWidget;
-use lispa\amos\sondaggi\AmosSondaggi;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\core\forms\CreatedUpdatedWidget;
+use open20\amos\sondaggi\AmosSondaggi;
 use kartik\widgets\ActiveForm;
 use yii\bootstrap\Tabs;
 use yii\helpers\Html;
@@ -9,7 +18,7 @@ use yii\helpers\Url;
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\SondaggiDomandeTipologie $model
+ * @var open20\amos\sondaggi\models\SondaggiDomandeTipologie $model
  * @var yii\widgets\ActiveForm $form
  */
 ?>

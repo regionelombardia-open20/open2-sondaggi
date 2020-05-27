@@ -1,22 +1,22 @@
 <?php
-
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\controllers
+ * @package    open20\amos\sondaggi\controllers
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\controllers;
+namespace open20\amos\sondaggi\controllers;
 
-use lispa\amos\core\controllers\CrudController;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\models\search\SondaggiDomandeSearch;
-use lispa\amos\sondaggi\models\SondaggiDomande;
+use open20\amos\core\controllers\CrudController;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\search\SondaggiDomandeSearch;
+use open20\amos\sondaggi\models\Sondaggi;
+use open20\amos\sondaggi\models\SondaggiDomande;
 use Yii;
 use yii\helpers\Url;
 
@@ -24,9 +24,10 @@ use yii\helpers\Url;
  * Class SondaggiDomandeController
  * SondaggiDomandeController implements the CRUD actions for SondaggiDomande model.
  *
- * @property \lispa\amos\sondaggi\models\SondaggiDomande $model
+ * @property \open20\amos\sondaggi\models\SondaggiDomande $model
+ * @property \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $modelSearch
  *
- * @package lispa\amos\sondaggi\controllers
+ * @package open20\amos\sondaggi\controllers
  */
 class SondaggiDomandeController extends CrudController
 {
@@ -46,7 +47,8 @@ class SondaggiDomandeController extends CrudController
         $this->setAvailableViews([
             'grid' => [
                 'name' => 'grid',
-                'label' => AmosIcons::show('view-list-alt') . Html::tag('p', AmosSondaggi::tHtml('amossondaggi', 'Tabella')),
+                'label' => AmosIcons::show('view-list-alt').Html::tag('p',
+                    AmosSondaggi::tHtml('amossondaggi', 'Tabella')),
                 'url' => '?currentView=grid'
             ]
         ]);
@@ -54,6 +56,41 @@ class SondaggiDomandeController extends CrudController
         parent::init();
 
         $this->setUpLayout();
+    }
+
+    /**
+     * Set a view param used in \open20\amos\core\forms\CreateNewButtonWidget
+     */
+    protected function setCreateNewBtnParams()
+    {
+        $get          = Yii::$app->request->get();
+        $urlCreateNew = ['create'];
+        $buttonLabel  = AmosSondaggi::t('amossondaggi', 'Aggiungi domanda');
+
+        if (isset($get['idSondaggio'])) {
+            $urlCreateNew['idSondaggio'] = filter_input(INPUT_GET, 'idSondaggio');
+        }
+        if (isset($get['idPagina'])) {
+            $urlCreateNew['idPagina'] = filter_input(INPUT_GET, 'idPagina');
+        }
+        if (isset($get['url'])) {
+            $urlCreateNew['url'] = $get['url'];
+        }
+        Yii::$app->view->params['createNewBtnParams'] = [
+            'urlCreateNew' => $urlCreateNew,
+            'createNewBtnLabel' => $buttonLabel
+        ];
+    }
+
+    /**
+     * This method is useful to set all common params for all list views.
+     */
+    protected function setListViewsParams()
+    {
+        $this->setCreateNewBtnParams();
+        $this->setUpLayout('list');
+        Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKey(), Url::previous());
+        Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKeyDateTime(), date('Y-m-d H:i:s'));
     }
 
     /**
@@ -65,6 +102,7 @@ class SondaggiDomandeController extends CrudController
         Url::remember();
         $this->setUrl($url);
         $this->setDataProvider($this->getModelSearch()->search(Yii::$app->request->getQueryParams()));
+        $this->setListViewsParams();
 //        return parent::actionIndex($layout); // TODO sistemare questo punto cambiando totalmente la action in quanto non compatibile con gli standard di PHP 7
         return parent::actionIndex();
     }
@@ -97,15 +135,16 @@ class SondaggiDomandeController extends CrudController
     public function actionCreate($idSondaggio, $idPagina = null, $url = null)
     {
         $this->setUpLayout('form');
-        $this->model = new SondaggiDomande();
+        $this->model              = new SondaggiDomande();
         $this->model->sondaggi_id = $idSondaggio;
         if ($idPagina) {
             $this->model->sondaggi_domande_pagine_id = $idPagina;
         }
         if ($this->model->load(Yii::$app->request->post())) {
-            $condizioneNecessaria = (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : null;
-            $ordinamento = Yii::$app->request->post()['SondaggiDomande']['ordine'];
-            $ordinaDopo = 0;
+            $condizioneNecessaria = (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : [
+                ];
+            $ordinamento          = Yii::$app->request->post()['SondaggiDomande']['ordine'];
+            $ordinaDopo           = 0;
             if (strlen($ordinamento) == 0) {
                 $ordinamento = 'fine';
             }
@@ -113,26 +152,33 @@ class SondaggiDomandeController extends CrudController
                 $ordinaDopo = Yii::$app->request->post()['SondaggiDomande']['ordina_dopo'];
             }
             $this->model->save();
-            $this->model->setOrdinamento($ordinamento, $ordinaDopo, (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
+            $this->model->setOrdinamento($ordinamento, $ordinaDopo,
+                (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
+
+            $this->model->setValidazione($this->model->validazione);
+
             if ($this->model->domanda_condizionata) {
-                $condizione = new \lispa\amos\sondaggi\models\SondaggiDomandeCondizionate();
-                $condizione->sondaggi_risposte_predefinite_id = $condizioneNecessaria;
-                $condizione->sondaggi_domande_id = $this->model->id;
-                $condizione->save();
+                foreach ($condizioneNecessaria as $cond) {
+                    $condizione                                   = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
+                    $condizione->sondaggi_risposte_predefinite_id = $cond;
+                    $condizione->sondaggi_domande_id              = $this->model->id;
+                    $condizione->save();
+                }
             }
             if ($url) {
                 $this->redirect($url);
             } else {
                 return $this->redirect(['update',
-                    'id' => $this->model->id,
-                    'url' => ($url) ? $url : null,
+                        'id' => $this->model->id,
+                        'url' => ($url) ? $url : null,
                 ]);
             }
         }
 
-        return $this->render('create', [
-            'model' => $this->model,
-            'url' => ($url) ? $url : null,
+        return $this->render('create',
+                [
+                'model' => $this->model,
+                'url' => ($url) ? $url : null,
         ]);
     }
 
@@ -149,10 +195,17 @@ class SondaggiDomandeController extends CrudController
     {
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
+        $validazioni = [];
+        foreach ((array)$this->model->sondaggiDomandeRuleMms as $v){
+            $validazioni[] = $v->sondaggi_domande_rule_id;
+        }
+        $this->model->validazione = $validazioni;
 
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
-            $ordinamento = Yii::$app->request->post()['SondaggiDomande']['ordine'];
-            $ordinaDopo = 0;
+            $condizioneNecessaria = (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : [
+                ];
+            $ordinamento          = Yii::$app->request->post()['SondaggiDomande']['ordine'];
+            $ordinaDopo           = 0;
             if (strlen($ordinamento) == 0) {
                 $ordinamento = 'fine';
             }
@@ -160,24 +213,18 @@ class SondaggiDomandeController extends CrudController
                 $ordinaDopo = Yii::$app->request->post()['SondaggiDomande']['ordina_dopo'];
             }
             $this->model->save();
-            $this->model->setOrdinamento($ordinamento, $ordinaDopo, (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
+            if (empty($this->model->ordinamento) || !empty($this->model->ordine)) {
+                $this->model->setOrdinamento($ordinamento, $ordinaDopo,
+                    (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
+            }
+            $this->model->setValidazione($this->model->validazione); 
+            \open20\amos\sondaggi\models\SondaggiDomandeCondizionate::deleteAll(['sondaggi_domande_id' => $id]);
             if ($this->model->domanda_condizionata) {
-                if ($this->model->getSondaggiRispostePredefinitesCondizionate()->count()) {
-                    $idMm = $this->model->getSondaggiRispostePreCondMm()->one()['id'];
-                    $condizione = \lispa\amos\sondaggi\models\SondaggiDomandeCondizionate::findOne(['id' => $idMm]);
-                    $condizione->sondaggi_risposte_predefinite_id = $this->model->condizione_necessaria;
+                foreach ($condizioneNecessaria as $cond) {
+                    $condizione                                   = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
+                    $condizione->sondaggi_risposte_predefinite_id = $cond;
+                    $condizione->sondaggi_domande_id              = $this->model->id;
                     $condizione->save();
-                } else {
-                    $condizione = new \lispa\amos\sondaggi\models\SondaggiDomandeCondizionate();
-                    $condizione->sondaggi_risposte_predefinite_id = $this->model->condizione_necessaria;
-                    $condizione->sondaggi_domande_id = $this->model->id;
-                    $condizione->save();
-                }
-            } else {
-                if ($this->model->getSondaggiRispostePredefinitesCondizionate()->count()) {
-                    $idMm = $this->model->getSondaggiRispostePreCondMm()->one()['id'];
-                    $condizione = \lispa\amos\sondaggi\models\SondaggiDomandeCondizionate::findOne(['id' => $idMm]);
-                    $condizione->delete();
                 }
             }
             if ($url) {
@@ -186,9 +233,10 @@ class SondaggiDomandeController extends CrudController
                 return $this->redirect(['update', 'id' => $this->model->id]);
             }
         } else {
-            return $this->render('update', [
-                'model' => $this->model,
-                'url' => ($url) ? $url : null,
+            return $this->render('update',
+                    [
+                    'model' => $this->model,
+                    'url' => ($url) ? $url : null,
             ]);
         }
     }
@@ -208,16 +256,20 @@ class SondaggiDomandeController extends CrudController
         $this->model = $this->findModel($id);
 
         $risposte = $this->model->getSondaggiRispostePredefinites()->count();
-        $pubbl = $this->model->getSondaggi()->one()['sondaggi_stato_id'];
-        $pubblicato = \lispa\amos\sondaggi\models\SondaggiStato::findOne(['stato' => 'BOZZA'])->id;
         if ($risposte) {
-            Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la domanda in quanto sono presenti risposte predefinite collegate."));
+            Yii::$app->getSession()->addFlash('danger',
+                AmosSondaggi::tHtml('amossondaggi',
+                    "Impossibile cancellare la domanda in quanto sono presenti risposte predefinite collegate."));
         } else {
-            if ($pubblicato != $pubbl) {
-                Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la domanda in quanto il sondaggio a cui è collegata non è in stato BOZZA."));
+            if ($this->model->sondaggi->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
+                Yii::$app->getSession()->addFlash('danger',
+                    AmosSondaggi::tHtml('amossondaggi',
+                        "Impossibile cancellare la domanda in quanto il sondaggio a cui è collegata non è in stato BOZZA."));
             } else {
+                \open20\amos\sondaggi\models\SondaggiDomandeCondizionate::deleteAll(['sondaggi_domande_id' => $id]);
                 $this->model->delete();
-                Yii::$app->getSession()->addFlash('success', AmosSondaggi::tHtml('amossondaggi', "Domanda cancellata correttamente."));
+                Yii::$app->getSession()->addFlash('success',
+                    AmosSondaggi::tHtml('amossondaggi', "Domanda cancellata correttamente."));
             }
         }
         if ($url) {

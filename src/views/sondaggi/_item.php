@@ -1,42 +1,40 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\documenti
+ * @package    open20\amos\sondaggi\views\sondaggi
  * @category   CategoryName
  */
 
-use lispa\amos\core\forms\ContextMenuWidget;
-use lispa\amos\core\forms\ItemAndCardHeaderWidget;
-use lispa\amos\core\helpers\Html;
-use lispa\amos\core\icons\AmosIcons;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\core\forms\ContextMenuWidget;
+use open20\amos\core\forms\ItemAndCardHeaderWidget;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\icons\AmosIcons;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
- * @var \lispa\amos\sondaggi\models\Sondaggi $model
+ * @var \open20\amos\sondaggi\models\Sondaggi $model
  */
 
-?>
+$isCommunityManager = false;
+if(!empty(\Yii::$app->getModule('community'))) {
+    $isCommunityManager = \open20\amos\community\utilities\CommunityUtil::isLoggedCommunityManager();
+}
+?> 
 
 <div class="listview-container documents">
     <div class="post-horizonatal">
-        <?php
-        $creatoreDocumenti = $model->getCreatedUserProfile()->one();
-        $dataPubblicazione = Yii::$app->getFormatter()->asDatetime($model->created_at);
-        $nomeCreatoreDocumenti = AmosSondaggi::tHtml('amossondaggi', 'Utente Cancellato');
-        ?>
         <?= ItemAndCardHeaderWidget::widget([
             'model' => $model,
             'publicationDateField' => 'created_at',
-        ]);
-        ?>
+        ]); ?>
         <div class="col-sm-7 col-xs-12 nop">
             <div class="post-content col-xs-12 nop">
                 <div class="post-title col-xs-10">
-                    <a href="/sondaggi/sondaggi/view?id=<?= $model->id ?>">
+                    <a href="<?= $model->getFullViewUrl() ?>">
                         <h2><?= $model->titolo ?></h2>
                     </a>
                 </div>
@@ -50,7 +48,6 @@ use lispa\amos\sondaggi\AmosSondaggi;
                 <div class="row nom post-wrap">
                     <?php
                     $url = '/img/img_default.jpg';
-
                     if ($model->file) {
                         $url = $model->file->getUrl('original');
                     }
@@ -71,8 +68,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                                 echo $model->descrizione;
                             }
                             ?>
-
-                            <a class="underline" href=/sondaggi/sondaggi/view?id=<?= $model->id ?>><?= AmosSondaggi::tHtml('amossondaggi', 'Leggi tutto') ?></a>
+                            <a class="underline" href="<?= $model->getFullViewUrl() ?>"><?= AmosSondaggi::tHtml('amossondaggi', 'Leggi tutto') ?></a>
                         </p>
                     </div>
                 </div>
@@ -82,33 +78,15 @@ use lispa\amos\sondaggi\AmosSondaggi;
         <div class="sidebar col-sm-5 col-xs-12">
             <div class="container-sidebar">
                 <div class="box">
-                    <h4 class="title-sidebar-list"> Dettagli </h4>
-                    <p><strong>Partecipanti:</strong> <?= $model->getNumeroPartecipazioni() ?></p>
-                    <p><strong>Stato:</strong> <?= $model->sondaggiStato->descrizione ?></p>
-                    <p><strong>Tipologia:</strong>
-                        <?php
-                        /** @var \lispa\amos\sondaggi\models\search\SondaggiSearch $model */
-                        if (!is_array($model->getSondaggiPubblicaziones()->one()['ruolo'])) {
-                            if ($model->getSondaggiPubblicaziones()->one()['ruolo'] == 'PUBBLICO') {
-                                if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0) {
-                                    echo 'Pubblico per attività';
-                                } else {
-                                    echo 'PUBBLICO';
-                                }
-                            } else if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] == NULL) {
-                                echo 'Riservato';
-                            }
-                        }
-
-                        ?>
-
+                    <h4 class="title-sidebar-list"><?= AmosSondaggi::t('amossondaggi', 'Dettagli') ?></h4>
+                    <p><strong><?= AmosSondaggi::t('amossondaggi', 'Partecipanti') ?>:</strong> <?= $model->getNumeroPartecipazioni() ?></p>
+                    <p>
+                        <strong><?= AmosSondaggi::t('amossondaggi', 'Stato') ?>:</strong> <?= $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--'; ?>
                     </p>
-
-
                 </div>
 
                 <div class="box">
-                    <h4 class="title-sidebar-list"> Azioni </h4>
+                    <h4 class="title-sidebar-list"><?= AmosSondaggi::t('amossondaggi', 'Azioni') ?></h4>
                     <div class="clearfix"></div>
                     <div class="sidebar-actions">
                         <ul>
@@ -116,7 +94,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                                 <?php
                                 $url = \yii\helpers\Url::current();
                                 $partecipazioni = $model->getNumeroPartecipazioni();
-                                if (\Yii::$app->getUser()->can('SONDAGGI_READ') && $partecipazioni) {
+                                if (\Yii::$app->getUser()->can('SONDAGGI_READ', ['model' => $model]) && $partecipazioni) {
                                     echo Html::a(AmosIcons::show('bar-chart', ['class' => 'btn btn-tool-secondary'], 'dash'), Yii::$app->urlManager->createUrl([
                                         '/' . $this->context->module->id . '/sondaggi/risultati',
                                         'id' => $model->id,
@@ -129,15 +107,33 @@ use lispa\amos\sondaggi\AmosSondaggi;
                             </li>
                             <li>
                                 <?php
-                                /** @var \lispa\amos\sondaggi\models\search\SondaggiSearch $model */
+                                /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                                 $url = \yii\helpers\Url::current();
-                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ||
+                                    \Yii::$app->getUser()->can('SONDAGGI_UPDATE', ['model' => $model])) {
                                     echo Html::a(AmosIcons::show('collection-item', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
+                                        '/' . $this->context->module->id . '/sondaggi/clone',
+                                        'id' => $model->id,
+                                        'url' => $url,
+                                    ]), [
+                                        'title' => AmosSondaggi::t('amossondaggi', 'Duplica sondaggio'),
+                                        'data-confirm' => AmosSondaggi::t('amossondaggi','Sei sicuro di voler duplicare  il sondaggio?')
+
+                                    ]);
+                                }
+                                ?>
+                            </li>
+                            <li>
+                                <?php
+                                /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                                $url = \yii\helpers\Url::current();
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDEPAGINE_READ', ['model' => $model])) {
+                                    echo Html::a(AmosIcons::show('book', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
                                         '/' . $this->context->module->id . '/sondaggi-domande-pagine/index',
                                         'idSondaggio' => $model->id,
                                         'url' => $url,
                                     ]), [
-                                        'title' => 'Gestisci pagine',
+                                        'title' => AmosSondaggi::t('amossondaggi', 'Gestisci pagine'),
                                     ]);
                                 }
                                 ?>
@@ -145,7 +141,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                             <li>
                                 <?php
                                 $url = \yii\helpers\Url::current();
-                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_READ', ['model' => $model])) {
                                     if ($model->getSondaggiDomandes()->count() == 0) {
                                         $url = Yii::$app->urlManager->createUrl(['/' . $this->context->module->id . '/sondaggi-domande-pagine/index', 'idSondaggio' => $model->id, 'url' => yii\helpers\Url::current()]);
                                         echo Html::a(AmosIcons::show('playlist-plus', ['class' => 'btn btn-tool-secondary', 'style' => 'color:red;']), Yii::$app->urlManager->createUrl([
@@ -153,7 +149,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                                             'idSondaggio' => $model->id,
                                             'url' => $url,
                                         ]), [
-                                            'title' => 'Gestisci domande - E\' necessario aggiungere delle domande al sondaggio.',
+                                            'title' => AmosSondaggi::t('amossondaggi', 'Gestisci domande - E\' necessario aggiungere delle domande al sondaggio.'),
                                         ]);
                                     } else {
                                         $url = Yii::$app->urlManager->createUrl(['/' . $this->context->module->id . '/sondaggi-domande-pagine/index', 'idSondaggio' => $model->id, 'url' => yii\helpers\Url::current()]);
@@ -162,7 +158,7 @@ use lispa\amos\sondaggi\AmosSondaggi;
                                             'idSondaggio' => $model->id,
                                             'url' => $url,
                                         ]), [
-                                            'title' => 'Gestisci domande',
+                                            'title' => AmosSondaggi::t('amossondaggi', 'Gestisci domande'),
                                         ]);
                                     }
                                 }
@@ -170,7 +166,19 @@ use lispa\amos\sondaggi\AmosSondaggi;
                             </li>
                             <li>
                                 <?php $url = \yii\helpers\Url::current();
-                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || $isCommunityManager) {
+                                    echo Html::a(AmosIcons::show('download', ['class' => 'btn btn-tool-secondary btn-sondaggi-download',
+                                        'data' => [
+                                            'id' => $model->id,]
+                                        ]), "#", [
+                                        'title' => AmosSondaggi::t('amossondaggi', 'Download Excel'),
+                                    ]);
+                                }
+                                ?>
+                            </li>
+                            <li>
+                                <?php $url = \yii\helpers\Url::current();
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_DELETE', ['model' => $model])) {
                                     echo Html::a(AmosIcons::show('delete', ['class' => 'btn btn-tool-secondary']), Yii::$app->urlManager->createUrl([
                                         '/' . $this->context->module->id . '/sondaggi/delete',
                                         'id' => $model->id,

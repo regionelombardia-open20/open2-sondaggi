@@ -1,4 +1,4 @@
-use lispa\amos\core\helpers\Html;
+use open20\amos\core\helpers\Html;
 /*
  * Personalizzare a piacimento la vista
  * $model è il model legato alla tabella del db

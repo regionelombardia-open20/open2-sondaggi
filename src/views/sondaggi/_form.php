@@ -1,24 +1,34 @@
 <?php
 
-use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\core\forms\CloseSaveButtonWidget;
-use lispa\amos\core\forms\CreatedUpdatedWidget;
-use lispa\amos\core\forms\RequiredFieldsTipWidget;
-use lispa\amos\core\forms\TextEditorWidget;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\assets\ModuleSondaggiPublicAsset;
-use lispa\amos\sondaggi\models\SondaggiStato;
-use kartik\select2\Select2;
-use yii\bootstrap\Tabs;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\sondaggi
+ * @category   CategoryName
+ */
+use open20\amos\attachments\components\AttachmentsInput;
+use open20\amos\core\forms\ActiveForm;
+use open20\amos\core\forms\CreatedUpdatedWidget;
+use open20\amos\core\forms\RequiredFieldsTipWidget;
+use open20\amos\core\forms\Tabs;
+use open20\amos\core\forms\TextEditorWidget;
+use open20\amos\core\helpers\Html;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\assets\ModuleSondaggiPublicAsset;
+use open20\amos\sondaggi\models\Sondaggi;
+use open20\amos\workflow\widgets\WorkflowTransitionButtonsWidget;
+use open20\amos\workflow\widgets\WorkflowTransitionStateDescriptorWidget;
+use yii\web\View;
 use yii\helpers\ArrayHelper;
-
-ModuleSondaggiPublicAsset::register($this);
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\Sondaggi $model
+ * @var open20\amos\sondaggi\models\Sondaggi $model
  * @var yii\widgets\ActiveForm $form
  */
+ModuleSondaggiPublicAsset::register($this);
 
 $postPublic = 'null';
 if (isset($public)) {
@@ -26,15 +36,129 @@ if (isset($public)) {
         $postPublic = $public;
     }
 }
-$js = 'var publicPost = \'' . $postPublic . '\';';
-$this->registerJs($js, yii\web\View::POS_BEGIN);
+$js = 'var publicPost = \''.$postPublic.'\';';
+$this->registerJs($js, View::POS_BEGIN);
+
+$statusToRenderToHide = $model->getStatusToRenderToHide();
+
+$js2 = <<<JS
+
+    var criteri = $('#abilita_criteri_valutazione-id').val();
+
+    if(criteri == 1){
+        $('#n_max_valutatori-id').prop('disabled', false);
+    } else {
+        $('#n_max_valutatori-id').val(0);
+        $('#n_max_valutatori-id').prop('disabled', true); 
+    }
+
+    $("#abilita_criteri_valutazione-id").change(function() {
+        var criterio1 = $('#abilita_criteri_valutazione-id').val();
+
+        if(criterio1 == 1){
+            $('#n_max_valutatori-id').prop('disabled', false);
+        } else {
+            $('#n_max_valutatori-id').val(0);
+            $('#n_max_valutatori-id').prop('disabled', true);
+        }
+    });
+
+    var front = $('#sondaggi-frontend').val();
+    if(front == 1){
+        $('#sondaggi-thank_you_page').prop('disabled', false);
+        $('#sondaggi-forza_lingua').prop('disabled', false);
+        $('#sondaggi-abilita_registrazione').prop('disabled', false);
+        $('#sondaggi-url_sondaggio_non_compilabile').prop('disabled', false);
+        $('#compilabile_in_frontend').show();
+        $('#no-frontend').hide();
+        $('#si-frontend').show();
+    } else {
+        $('#sondaggi-thank_you_page').prop('disabled', true);
+        $('#sondaggi-forza_lingua').prop('disabled', true);
+        $('#sondaggi-abilita_registrazione').prop('disabled', true);
+        $('#sondaggi-url_sondaggio_non_compilabile').prop('disabled', true);
+        $('#compilabile_in_frontend').hide();
+        $('#no-frontend').show();
+        $('#si-frontend').hide();
+    }
+
+    var confermaCommunity = $("#sondaggi-mail_conf_community").val();
+    if(confermaCommunity == 1){
+        $("#mail_custom-conferma-community").show();
+    } else {
+        $("#mail_custom-conferma-community").hide();
+    }
+
+    $("#sondaggi-mail_conf_community").change(function() {
+        var confermaCommunity = $("#sondaggi-mail_conf_community").val();
+        if(confermaCommunity == 1){
+            $("#mail_custom-conferma-community").show();
+        } else {
+            $("#mail_custom-conferma-community").hide();
+        }
+    });
+    
+    var mailNewAccountCustom = $("#sondaggi-mail_registrazione_custom").val();
+    if(mailNewAccountCustom == 1){
+        $("#mail_custom-nuovi-utenti").show();
+    } else {
+        $("#mail_custom-nuovi-utenti").hide();
+    }
+
+    $("#sondaggi-mail_registrazione_custom").change(function() {
+    var mailNewAccountCustom = $("#sondaggi-mail_registrazione_custom").val();
+        if(mailNewAccountCustom == 1){
+            $("#mail_custom-nuovi-utenti").show();
+        } else {
+            $("#mail_custom-nuovi-utenti").hide();
+        }
+    });
+
+    $('#sondaggi-frontend').change(function() {
+        var front = $('#sondaggi-frontend').val();
+        if(front == 1){
+            $('#sondaggi-thank_you_page').prop('disabled', false);
+            $('#sondaggi-forza_lingua').prop('disabled', false);
+            $('#sondaggi-abilita_registrazione').prop('disabled', false);
+            $('#sondaggi-url_sondaggio_non_compilabile').prop('disabled', false);
+            $('#compilabile_in_frontend').show();
+            $('#no-frontend').hide();
+            $('#si-frontend').show();
+        } else {
+            $('#sondaggi-thank_you_page').prop('disabled', true);
+            $('#sondaggi-forza_lingua').prop('disabled', true);
+            $('#sondaggi-abilita_registrazione').prop('disabled', true);
+            $('#sondaggi-url_sondaggio_non_compilabile').prop('disabled', true);
+            $('#compilabile_in_frontend').hide();
+            $('#no-frontend').show();
+            $('#si-frontend').hide();
+        }
+   });
+JS;
+
+$this->registerJs($js2, View::POS_READY);
+?>
+
+<?php
+$form              = ActiveForm::begin([
+        'options' => [
+            'enctype' => 'multipart/form-data'
+        ]
+    ]);
+?>
+
+<?=
+WorkflowTransitionStateDescriptorWidget::widget([
+    'form' => $form,
+    'model' => $model,
+    'workflowId' => Sondaggi::WORKFLOW,
+    'classDivIcon' => '',
+    'classDivMessage' => 'message',
+    'viewWidgetOnNewRecord' => false
+]);
 ?>
 
 <div class="sondaggi-form col-xs-12">
-
-    <?php
-    $form = ActiveForm::begin(['options' => ['enctype' => 'multipart/form-data']]);
-    ?>
 
     <?php $this->beginBlock('generale'); ?>
     <div class="row">
@@ -45,202 +169,280 @@ $this->registerJs($js, yii\web\View::POS_BEGIN);
 
         <div class="col-sm-4">
             <div class="col-lg-8 col-sm-8 pull-right">
-                <?= $form->field($model,
-                    'file')->widget(\lispa\amos\attachments\components\AttachmentsInput::classname(), [
-                    'options' => [ // Options of the Kartik's FileInput widget
+                <?=
+                $form->field($model, 'file')->widget(AttachmentsInput::classname(),
+                    [
+                    'options' => [// Options of the Kartik's FileInput widget
                         'multiple' => false, // If you want to allow multiple upload, default to false
                         'accept' => "image/*"
                     ],
-                    'pluginOptions' => [ // Plugin options of the Kartik's FileInput widget
+                    'pluginOptions' => [// Plugin options of the Kartik's FileInput widget
                         'maxFileCount' => 1,
-                        'showRemove' => false,// Client max files,
+                        'showRemove' => false, // Client max files,
                         'indicatorNew' => false,
                         'allowedPreviewTypes' => ['image'],
                         'previewFileIconSettings' => false,
                         'overwriteInitial' => false,
                         'layoutTemplates' => false
                     ]
-                ])->label(AmosSondaggi::t('amosnews', 'Immagine')) ?>
+                ])->label(AmosSondaggi::t('amossondaggi', 'Immagine'))
+                ?>
             </div>
         </div>
     </div>
+
     <div class="row">
+        <div class="col-sm-6">
+            <!--                <label>Opzioni</label>-->
+            <?= $form->field($model, 'send_pdf_via_email')->checkbox() ?>
+        </div>
+        <div class="col-sm-12">
+            <?=
+                $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
+                ->label(AmosSondaggi::t('amossondaggi', 'Elenco di email a cui verrà inviato il sondaggio compilato.'))
+            ?>
+        </div>
+
         <div class="col-lg-6 col-sm-6">
             <?= $form->field($model, 'compilazioni_disponibili')->textInput() ?>
         </div>
         <div class="col-lg-6 col-sm-6">
-            <?php if (Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')): ?>
-                <?php if ($model->sondaggi_stato_id == 3): ?>
-                    <?= $form->field($model, 'sondaggi_stato_id')->dropDownList(ArrayHelper::map(SondaggiStato::find()->all(), 'id', 'descrizione')) ?>
-                <?php else: ?>
-                    <?= $form->field($model, 'sondaggi_stato_id')->dropDownList(ArrayHelper::map(SondaggiStato::find()->andWhere(['!=', 'id', 3])->all(), 'id', 'descrizione')) ?>
-                <?php endif; ?>
-            <?php else: ?>
-                <?php if ($model->isNewRecord): ?>
-                    <?php $model->sondaggi_stato_id = 1;
-                    ?>
-                    <input type="hidden" name="sondaggi_stato_id" value="1">
-                <?php else: ?>
-                    <input type="hidden" name="sondaggi_stato_id"
-                           value="<?= ($model->sondaggi_stato_id) ? $model->sondaggi_stato_id : 1; ?>"
-                <?php endif; ?>
-                <?= $form->field($model, 'sondaggi_stato_id')->dropDownList(ArrayHelper::map(SondaggiStato::find()->all(), 'id', 'descrizione'), ['disabled' => true]) ?>
-            <?php endif; ?>
+            <?=
+            $form->field($model, 'frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
+                    'Si')])
+            ?>
+        </div>
+    </div>
+    <div class="row" id="compilabile_in_frontend">
+        <div class="col-md-6">
+            <?= $form->field($model, 'thank_you_page')->textInput() ?>
+        </div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'url_sondaggio_non_compilabile')->textInput() ?>
+        </div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
+        </div>
+        <div class="col-md-6">
+            <?=
+            $form->field($model, 'abilita_registrazione')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
+                1 => AmosSondaggi::t('amossondaggi', 'Si')])
+            ?>
+        </div>
+        <div class="col-md-6">
+            <?php
+            $moduleTranslation = \Yii::$app->getModule('translation');
+            //$languages         = ['it-IT' => 'IT', 'en-GB' => 'EN'];
+
+            if (!empty($moduleTranslation)) {
+                $arrLanguage = (new \yii\db\Query())->from('language')->andWhere(['=', 'status', 1])->select(['language_id',
+                        'name'])->all();
+                foreach ($arrLanguage as $k => $v) {
+                    $languages[$v['language_id']] = $v['name'];
+                }
+            }
+            ?>
+            <?=
+            $form->field($model, 'forza_lingua')->dropDownlist($languages,
+                ['prompt' => AmosSondaggi::t('amossondaggi', 'Non forzare. Usa quella dell\'utente')]);
+            ?>
         </div>
     </div>
     <div class="row">
-        <div class="col-lg-12 col-sm-12">
-            <h4><?= AmosSondaggi::tHtml('amossondaggi', 'Regole di pubblicazione') ?></h4>
-            <?php
-            if ($model->isNewRecord) {
-                $model->pubblico = 1;
-            } else if (!isset($model->pubblico)) {
-                $model->pubblico = ($model->getSondaggiPubblicaziones()->one()['ruolo'] == 'PUBBLICO') ? 1 : 0;
-            }
-            ?>
-            <?= $form->field($model, 'pubblico')->dropDownList([1 => 'Pubblica', 0 => 'Riservata agli utenti'], ['id' => 'sondaggio-pubblico'])->label('Tipologia Pubblicazione'); ?>
-            <?php
-            $model->tipologie_entita = 0;
-            if ($model->getSondaggiPubblicaziones()->count() > 0) {
-                $dati = [];
-                foreach ($model->getSondaggiPubblicaziones()->all() as $Destinatari) {
-                    $dati[] = $Destinatari['ruolo'];
-                }
-                $model->destinatari_pubblicazione = $dati;
-                $datiAtt = [];
-                foreach ($model->getSondaggiPubblicaziones()->all() as $tipologieAtt) {
-                    $datiAtt[] = $tipologieAtt['tipologie_entita'];
-                }
-                $model->tipologie_entita = $datiAtt;
-            }
-            ?>
-            <?php
-            $ruoli = [];
-            foreach (Yii::$app->authManager->getRoles() as $key => $value) {
-                if ($key != 'ADMIN') {
-                    $ruoli[] = $value;
-                }
-            }
-            ?>
-            <?= $form->field($model, 'destinatari_pubblicazione')->widget(Select2::classname(), [
-                'data' => ArrayHelper::map($ruoli, 'name', 'description'),
-                //'showToggleAll' => FALSE,
-                'options' => [
-                    'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome della classe di utenti ...'),
-                    'multiple' => true,
-                    'id' => 'destinatari-pubblicazione-ruolo',
-                ],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                ],
-            ]); ?>
-            <?php
-            $tipologieA = ArrayHelper::map(\lispa\amos\tag\models\Tag::find()->andWhere(['root' => 1])->andWhere(['>', 'lvl', 0])->asArray()->all(), 'id', 'nome');
-            //$tipologieB = [0 => 'Non selezionato'];
-            //$datiTipologie = ArrayHelper::merge($tipologieB, $tipologieA);            
-            ?>
-            <?= $form->field($model, 'tipologie_entita')->widget(Select2::classname(), [
-                'data' => $tipologieA,
-                'options' => [
-                    'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome della tipologia di entità ...'),
-                    'id' => 'tipologie-attivita-pubblicazione',
-                    'multiple' => true
-                ],
-                'pluginOptions' => [
-                    'allowClear' => true,
-                ],
-            ]); ?>
-            <?php
-            //Da abilitare per l'associazione di sondaggi a singoli corsi (modificare anche il controller poi...)
-            /*
-              $model->attivita_formativa = $model->getSondaggiPubblicaziones()->one()['entita_id'];
-              $datiAttivita = ArrayHelper::map(\backend\modules\attivitaformative\models\PeiAttivitaFormative::find()->andWhere(['pei_entita_formative_stati_id' => 2])->asArray()->all(), 'id', 'titolo', function($model) {
-              $pei = \backend\modules\peipoint\models\PeiPointSedi::findOne($model['pei_point_sedi_id'])->peiPoint;
-              if ($pei) {
-              return $pei->denominazione;
-              } else {
-              return 'Non associato a nessun Punto PEI';
-              }
-              });
-              ?>
-              <?=
-              $form->field($model, 'attivita_formativa')->widget(Select2::classname(), [
-              'data' => $datiAttivita,
-              'options' => [
-              'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome dell\'attività formativa ...'),
-              'id' => 'attivita-formativa-pubblicazione'
-              ],
-              ])->label('Attività Formativa'); */
+        <div class="col-md-6">
+            <?=
+            $form->field($model, 'abilita_criteri_valutazione')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
+                1 => AmosSondaggi::t('amossondaggi', 'Si')], ['id' => 'abilita_criteri_valutazione-id'])
             ?>
         </div>
+        <div class="col-md-6" id="div_max_valutatori-id">
+            <?= $form->field($model, 'n_max_valutatori')->textInput(['id' => 'n_max_valutatori-id']) ?>
+        </div>
     </div>
+
     <div class="clearfix"></div>
     <?php $this->endBlock(); ?>
     <?php
     $itemsTab[] = [
-        'label' => AmosSondaggi::tHtml('amossondaggi', 'Generale '),
+        'label' => AmosSondaggi::tHtml('amossondaggi', 'Generale'),
         'content' => $this->blocks['generale'],
     ];
     ?>
 
     <?php $this->beginBlock('messaggi'); ?>
-    <div class="row">
-        <div class="col-lg-12">
-            <?= $form->field($model, 'text_not_compilable_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'NO'), 1 => AmosSondaggi::t('amossondaggi', 'SI')]) ?>
+    <div id="no-frontend">
+        <div class="row">
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'text_not_compilable_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi',
+                        'NO'), 1 => AmosSondaggi::t('amossondaggi', 'SI')])
+                ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12" id="areatext-not-compilable">
+                <?=
+                $form->field($model, 'text_not_compilable')->textarea(['rows' => 4])
+                ?>
+            </div>
+            <div class="col-lg-12" id="htmltext-not-compilable">
+                <?=
+                $form->field($model, 'text_not_compilable')->widget(TextEditorWidget::className(),
+                    [
+                    'clientOptions' => [
+                        'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                        'lang' => substr(Yii::$app->language, 0, 2)
+                    ],
+                    'options' => [
+                        'id' => 'text_not_compilable-id-html',
+                    ]
+                ])
+                ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'text_end_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'NO'), 1 => AmosSondaggi::t('amossondaggi',
+                        'SI')])
+                ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <?= $form->field($model, 'text_end_title')->textinput() ?>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12" id="areatext-end">
+                <?= $form->field($model, 'text_end')->textarea(['rows' => 4]) ?>
+            </div>
+            <div class="col-lg-12" id="htmltext-end">
+                <?=
+                $form->field($model, 'text_end')->widget(TextEditorWidget::className(),
+                    [
+                    'clientOptions' => [
+                        'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                        'lang' => substr(Yii::$app->language, 0, 2)
+                    ],
+                    'options' => [
+                        'id' => 'text_end-id-html',
+                    ]
+                ])
+                ?>
+            </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-12" id="areatext-not-compilable">
-            <?=
-            $form->field($model, 'text_not_compilable')->textarea(['rows' => 4])
-            ?>
+    <div id="si-frontend">
+        <div class="row">
+            <div class="col-lg-12">
+                <?= $form->field($model, 'link_landing_page')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'testo_sondaggio_non_compilabile_front')->textarea(['rows' => 3])
+                ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'titolo_fine_sondaggio_front')->textinput()
+                ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'testo_fine_sondaggio_front')->textarea(['rows' => 3])
+                ?>
+            </div>
+            <div class="col-lg-6">
+                <?=
+                $form->field($model, 'mail_registrazione_custom')->dropDownList([0 => AmosSondaggi::t('amossondaggi',
+                        'No'), 1 => AmosSondaggi::t('amossondaggi', 'Si')])
+                ?>
+            </div>
+            <div class="col-lg-6">
+                <?=
+                $form->field($model, 'mail_conf_community')->dropDownList([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
+                        'Si')])
+                ?>
+            </div>
         </div>
-        <div class="col-lg-12" id="htmltext-not-compilable">
-            <?= $form->field($model, 'text_not_compilable')->widget(TextEditorWidget::className(), [
-                'clientOptions' => [
-                    'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
-                    'lang' => substr(Yii::$app->language, 0, 2)
-                ],
-                'options' => [
-                    'id' => 'text_not_compilable-id-html',
-                ]
-            ]) ?>
+        <div class="row">
+            <h2><?= AmosSondaggi::t('amossondaggi', 'E-mail degli eventi') ?></h2>
+            <h3><?= AmosSondaggi::t('amossondaggi', 'Messaggio inviato al completamento del sondaggio') ?></h3>
+            <strong><?= AmosSondaggi::t('amossondaggi', 'Caso 1: nuovo utente') ?></strong>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_mittente_nuovo_utente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_soggetto_nuovo_utente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'mail_contenuto_nuovo_utente')->textarea(['rows' => 4])->label(AmosSondaggi::t('amossondaggi', 'Testo') . ' ' . AmosSondaggi::t('amossondaggi', '(variabili comprese: {{{link}}} - {{{link_esteso}}} - {{{nome}}} - {{{cognome}}})'))
+                ?>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <?= $form->field($model, 'text_end_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'NO'), 1 => AmosSondaggi::t('amossondaggi', 'SI')]) ?>
+        <div class="row">
+            <strong><?= AmosSondaggi::t('amossondaggi', 'Caso 2: utente già registrato') ?></strong>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_mittente_utente_presente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_soggetto_utente_presente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'mail_contenuto_utente_presente')->textarea(['rows' => 4])->label(AmosSondaggi::t('amossondaggi', 'Testo') . ' ' . AmosSondaggi::t('amossondaggi', '(variabili disponibili: {{{link}}} - {{{link_esteso}}} - {{{nome}}} - {{{cognome}}})'))
+                ?>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12">
-            <?= $form->field($model, 'text_end_title')->textinput() ?>
+        <div class="row" id="mail_custom-nuovi-utenti">
+
+            <h3><?= AmosSondaggi::t('amossondaggi', 'E-mail personalizzata per le nuove iscrizioni') ?></h3>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_registrazione_mittente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_registrazione_soggetto')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'mail_registrazione_corpo')->textarea(['rows' => 4])
+                ?>
+            </div>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-12" id="areatext-end">
-            <?= $form->field($model, 'text_end')->textarea(['rows' => 4]) ?>
-        </div>
-        <div class="col-lg-12" id="htmltext-end">
-            <?= $form->field($model, 'text_end')->widget(TextEditorWidget::className(), [
-                'clientOptions' => [
-                    'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
-                    'lang' => substr(Yii::$app->language, 0, 2)
-                ],
-                'options' => [
-                    'id' => 'text_end-id-html',
-                ]
-            ]) ?>
+        <div class="row" id="mail_custom-conferma-community">
+
+            <h3><?=
+                AmosSondaggi::t('amossondaggi',
+                    'E-mail inviata al primo accesso alla piattaforma per gli utenti registrati alla community collegata')
+                ?></h3>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_conf_community_id')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_conf_community_mittente')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?= $form->field($model, 'mail_conf_community_soggetto')->textinput() ?>
+            </div>
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'mail_conf_community_corpo')->textarea(['rows' => 4])
+                ?>
+            </div>
         </div>
     </div>
     <div class="clearfix"></div>
 
     <?php $this->endBlock(); ?>
     <?php
-    $itemsTab[] = [
-        'label' => AmosSondaggi::tHtml('amossondaggi', 'Messaggi '),
-        'content' => $this->blocks['messaggi'],
-    ];
+    if (\Yii::$app->user->can('ADMIN')) {
+        $itemsTab[] = [
+            'label' => AmosSondaggi::tHtml('amossondaggi', 'Messaggi '),
+            'content' => $this->blocks['messaggi'],
+        ];
+    }
     ?>
     <?php
     if ($this->context->module->enableNotificationEmailByRoles) {
@@ -253,12 +455,15 @@ $this->registerJs($js, yii\web\View::POS_BEGIN);
         </div>
         <div class="row">
             <div class="col-lg-12">
-                <?= $form->field($model, 'mail_message')->widget(TextEditorWidget::className(), [
+                <?=
+                $form->field($model, 'mail_message')->widget(TextEditorWidget::className(),
+                    [
                     'clientOptions' => [
                         'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
                         'lang' => substr(Yii::$app->language, 0, 2)
                     ]
-                ]) ?>
+                ])
+                ?>
             </div>
         </div>
         <div class="clearfix"></div>
@@ -272,16 +477,46 @@ $this->registerJs($js, yii\web\View::POS_BEGIN);
     }
     ?>
 
-    <?= Tabs::widget([
+    <?=
+    Tabs::widget([
         'encodeLabels' => false,
         'items' => $itemsTab
-    ]); ?>
+    ]);
+    ?>
 
     <?= RequiredFieldsTipWidget::widget() ?>
     <?= CreatedUpdatedWidget::widget(['model' => $model]) ?>
-    <?= CloseSaveButtonWidget::widget([
+
+    <?=
+    WorkflowTransitionButtonsWidget::widget([
+        'form' => $form,
         'model' => $model,
-        'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::tHtml('amossondaggi', 'Inserisci') : AmosSondaggi::tHtml('amossondaggi', 'Salva'),
-    ]); ?>
+        'workflowId' => Sondaggi::WORKFLOW,
+        'viewWidgetOnNewRecord' => true,
+        'closeButton' => Html::a(AmosSondaggi::t('amossondaggi', 'Annulla'), Yii::$app->session->get('previousUrl'),
+            ['class' => 'btn btn-secondary']),
+        'initialStatusName' => "BOZZA",
+        'initialStatus' => Sondaggi::WORKFLOW_STATUS_BOZZA,
+        'statusToRender' => $statusToRenderToHide['statusToRender'],
+        //gli utenti validatore/facilitatore o ADMIN possono sempre salvare il sondaggio => parametro a false altrimenti se stato VALIDATO => pulsante salva nascosto
+        'hideSaveDraftStatus' => $statusToRenderToHide['hideDraftStatus'],
+        'draftButtons' => [
+            Sondaggi::WORKFLOW_STATUS_DAVALIDARE => [
+                'button' => Html::submitButton(AmosSondaggi::t('amossondaggi', 'Salva'), ['class' => 'btn btn-workflow']),
+                'description' => 'le modifiche e mantieni il sondaggio in "richiesta di pubblicazione"'
+            ],
+//            Sondaggi::WORKFLOW_STATUS_VALIDATO => [
+//                'button' => Html::submitButton(AmosSondaggi::t('amossondaggi', 'Salva'), ['class' => 'btn btn-workflow']),
+//                'description' => AmosSondaggi::t('amossondaggi', 'le modifiche e mantieni il sondaggio "pubblicato"'),
+//            ],
+            'default' => [
+                'button' => Html::submitButton(AmosSondaggi::t('amossondaggi', 'Salva in bozza'),
+                    ['class' => 'btn btn-workflow']),
+                'description' => AmosSondaggi::t('amossondaggi', 'potrai richiedere la pubblicazione in seguito'),
+            ]
+        ]
+    ]);
+    ?>
+
     <?php ActiveForm::end(); ?>
 </div>

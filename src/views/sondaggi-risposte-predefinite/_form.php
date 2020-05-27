@@ -1,10 +1,19 @@
 <?php
 
-use lispa\amos\core\forms\ActiveForm;
-use lispa\amos\core\forms\CloseSaveButtonWidget;
-use lispa\amos\core\forms\CreatedUpdatedWidget;
-use lispa\amos\sondaggi\AmosSondaggi;
-use lispa\amos\sondaggi\assets\ModuleSondaggiRisposteAsset;
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
+
+use open20\amos\core\forms\ActiveForm;
+use open20\amos\core\forms\CloseSaveButtonWidget;
+use open20\amos\core\forms\CreatedUpdatedWidget;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\assets\ModuleSondaggiRisposteAsset;
 use yii\bootstrap\Tabs;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
@@ -13,7 +22,7 @@ ModuleSondaggiRisposteAsset::register($this);
 
 /**
  * @var yii\web\View $this
- * @var lispa\amos\sondaggi\models\SondaggiRispostePredefinite $model
+ * @var open20\amos\sondaggi\models\SondaggiRispostePredefinite $model
  * @var yii\widgets\ActiveForm $form
  */
 ?>
@@ -61,7 +70,7 @@ ModuleSondaggiRisposteAsset::register($this);
                 ?>
                 <?=
                 $form->field($model, 'sondaggi_domande_id')->dropDownList(
-                    ArrayHelper::map(\lispa\amos\sondaggi\models\SondaggiDomande::find()->asArray()->all(), 'id', 'domanda'), ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona la domanda ...'), 'id' => 'sondaggi_domande_id-id']);
+                    ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomande::find()->asArray()->all(), 'id', 'domanda'), ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona la domanda ...'), 'id' => 'sondaggi_domande_id-id']);
                 ?>
                 <?php
             endif;
@@ -70,10 +79,17 @@ ModuleSondaggiRisposteAsset::register($this);
     </div>
     <div class="row">
         <div class="col-sm-12">
+            <?php echo Html::button(AmosSondaggi::t('amossondaggi', 'Importa risposte predefinite'), [
+                'class' => 'btn btn-primary pull-right',
+                'data-toggle' => 'modal',
+                'data-target' => '#modalImport',
+            ]); ?>
+        </div>
+        <div class="col-sm-12">
             <?= $form->field($model, 'risposta')->textarea(['rows' => 4]) ?>
         </div>
         <div class="col-xs-12">
-            <?= $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine', 'dopo' => 'Dopo la seguente risposta'], ['id' => 'ordinamento-radio-risposta'])->label('Posiziona la risposta:') ?>
+            <?= $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine', 'dopo' => 'Dopo la seguente risposta'], ['id' => 'ordinamento-radio-risposta'])->label(AmosSondaggi::t('amossondaggi','Posiziona la risposta') . ':') ?>
         </div>
         <div class="col-xs-12">
             <?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteRisposteSondaggio()->all(), 'id', 'risposta'), ['id' => 'ordina-dopo-risposta'])->label(FALSE); ?>
@@ -110,13 +126,19 @@ ModuleSondaggiRisposteAsset::register($this);
         <?= CloseSaveButtonWidget::widget([
             'model' => $model,
             'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::tHtml('amossondaggi', 'Inserisci un\'altra risposta') : AmosSondaggi::tHtml('amossondaggi', 'Salva'),
+            'closeButtonLabel' => AmosSondaggi::t('amossondaggi', 'Chiudi'),
         ]); ?>
     <?php else : ?>
         <?= CloseSaveButtonWidget::widget([
             'model' => $model,
             'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::tHtml('amossondaggi', 'Inserisci') : AmosSondaggi::tHtml('amossondaggi', 'Salva'),
+            'closeButtonLabel' => AmosSondaggi::t('amossondaggi', 'Chiudi'),
         ]); ?>
     <?php endif; ?>
     
     <?php ActiveForm::end(); ?>
 </div>
+
+<?php
+    echo $this->render('_modal_import_risposte', ['model' => $model, 'sondaggi_domande_id' => $model->sondaggi_domande_id]);
+?>

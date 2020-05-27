@@ -1,18 +1,18 @@
 <?php
 
 /**
- * Lombardia Informatica S.p.A.
+ * Aria S.p.A.
  * OPEN 2.0
  *
  *
- * @package    lispa\amos\sondaggi\models\base
+ * @package    open20\amos\sondaggi\models\base
  * @category   CategoryName
  */
 
-namespace lispa\amos\sondaggi\models\base;
+namespace open20\amos\sondaggi\models\base;
 
 use Yii;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\AmosSondaggi;
 
 /**
  * This is the base-model class for table "sondaggi_domande_tipologie".
@@ -28,9 +28,9 @@ use lispa\amos\sondaggi\AmosSondaggi;
  * @property integer $deleted_by
  * @property integer $version
  *
- * @property \lispa\amos\sondaggi\models\SondaggiDomande[] $sondaggiDomandes
+ * @property \open20\amos\sondaggi\models\SondaggiDomande[] $sondaggiDomandes
  */
-class SondaggiDomandeTipologie extends \lispa\amos\core\record\Record {
+class SondaggiDomandeTipologie extends \open20\amos\core\record\Record {
 
     /**
      * @inheritdoc
@@ -75,7 +75,8 @@ class SondaggiDomandeTipologie extends \lispa\amos\core\record\Record {
      * @return \yii\db\ActiveQuery
      */
     public function getSondaggiDomandes() {
-        return $this->hasMany(\lispa\amos\sondaggi\models\SondaggiDomande::className(), ['sondaggi_domande_tipologie_id' => 'id']);
+        return $this->hasMany(\open20\amos\sondaggi\models\SondaggiDomande::className(), ['sondaggi_domande_tipologie_id' => 'id'])
+            ->andWhere([\open20\amos\sondaggi\models\SondaggiDomande::tableName().'.deleted_at' => null]);
     }
 
 }

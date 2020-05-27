@@ -1,20 +1,33 @@
 <?php
+
+/**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    Open20Package
+ * @category   CategoryName
+ */
 echo "<?php\n";
 ?>
 
 namespace <?= $generator->ns ?>;
 
 use Yii;
-use lispa\amos\sondaggi\models\SondaggiDomandePagine;
-use lispa\amos\sondaggi\models\SondaggiDomandeTipologie;
-use lispa\amos\sondaggi\models\SondaggiDomandeCondizionate;
-use lispa\amos\sondaggi\models\SondaggiRispostePredefinite;
-use lispa\amos\sondaggi\models\Sondaggi;
-use lispa\amos\sondaggi\models\SondaggiDomande;
-use lispa\amos\sondaggi\models\SondaggiRisposte;
-use lispa\amos\sondaggi\models\SondaggiRisposteSessioni;
-use lispa\amos\sondaggi\models\SondaggiStato;
-use lispa\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\sondaggi\models\SondaggiDomandeTipologie;
+use open20\amos\sondaggi\models\SondaggiDomandeCondizionate;
+use open20\amos\sondaggi\models\SondaggiRispostePredefinite;
+use open20\amos\sondaggi\models\Sondaggi;
+use open20\amos\sondaggi\models\SondaggiDomande;
+use open20\amos\sondaggi\models\SondaggiRisposte;
+use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\models\SondaggiStato;
+use open20\amos\sondaggi\AmosSondaggi;
+use yii\web\UploadedFile;
+use open20\amos\attachments\models\File;
+
+
 
 /**
 * Questa è la classe base per la pagina "<?= $generator->paginaSondaggio ?>" del sondaggio "<?= $generator->titoloSondaggio ?>".
@@ -38,6 +51,7 @@ public function rules()
 {
 return [<?= "\n " . implode(",\n ", $rules) . "\n        " ?>];
 }
+
 
 /**
 * @inheritdoc

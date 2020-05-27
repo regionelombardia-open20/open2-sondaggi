@@ -1,6 +1,15 @@
 <?php
 
 /**
+ * Aria S.p.A.
+ * OPEN 2.0
+ *
+ *
+ * @package    open20\amos\sondaggi\views\pubblicazione
+ * @category   CategoryName
+ */
+
+/**
  * @var $model
  * @var $idSessione
  * @var $idPagina
