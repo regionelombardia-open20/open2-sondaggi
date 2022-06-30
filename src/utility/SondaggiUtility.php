@@ -204,8 +204,7 @@ class SondaggiUtility
      * @param $model
      * @return array
      */
-
-    public static function getSidebarPages($model, $idQuestion)
+    public static function getSidebarPages($model, $idQuestion = null, $page = null)
     {
         $controllerDashboard = 'dashboard';
         $menu = [];

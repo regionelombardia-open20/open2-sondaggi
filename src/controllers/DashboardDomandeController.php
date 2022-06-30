@@ -419,7 +419,7 @@ class DashboardDomandeController extends CrudController
         }
     }
 
-    public function setMenuSidebar($model, $idQuestion)
+    public function setMenuSidebar($model, $idQuestion = null)
     {
         \Yii::$app->getView()->params['showSidebarForm'] = true;
         \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model, $idQuestion);
