@@ -141,7 +141,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 
 			if (!$condizionata && !$Domanda->parent->domanda_condizionata && (($Domanda['obbligatoria'] && !$parent ) || ($Domanda->parent->obbligatoria))) {
 				$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'required']";
-			} else if ( $Domanda['obbligatoria'] && ($Domanda['domanda_condizionata'] || $Domanda->parent->domanda_condizionata) ) {
+			} else if ( ($Domanda['obbligatoria'] || $Domanda->parent->obbligatoria) && !$parent && ($Domanda['domanda_condizionata'] || $Domanda->parent->domanda_condizionata) ) {
 				if ($Domanda['domanda_condizionata'])
 					$condizioni = SondaggiDomandeCondizionate::find()->andWhere( [ 'sondaggi_domande_id' => $Domanda['id'] ] )->all();
 				else
@@ -958,7 +958,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 												 . "}\n"
 												 . "}\n"
 												 . "}\n"
-												 . "if (count(\$count) >= " . count($idDomConds) . ") \$showConditional = count(\$count);\n"
+												 . "if (count(\$count) >= " . count($idDomConds) . ") \$showConditional = count(\$count) > 0;\n"
 												 . "} else {\n"
 					               . "\$sessione = SondaggiRisposteSessioni::findOne(['id' => \$idSessione]);\n"
 					               . "\$risposteDate = SondaggiRisposte::find()->"
@@ -967,7 +967,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 					               . "->andWhere(['in', 'sondaggi_risposte_predefinite_id', [" . implode( ',', $idRisConds ) . "]]);\n"
 												 . "\$showConditional = \$risposteDate->count() > 0;\n"
 												 . "}\n"
-					               . "if(\$showConditional > 0){\n"
+												 . "\Yii::debug(\$showConditional, 'sondaggi');"
+					               . "if(\$showConditional){\n"
 					               . "?>\n"
 					               . "$(document).ready(function () {"
 					               . "$('#div-domanda_$idD').show();"
