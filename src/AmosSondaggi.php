@@ -292,6 +292,10 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $additionalButtonsInAnswerCreation = true;
 
     /**
+     * @var bool $enableTags
+     */
+    public $enableTags = true;
+    /**
      * @inheritdoc
      */
     public function init()

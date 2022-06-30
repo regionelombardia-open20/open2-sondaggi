@@ -252,7 +252,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <?= $form->field($model, 'graphics_live')->widget(\kartik\select2\Select2::className(), [
                 'data' => Sondaggi::sondaggiLiveTypeCharts(),
 
-            ])->label(AmosSondaggi::t('amossondaggi', "Grafico di sintesi da mostare")) ?>
+            ])->label(AmosSondaggi::t('amossondaggi', "Grafico di sintesi da mostrare")) ?>
         </div>
         <div class="col-md-6">
             <?= $form->field($model, 'how_show_live')->widget(\kartik\select2\Select2::className(), [
@@ -602,6 +602,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
     ?>
 
     <?php if (!empty($moduleCwh)): ?>
+
         <?php $this->beginBlock('survey_recipients'); ?>
         <div class="">
             <div class="col-xs-12 receiver-section">
@@ -616,11 +617,14 @@ WorkflowTransitionStateDescriptorWidget::widget([
         </div>
         <div class="clearfix"></div>
         <?php $this->endBlock(); ?>
+
         <?php
+        
         $itemsTab[] = [
             'label' => AmosSondaggi::tHtml('amossondaggi', '#recipients'),
             'content' => $this->blocks['survey_recipients'],
         ];
+        
         ?>
     <?php endif; ?>
 

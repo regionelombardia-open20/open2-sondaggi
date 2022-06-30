@@ -565,7 +565,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				 . (! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 				 . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 				 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
-				 . "<div>".$Domanda->domanda."</div>";
+				 . "<div class=\"control-label font-weight-bold\">".$Domanda->domanda."</div>";
 				$content .= '<div class="table_switch table-responsive"><table class="table"><tr><th></th>';
 				if ($tipo == 'radio') {
 					$cols = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->orderBy('ordinamento ASC')->all();

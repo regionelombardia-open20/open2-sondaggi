@@ -607,6 +607,7 @@ class PubblicazioneController extends CrudController
         $num_pagine = $pagine->count();
         $np         = 1;
         $generatore = new GeneratoreSondaggio();
+        
         foreach ($pagine->all() as $pagina) {
             $generatore->creaValidator($this->percorso_validator, $pagina['id']);
             $generatore->creaView("backend".DS.$this->base_dir.DS."views".DS."q".$id, $pagina['id'],
@@ -614,7 +615,8 @@ class PubblicazioneController extends CrudController
             $generatore->creaModel("backend".DS.$this->base_dir.DS."models".DS."q".$id, $pagina['id'],
                 $this->percorso_validator, $this->percorso_model.$id);
         }
-
+        
+         
         $this->setUpLayout('main');
         if (!$utente) {
             $utente = Yii::$app->getUser()->getId();
@@ -628,7 +630,7 @@ class PubblicazioneController extends CrudController
 
         ModuleRisultatiAsset::register(\Yii::$app->getView());
         ModuleSondaggiAsset::register(\Yii::$app->getView());
-
+        $idPagina = \Yii::$app->request->post('idPagina');
         $pagineQuery         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
         $pagine              = $pagineQuery->all();
         $primaPagina         = $pagine[0]['id'];
@@ -654,7 +656,7 @@ class PubblicazioneController extends CrudController
         }
 
         $risposteWithFiles = [];
-        if ($primaPagina) {
+        if ($idPagina == $primaPagina) {
             if (isset($session['answer_data'])) unset($session['answer_data']);
             $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
             $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
