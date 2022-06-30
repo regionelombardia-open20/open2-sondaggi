@@ -48,8 +48,10 @@ use open20\amos\sondaggi\models\SondaggiDomandeCondizionate;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
 use open20\amos\sondaggi\models\SondaggiRispostePredefinite;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\models\SondaggiRisposte;
 use open20\amos\sondaggi\models\SondaggiInvitations;
 use open20\amos\sondaggi\models\SondaggiInvitationMm;
+use open20\amos\sondaggi\models\SondaggiUsersInvitationMm;
 use open20\amos\upload\models\FilemanagerMediafile;
 use open20\amos\attachments\FileModule;
 use Yii;
@@ -91,6 +93,7 @@ class DashboardController extends CrudController
                                 'update-communication',
                                 'send-communications',
                                 'delete-communication',
+                                'delete-compilations'
                             ],
                             'roles' => ['AMMINISTRAZIONE_SONDAGGI']
                         ],
@@ -247,7 +250,7 @@ class DashboardController extends CrudController
                     $this->model->saveCustomTags();
                     Yii::$app->getSession()->addFlash('success',
                         AmosSondaggi::tHtml('amossondaggi', "Sondaggio aggiornato correttamente."));
-                    return $this->redirect(['info', 'id' => $this->model->id]);
+                    return $this->redirect(['dashboard', 'id' => $this->model->id]);
                 } else {
                     Yii::$app->getSession()->addFlash('danger',
                         AmosSondaggi::tHtml('amossondaggi', 'Sondaggio non aggiornato. Verifica i dati inseriti.'));
@@ -271,7 +274,7 @@ class DashboardController extends CrudController
     public function actionCompilations($id)
     {
         $this->model = $this->findModel($id);
-        $this->setMenuSidebar($this->model);
+        $this->setMenuSidebar($this->model, 'compilations');
 
         $this->model->getOtherAttributes();
 
@@ -287,8 +290,6 @@ class DashboardController extends CrudController
         $compilations = null;
         $compilations = SondaggiInvitationMm::find()->andWhere(['sondaggi_id' => $id])->joinWith('to', true, 'RIGHT JOIN');
 
-        \Yii::debug($compilations->createCommand()->rawSql, 'sondaggi');
-
         $dataProvider = new ActiveDataProvider([
             'query' => $compilations,
             'pagination' => [
@@ -298,9 +299,51 @@ class DashboardController extends CrudController
 
         return $this->render('_compilations',
                 [
+                'model' => $this->model,
                 'dataProvider' => $dataProvider,
                 'currentView' => $this->getCurrentView()
         ]);
+    }
+
+    /**
+     * @param $id
+     * @return string|\yii\web\Response
+     * @throws \yii\web\NotFoundHttpException
+     */
+    public function actionDeleteCompilations($idSondaggio, $id = null)
+    {
+        $this->model = $this->findModel($idSondaggio);
+        if ($id == null) {
+            $invitations = SondaggiInvitationMm::find()->andWhere(['sondaggi_id' => $idSondaggio])->with('to')->all();
+            SondaggiInvitationMm::deleteAll(['sondaggi_id' => $idSondaggio]);
+            $sessions = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $idSondaggio])->select('id');
+            SondaggiRisposte::deleteAll(['sondaggi_risposte_sessioni_id' => $sessions]);
+            SondaggiUsersInvitationMm::deleteAll(['sondaggi_id' => $idSondaggio]);
+            foreach($invitations as $invitation) {
+                SondaggiUtility::sendEmailRemovedCompilation($idSondaggio, $invitation->to);
+            }
+            SondaggiRisposteSessioni::deleteAll(['sondaggi_id' => $idSondaggio]);
+
+        }
+        else {
+            $sessions = null;
+            $invitation = SondaggiInvitationMm::findOne($id);
+            if (AmosSondaggi::instance()->compilationToOrganization) {
+                $sessions = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $idSondaggio, 'organization_id' => $invitation->to_id])->select('id');
+                SondaggiRisposte::deleteAll(['sondaggi_risposte_sessioni_id' => $sessions]);
+                SondaggiRisposteSessioni::deleteAll(['sondaggi_id' => $idSondaggio, 'organization_id' => $invitation->to_id]);
+            } else {
+                $sessions = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $idSondaggio, 'user_id' => $invitation->to_id])->select('id');
+                SondaggiRisposte::deleteAll(['sondaggi_risposte_sessioni_id' => $sessions]);
+                SondaggiRisposteSessioni::deleteAll(['sondaggi_id' => $idSondaggio, 'user_id' => $invitation->to_id]);
+            }
+            SondaggiUsersInvitationMm::deleteAll(['sondaggi_id' => $idSondaggio, 'to_id' => $invitation->to_id]);
+            $invitation->delete();
+            SondaggiUtility::sendEmailRemovedCompilation($idSondaggio, $invitation->to);
+
+        }
+        Yii::$app->getSession()->addFlash('success', AmosSondaggi::t('amossondaggi', "#compilation_removed"));
+        return $this->redirect(['dashboard/compilations', 'id' => $this->model->id]);
     }
 
     /**
@@ -766,6 +809,7 @@ class DashboardController extends CrudController
                             }
                         }
                     }
+
                 }
             }
 
@@ -871,10 +915,10 @@ class DashboardController extends CrudController
     /**
      * @param $model
      */
-    public function setMenuSidebar($model)
+    public function setMenuSidebar($model, $page)
     {
         \Yii::$app->getView()->params['showSidebarForm'] = true;
-        \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model);
+        \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model, null, $page);
     }
 
     /**
@@ -1117,18 +1161,19 @@ class DashboardController extends CrudController
                     else
                         $to_id        = $single['to_id'];
                     $email        = '';
+                    $profile = null;
                     $organization = Profilo::findOne($to_id);
                     if (!empty($organization)) {
                         $referente = $organization->referenteOperativo;
                         if (!is_null($referente)) {
+                            $profile = $referente->user;
                             $email = $referente->user->email;
                         } else {
                             $email = $organization->email;
                         }
                     }
-                    \Yii::debug($email, 'sondaggi');
                     if (!empty($email)) {
-                        $this->sendEmailGeneral($email, $comunicazione->subject, $comunicazione->message);
+                        $this->sendEmailGeneral($email, $comunicazione->subject, $comunicazione->message, [], $profile);
                     }
                 }
             }
@@ -1136,7 +1181,7 @@ class DashboardController extends CrudController
         return $this->redirect([$url]);
     }
 
-    protected function sendEmailGeneral($to, $subject, $message, $files = [])
+    protected function sendEmailGeneral($to, $subject, $message, $files = [], $profile = null)
     {
         try {
             $from = '';
@@ -1147,7 +1192,7 @@ class DashboardController extends CrudController
 
             /** @var Email $email */
             $email = new Email();
-            $email->sendMail($from, $to, $subject, $message, $files);
+            $email->sendMail($from, $to, $subject, $message, $files, [], ['profile' => $profile]);
         } catch (\Exception $ex) {
             \Yii::getLogger()->log($ex->getMessage(), Logger::LEVEL_ERROR);
         }

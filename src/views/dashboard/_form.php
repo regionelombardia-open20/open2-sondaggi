@@ -219,10 +219,6 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <?= $form->field($model, 'sottotitolo')->textInput() ?>
             <?= $form->field($model, 'visualizza_solo_titolo')->checkbox() ?>
             <?= $form->field($model, 'descrizione')->textarea(['rows' => 4]) ?>
-            <?php
-            $m = \Yii::$app->getModule('sondaggi');
-            if ($m->enableTags) {
-            ?>
             <?= $form->field($model, 'customTags')->widget(\xj\tagit\Tagit::className(),
                [
                   'options' => [
@@ -230,9 +226,6 @@ WorkflowTransitionStateDescriptorWidget::widget([
                      'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_tag')
                   ],
                ])->label(AmosSondaggi::t('amossondaggi', '#tags')) ?>
-            <?php
-            }
-            ?>
         </div>
     </div>
 

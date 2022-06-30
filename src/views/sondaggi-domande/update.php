@@ -13,6 +13,7 @@ if (NULL != (filter_input(INPUT_GET, 'url'))) {
 }
 //$this->params['breadcrumbs'][] = ['label' => $model, 'url' => ['view', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = AmosSondaggi::t('amossondaggi', 'Aggiorna');
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-domande-pagine-update">
     <?=

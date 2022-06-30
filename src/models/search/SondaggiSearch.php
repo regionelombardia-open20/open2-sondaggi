@@ -479,7 +479,6 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
 
     public function searchAllAdminExtended($params) {
         $dataProvider = $this->searchAllAdmin($params);
-        \Yii::debug($params, 'sondaggi');
         $from = $params['SondaggiSearch']['publish_date'];
         $to = $params['SondaggiSearch']['close_date'];
         $closed = $params['SondaggiSearch']['closed'];
@@ -487,7 +486,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
             $dataProvider->query->andWhere(['>=', 'publish_date', $from]);
         if (!empty($to))
             $dataProvider->query->andWhere(['<=', 'close_date', $to]);
-        if (!is_null($closed) && !$closed)
+        if (AmosSondaggi::instance()->differentiateClosed && !$closed)
             $dataProvider->query->andWhere(['>=', 'close_date', new Expression('curdate()')]);
         return $dataProvider;
     }

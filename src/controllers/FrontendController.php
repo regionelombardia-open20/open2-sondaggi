@@ -202,11 +202,9 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
-            $newModel->session_id = $idSessione;
-            \Yii::debug($data, 'sondaggi');
             if ($newModel->load($data) && $newModel->validate()) {
-                \Yii::debug($newModel->validate(), 'sondaggi');
                 $newModel->save($idSessione, $accesso, $completato);
+
                 if ($this->model->frontend == 1) {
                     $this->model->setFrontendCookie($idSessione);
                 }
@@ -323,7 +321,6 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
-                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -493,7 +490,6 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
-            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
@@ -591,7 +587,6 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
-                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -785,7 +780,7 @@ class FrontendController extends Controller
         foreach ($users as $user) {
             if (!in_array($user->email, $additionalEmails)) {
                 if ($model->send_pdf_via_email == 1 || empty($new)) {
-                    SondaggiUtility::sendEmailGeneral([$user->email], null, $subject, $message, $files, $from);
+                    SondaggiUtility::sendEmailGeneral([$user->email], $user, $subject, $message, $files, $from);
                 }
             }
         }
@@ -793,13 +788,14 @@ class FrontendController extends Controller
         if ($model->send_pdf_via_email == 1) {
             if (!empty($dati_utente) && !empty($dati_utente['email'])) {
                 if (!in_array($dati_utente['email'], $additionalEmails)) {
-                    SondaggiUtility::sendEmailGeneral([$dati_utente['email']], null, $subject, $message, $files, $from);
+                    SondaggiUtility::sendEmailGeneral([$dati_utente['email']], $utente, $subject, $message, $files, $from);
                 }
             }
 
             foreach ($additionalEmails as $email) {
+                $user = User::find()->andWhere(['email' => $email])->one();
                 if (!empty($email)) {
-                    SondaggiUtility::sendEmailGeneral([trim($email)], null, $subject, $message, $files, $from);
+                    SondaggiUtility::sendEmailGeneral([trim($email)], $user, $subject, $message, $files, $from);
                 }
             }
         }
@@ -1021,14 +1017,20 @@ class FrontendController extends Controller
             $profile = $userProfileModel::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
         }
         $session_id = $sondRisposta->id;
+        $dateDiff = (new \DateTime())->diff(new \DateTime($sondRisposta->updated_at));
         if (!empty($profile)) {
             $xlsData [$row][0] = $profile->nome;
             $xlsData [$row][1] = $profile->cognome;
             $xlsData [$row][2] = $profile->user->email;
-        } else if (!empty($dati_utente)) {
+         else if (!empty($dati_utente)) {
             $xlsData [$row][0] = $dati_utente['nome'];
             $xlsData [$row][1] = $dati_utente['cognome'];
             $xlsData [$row][2] = $dati_utente['email'];
+        }
+        if (($dateDiff->invert * $dateDiff->days) > 730 && AmosSondaggi::instance()->resetGdpr) {
+            $xlsData [$row][0] = "#####";
+            $xlsData [$row][1] = "#####";
+            $xlsData [$row][2] = "#####";
         }
 
         /** @var  $domanda SondaggiDomande */
@@ -1124,7 +1126,11 @@ class FrontendController extends Controller
             'orientation' => Pdf::ORIENT_PORTRAIT,
             'content' => $content,
             'cssInline' => '',
-            'options' => ['title' => ''],
+            'options' => [
+                'title' => '',
+                'setAutoBottomMargin' => 'pad',
+                'autoMarginPadding' => 1
+            ],
             'methods' => [
                 'SetFooter' => ['{PAGENO}']
             ],

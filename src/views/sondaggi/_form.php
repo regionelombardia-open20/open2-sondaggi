@@ -54,7 +54,7 @@ $js2 = <<<JS
         $('#n_max_valutatori-id').prop('disabled', false);
     } else {
         $('#n_max_valutatori-id').val(0);
-        $('#n_max_valutatori-id').prop('disabled', true); 
+        $('#n_max_valutatori-id').prop('disabled', true);
     }
 
     $("#abilita_criteri_valutazione-id").change(function() {
@@ -102,7 +102,7 @@ $js2 = <<<JS
             $("#mail_custom-conferma-community").hide();
         }
     });
-    
+
     var mailNewAccountCustom = $("#sondaggi-mail_registrazione_custom").val();
     if(mailNewAccountCustom == 1){
         $("#mail_custom-nuovi-utenti").show();
@@ -139,12 +139,12 @@ $js2 = <<<JS
             $('#si-frontend').hide();
         }
    });
-    
+
     $('#sondaggio-type-id').on('select2:select', function(){
         hideShowSondaggiLive($(this).val());
     });
-    
-    
+
+
     function hideShowSondaggiLive(sondaggiotype){
           if(sondaggiotype == '$liveId'){
             $('.container-not-live').hide();
@@ -154,7 +154,7 @@ $js2 = <<<JS
             $('.container-live').hide();
         }
     }
-    
+
     hideShowSondaggiLive($('#sondaggio-type-id').val());
 JS;
 
@@ -206,7 +206,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
         </div>
 
         <div class="col-sm-5">
-           
+
                 <?=
                 $form->field($model, 'file')->widget(AttachmentsInput::classname(),
                     [
@@ -225,7 +225,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
                         ]
                     ])->label(AmosSondaggi::t('amossondaggi', 'Immagine'))
                 ?>
-           
+
         </div>
     </div>
 
@@ -233,7 +233,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
     <div class="col-xs-12">
     <h5><?= AmosSondaggi::t('amossondaggi', "Configurazioni sondaggi live") ?></h5>
     </div>
-        
+
         <div class="col-md-6">
             <?= $form->field($model, 'begin_date_hour_live')->widget(\kartik\datecontrol\DateControl::className(), [
                 'type' => \kartik\datecontrol\DateControl::FORMAT_DATETIME
@@ -252,7 +252,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <?= $form->field($model, 'graphics_live')->widget(\kartik\select2\Select2::className(), [
                 'data' => Sondaggi::sondaggiLiveTypeCharts(),
 
-            ])->label(AmosSondaggi::t('amossondaggi', "Grafico di sintesi da mostrare")) ?>
+            ])->label(AmosSondaggi::t('amossondaggi', "Grafico di sintesi da mostare")) ?>
         </div>
         <div class="col-md-6">
             <?= $form->field($model, 'how_show_live')->widget(\kartik\select2\Select2::className(), [
@@ -263,7 +263,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
             ])->label(AmosSondaggi::t('amossondaggi', "Mostra grafico andamento sondaggio"))?>
         </div>
-       
+
     </div>
     <hr style="border-style:dashed" class="m-t-20 m-b-20">
     <div class="row">
@@ -602,7 +602,6 @@ WorkflowTransitionStateDescriptorWidget::widget([
     ?>
 
     <?php if (!empty($moduleCwh)): ?>
-
         <?php $this->beginBlock('survey_recipients'); ?>
         <div class="">
             <div class="col-xs-12 receiver-section">
@@ -617,14 +616,11 @@ WorkflowTransitionStateDescriptorWidget::widget([
         </div>
         <div class="clearfix"></div>
         <?php $this->endBlock(); ?>
-
         <?php
-        
         $itemsTab[] = [
             'label' => AmosSondaggi::tHtml('amossondaggi', '#recipients'),
             'content' => $this->blocks['survey_recipients'],
         ];
-        
         ?>
     <?php endif; ?>
 

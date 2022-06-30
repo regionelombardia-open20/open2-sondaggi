@@ -15,8 +15,9 @@ use kartik\detail\GridView;
 ModuleSondaggiAsset::register($this);
 
 $this->title = $model->getTitle();
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Pagine dei sondaggi'), 'url' => ['sondaggi/sondaggi/manage']];
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Pagine dei sondaggi'), 'url' => ['sondaggi/sondaggi/manage']];
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-dashboard">
     <div class="row">

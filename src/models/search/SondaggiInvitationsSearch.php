@@ -124,8 +124,7 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
 
                 $answers = SondaggiRisposteSessioni::find()
                     ->select('organization_id')->distinct()
-                    ->andWhere(['sondaggi_id' => $polls])
-                    ->andWhere(['status' => SondaggiRisposteSessioni::WORKFLOW_STATUS_INVIATO]);
+                    ->andWhere(['sondaggi_id' => $polls]);
                 \Yii::debug($answers->createCommand()->rawSql, 'sondaggi');
                 $answers = $answers->all();
                 $answeredOrg = ArrayHelper::getColumn($answers, 'organization_id');
@@ -142,6 +141,7 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
                 $query = $query->andFilterWhere([$operator, 'profilo.id', $params['value'][$i]]);
             }
         }
+        $query->groupBy('id');
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
         ]);

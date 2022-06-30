@@ -21,7 +21,8 @@ use yii\helpers\Url;
  */
 $this->title                   = ($pubblicazioni->one()->sondaggi->visualizza_solo_titolo == 1 ?  $pubblicazioni->one()->sondaggi->titolo : AmosSondaggi::t('amossondaggi',
         '#sondaggioterminato'));
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
     <?php
@@ -63,7 +64,7 @@ $this->title                   = ($pubblicazioni->one()->sondaggi->visualizza_so
             ?></h3>
     <?php } ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url) ? $url : (!empty($pubblicazioni->one()->sondaggi->url_chiudi_sondaggio )? $pubblicazioni->one()->sondaggi->url_chiudi_sondaggio : ['/sondaggi/pubblicazione/index']),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url) ? $url : (!empty($pubblicazioni->one()->sondaggi->url_chiudi_sondaggio) && AmosSondaggi::instance()->enableRedirectionUrl ) ? $pubblicazioni->one()->sondaggi->url_chiudi_sondaggio : ['/sondaggi/pubblicazione/index']),
         [
         'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);

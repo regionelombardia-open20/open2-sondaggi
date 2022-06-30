@@ -248,9 +248,9 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
      * Funzione che verifica se il sondaggio è pubblicabile o meno
      * @return boolean True | False - se il sondaggio è pubblicabile restituisce true, altrimenti false
      */
-    public function verificaSondaggioPubblicabile()
+    public function verificaSondaggioPubblicabile($withList = true)
     {
-        if (AmosSondaggi::instance()->enableInvitationList) {
+        if (AmosSondaggi::instance()->enableInvitationList && $withList) {
             if (SondaggiInvitations::find()->andWhere(['sondaggi_id' => $this->id])->andWhere(['active' => 1])->count() == 0)
                     return false;
         }
@@ -1229,13 +1229,4 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
             }
         }
     }
-
-    /**
-     * @return bool
-     */
-    public function sendNotification()
-    {
-        return AmosSondaggi::instance()->sondaggiModelSendNotification;
-    }
-
 }

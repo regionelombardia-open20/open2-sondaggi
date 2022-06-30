@@ -52,6 +52,7 @@ class SondaggiRispostePredefinite extends \open20\amos\core\record\Record
             [['sondaggi_domande_id'], 'required'],
             [['code'], 'string'],
             [['code'], 'unique', 'targetAttribute' => ['code', 'sondaggi_domande_id'], 'message' => AmosSondaggi::t('amossondaggi', '#duplicate_code')],
+            [['ordine'], 'default', 'value'=> 'fine'],
             [['sondaggi_domande_id', 'ordinamento', 'created_by', 'updated_by', 'deleted_by', 'version', 'modello_id'], 'integer'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe']
         ];

@@ -10,6 +10,7 @@ use kartik\detail\DetailView;
 $this->title = $model;
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Domande dei sondaggi'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-domande-pagine-view">
     <?= DetailView::widget([

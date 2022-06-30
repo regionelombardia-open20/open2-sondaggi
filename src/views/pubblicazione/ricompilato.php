@@ -20,7 +20,8 @@ use yii\helpers\Url;
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', '#sondaggioterminato');
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
     <?php
@@ -56,8 +57,8 @@ $this->title                   = AmosSondaggi::t('amossondaggi', '#sondaggioterm
     } else {
         ?>
         <h3 class="m-b-30"><?=
-            AmosSondaggi::tHtml('amossondaggi', '#thankyoumessage').($pubblicazioni->one()->sondaggi->send_pdf_via_email
-            == 1 ? 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.' : '')
+            AmosSondaggi::tHtml('amossondaggi', '#thankyoumessage').((!AmosSondaggi::instance()->enableCompilationWorkflow && $pubblicazioni->one()->sondaggi->send_pdf_via_email)
+            == true ? 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.' : '')
             ?></h3>
     <?php } ?>
     <?=

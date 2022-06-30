@@ -23,7 +23,6 @@ use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomande;
 use open20\amos\sondaggi\models\SondaggiDomandeCondizionate;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
-use open20\amos\sondaggi\models\SondaggiRisposte;
 use open20\amos\sondaggi\models\SondaggiRispostePredefinite;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
 use open20\amos\sondaggi\utility\SondaggiUtility;
@@ -763,19 +762,37 @@ class SondaggiController extends CrudController
 
         /*
         $this->model = $this->findModel($id);
-        $pagine      = $this->model->getSondaggiDomandePagines()->count();
-        if ($pagine) {
+
+        if ($this->model->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
             Yii::$app->getSession()->addFlash('danger',
-                AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare il sondaggio per la presenza di pagine."));
+                AmosSondaggi::tHtml('amossondaggi',
+                    "Impossibile cancellare il sondaggio in quanto non è in stato BOZZA."));
         } else {
-            if ($this->model->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
-                Yii::$app->getSession()->addFlash('danger',
-                    AmosSondaggi::tHtml('amossondaggi',
-                        "Impossibile cancellare il sondaggio in quanto non è in stato BOZZA."));
-            } else {
+            $pages = $this->model->sondaggiDomandePagines;
+            if ($this->sondaggiModule->pollCascadeDeletion) {
+                foreach ($pages as $page) {
+                    $page->delete();
+                }
+                $questions = $this->model->sondaggiDomandes;
+                foreach ($questions as $question) {
+                    $defaultAnswers = $question->sondaggiRispostePredefinites;
+                    foreach ($defaultAnswers as $answer) {
+                        $answer->delete();
+                    }
+                    $question->delete();
+                }
                 $this->model->delete();
                 Yii::$app->getSession()->addFlash('success',
                     AmosSondaggi::tHtml('amossondaggi', "Sondaggio cancellato correttamente."));
+            } else {
+                if ($pages) {
+                    Yii::$app->getSession()->addFlash('danger',
+                        AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare il sondaggio per la presenza di pagine."));
+                } else {
+                    $this->model->delete();
+                    Yii::$app->getSession()->addFlash('success',
+                        AmosSondaggi::tHtml('amossondaggi', "Sondaggio cancellato correttamente."));
+                }
             }
         }
         return $this->redirect('manage');
@@ -793,9 +810,6 @@ class SondaggiController extends CrudController
      */
     public function actionExtractSondaggi($id, $type, $url)
     {
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-
         $this->model = $this->findModel($id);
         $xlsData     = [];
         $basePath    = \Yii::getAlias('@vendor/../common/uploads/temp');
@@ -885,9 +899,6 @@ class SondaggiController extends CrudController
             $count ++;
         }
 
-
-
-
 // CORPO FILE EXCEL
         $sondaggiRisposte = SondaggiRisposteSessioni::find()
             ->distinct()
@@ -900,17 +911,6 @@ class SondaggiController extends CrudController
             ->all();
 
         $row = 1;
-
-        $srpArray = SondaggiRispostePredefinite::find()->asArray()->all();
-        $sondRispPredefAll = [];
-        foreach ($srpArray as $element) {
-            $sondRispPredefAll[$element['id']] = $element;
-        }
-
-//        VarDumper::dump(count($sondaggiRisposte), 3, true); echo('<hr>');
-//        $cont = 0;
-//        $mt = microtime(true);
-//        VarDumper::dump($mt, 3, true); echo('<hr>');
 
         foreach ($sondaggiRisposte as $sondRisposta) {
             $profile = null;
@@ -940,6 +940,12 @@ class SondaggiController extends CrudController
                     $xlsData [$row][2 + $offset] = $profile->user->email;
                 }
             }
+            $dateDiff = (new \DateTime())->diff(new \DateTime($sondRisposta->updated_at));
+            if (($dateDiff->invert * $dateDiff->days) > 730 && AmosSondaggi::instance()->resetGdpr) {
+                $xlsData [$row][0 + $offset] = "#####";
+                $xlsData [$row][1 + $offset] = "#####";
+                $xlsData [$row][2 + $offset] = "#####";
+            }
 
             if (AmosSondaggi::instance()->compilationToOrganization) {
                 $profilo                     = \open20\amos\organizzazioni\models\Profilo::find()->andWhere(['id' => $sondRisposta->organization_id])->one();
@@ -962,12 +968,14 @@ class SondaggiController extends CrudController
             foreach ($domande as $domanda) {
 
                 $query = $domanda->getRispostePerUtente((empty($profile) ? null : $profile->user_id), $session_id);
-// RISPOSTE LIBERE
-                if ($domanda->sondaggi_domande_tipologie_id == 6 || $domanda->sondaggi_domande_tipologie_id == 5 || $domanda->sondaggi_domande_tipologie_id == 13) {
 
-                    $risposta = $query->asArray()->one();
+// RISPOSTE LIBERE
+                if ($domanda->sondaggi_domande_tipologie_id == 6 || $domanda->sondaggi_domande_tipologie_id == 5 || $domanda->sondaggi_domande_tipologie_id
+                    == 13) {
+
+                    $risposta = $query->one();
                     if ($risposta) {
-                        $xlsData[$row][$colRispLibere[$domanda->id] + $offset] = $risposta['risposta_libera'];
+                        $xlsData[$row][$colRispLibere[$domanda->id] + $offset] = $risposta->risposta_libera;
                     } else {
 
                     }
@@ -998,25 +1006,23 @@ class SondaggiController extends CrudController
                     }
                 } else {
                     $risposteArray = [];
-                    /** @var SondaggiRisposte $risposta */
-                    foreach ($query->asArray()->all() as $risposta) {
-                        $srp = $sondRispPredefAll[$risposta['sondaggi_risposte_predefinite_id']];
 
-                        if (!empty($srp)) {
+                    foreach ($query->all() as $risposta) {
+                        if ($risposta->sondaggiRispostePredefinite) {
                             if ($domanda->is_parent) {
-                                if (empty($srp['code'])) {
+                                if (empty($risposta->sondaggiRispostePredefinite->code)) {
 
-                                    $xlsData[$row][$colRisp[$srp['id']][$risposta['sondaggi_domande_id']]
-                                        + $offset] = $srp['risposta'];
+                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id][$risposta->sondaggi_domande_id]
+                                        + $offset] = $risposta->sondaggiRispostePredefinite->risposta;
                                 } else {
-                                    $xlsData[$row][$colRisp[$srp['id']][$risposta['sondaggi_domande_id']]
-                                        + $offset] = $srp['code'];
+                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id][$risposta->sondaggi_domande_id]
+                                        + $offset] = $risposta->sondaggiRispostePredefinite->code;
                                 }
                             } else {
-                                if (empty($srp['code'])) {
-                                    $xlsData[$row][$colRisp[$srp['id']] + $offset] = $srp['risposta'];
+                                if (empty($risposta->sondaggiRispostePredefinite->code)) {
+                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id] + $offset] = $risposta->sondaggiRispostePredefinite->risposta;
                                 } else {
-                                    $xlsData[$row][$colRisp[$srp['id']] + $offset] = $srp['code'];
+                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id] + $offset] = $risposta->sondaggiRispostePredefinite->code;
                                 }
                             }
                         }
@@ -1025,16 +1031,6 @@ class SondaggiController extends CrudController
             }
             $row++;
             gc_collect_cycles();
-
-//            if ($cont >= 1000) {
-//
-//                $mtNew = microtime(true);
-//                VarDumper::dump($mtNew, 3, true); echo('<hr>');
-//                VarDumper::dump(($mtNew - $mt), 3, true); echo('<hr>');
-//                die('stoop');
-//            }
-//            $cont++;
-
         }
 
         $zip_filepath = $basePath.'/Risposte_sondaggio_'.$id.'.zip';

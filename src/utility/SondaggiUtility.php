@@ -46,7 +46,7 @@ class SondaggiUtility
 
             /** @var \open20\amos\core\utilities\Email $email */
             $email = new Email();
-            $email->sendMail($from, $to, $subject, $message, $files);
+            $email->sendMail($from, $to, $subject, $message, $files, [], ['profile' => $profile]);
         } catch (\Exception $ex) {
             pr($ex->getMessage());
             \Yii::getLogger()->log($ex->getMessage(), Logger::LEVEL_ERROR);
@@ -65,12 +65,12 @@ class SondaggiUtility
         $risposteSessioni = SondaggiRisposteSessioni::findOne($idSessione);
         $userDefault      = null;
         $users            = [];
-        if (!empty($risposteSessioni->user)) {
+        if (!empty($risposteSessioni->user) && $model->send_pdf_to_compiler) {
             $users[] = $risposteSessioni->user;
         }
 
         $additionalEmails = [];
-        if (!empty($model->additional_emails)) {
+        if (!empty($model->additional_emails) && $model->send_pdf_via_email) {
             $additionalEmails = explode(';', $model->additional_emails);
         }
 
@@ -99,19 +99,25 @@ class SondaggiUtility
 
         foreach ($users as $user) {
             if (!in_array($user->email, $additionalEmails)) {
-                SondaggiUtility::sendEmailGeneral([$user->email], null, $subject, $message, $files);
+                SondaggiUtility::sendEmailGeneral([$user->email], $user, $subject, $message, $files);
             }
         }
 
         if (!empty($dati_utente) && !empty($dati_utente['email'])) {
             if (!in_array($dati_utente['email'], $additionalEmails)) {
-                SondaggiUtility::sendEmailGeneral([$dati_utente['email']], null, $subject, $message, $files);
+                SondaggiUtility::sendEmailGeneral([$dati_utente['email']], $user, $subject, $message, $files);
             }
         }
 
+        $message = "<p>".AmosSondaggi::t('amossondaggi',
+        'L’utente {utente} ha compilato il sondaggio <strong>{titolo}</strong>, in allegato trovi il sondaggio compilato.',
+        ['titolo' => $model->titolo, 'utente' => !empty($compilatore) ? $compilatore->userProfile->nomeCognome
+        : ''])."</p>";
+
         foreach ($additionalEmails as $email) {
+            $user = User::find()->andWhere(['email' => $email])->one();
             if (!empty($email)) {
-                SondaggiUtility::sendEmailGeneral([trim($email)], null, $subject, $message, $files);
+                SondaggiUtility::sendEmailGeneral([trim($email)], $user, $subject, $message, $files);
             }
         }
     }
@@ -169,7 +175,7 @@ class SondaggiUtility
         ]);
 
         if (!empty($user->email)) {
-            SondaggiUtility::sendEmailGeneral([trim($user->email)], null, $subject, $message);
+            SondaggiUtility::sendEmailGeneral([trim($user->email)], $user, $subject, $message);
         }
 
         return;
@@ -195,8 +201,41 @@ class SondaggiUtility
         $users = User::find()->where(['status' => User::STATUS_ACTIVE])->all();
         foreach($users as $user) {
             if (!empty($user->email) && array_key_exists('SUPER_USER', \Yii::$app->authManager->getRolesByUser($user->id))) {
-                SondaggiUtility::sendEmailGeneral([trim($user->email)], null, $subject, $message);
+                SondaggiUtility::sendEmailGeneral([trim($user->email)], $user, $subject, $message);
             }
+        }
+    }
+
+    public static function sendEmailRemovedCompilation($id, $entity) {
+        $model = Sondaggi::findOne($id);
+        $name = '';
+        $email = '';
+        $profile = null;
+        if ($entity instanceof \open20\amos\organizzazioni\models\Profilo) {
+            $profile = $entity->referenteOperativo;
+            if (!is_null($profile)) {
+                $name = $profile->nomeCognome;
+                $email = $profile->user->email;
+            } else {
+                $name = $entity->name;
+                $email = $entity->operativeHeadquarter->email;
+            }
+        } else {
+            $profile = $entity;
+            $name = $profile->nomeCognome;
+            $email = $profile->user->email;
+        }
+
+        $message = AmosSondaggi::t('amossondaggi', '#email_compilation_removed', [
+            'name' => $name,
+            'title' => $model->titolo
+        ]);
+        $subject = AmosSondaggi::t('amossondaggi', '#email_compilation_removed_subject', [
+            'title' => $model->titolo
+        ]);
+
+        if (!empty($email)) {
+            SondaggiUtility::sendEmailGeneral([trim($email)], $profile, $subject, $message);
         }
     }
 
@@ -204,12 +243,25 @@ class SondaggiUtility
      * @param $model
      * @return array
      */
-    public static function getSidebarPages($model, $idQuestion = null, $page = null)
+
+    public static function getSidebarPages($model, $idQuestion, $page)
     {
         $controllerDashboard = 'dashboard';
         $menu = [];
-        if (!\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI'))
-            return $menu;
+        if (!\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                if (empty($page)) return [];
+            else
+                return [[
+                    'undo' => [
+                        'label' => AmosSondaggi::t('amossondaggi', 'Indietro'),
+                        'activeTargetAction' => '',
+                        'activeTargetController' => 'dashboard',
+                        'titleLink' => AmosSondaggi::t('amossondaggi', 'Indietro'),
+                        'url' => '/sondaggi/dashboard/dashboard?id='.$model->id,
+                        'icon' => 'caret-left'
+                    ]
+                ]];
+        }
         if (empty($idQuestion))
             $menu[] = [
                 'mainMenu' => [

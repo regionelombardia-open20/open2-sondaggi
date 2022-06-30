@@ -26,7 +26,8 @@ use yii\web\View;
 
 
 $this->title = $title;
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 $userProfile = \Yii::$app->user->identity->userProfile;
 
  echo $this->render('@vendor/open20/amos-sondaggi/src/views/sondaggi-domande-pagine/index', [

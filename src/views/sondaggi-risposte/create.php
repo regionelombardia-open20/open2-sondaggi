@@ -12,6 +12,7 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Create {modelClass}', [
 ]);
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi Rispostes'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-risposte-create">
     <?= $this->render('_form', [

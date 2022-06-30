@@ -15,16 +15,19 @@ use open20\amos\sondaggi\AmosSondaggi;
         );
 
         echo Html::tag(
+            'div', $form->field($model, 'send_pdf_via_email_closed')->checkbox(), ['class' => 'col-sm-12']
+        );
+
+        echo Html::tag(
             'div',
             $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
                 ->label(AmosSondaggi::t('amossondaggi', '#compiled_poll_emails_option')), ['class' => 'col-sm-12']
         );
 
-        echo Html::tag(
-            'div', $form->field($model, 'send_pdf_via_email_closed')->checkbox(), ['class' => 'col-sm-12']
-        );
-        echo '<hr/>';
-        echo $form->field($model, 'url_chiudi_sondaggio')->textInput();
+        if (AmosSondaggi::instance()->enableRedirectionUrl) {
+            echo '<hr/>';
+            echo $form->field($model, 'url_chiudi_sondaggio')->textInput();
+        }
 
 
         if (empty($model->compilazioni_disponibili)) $model->compilazioni_disponibili = 1;

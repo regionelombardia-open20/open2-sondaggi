@@ -11,6 +11,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggi Rispostes');
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-risposte-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
@@ -34,13 +35,13 @@ $this->params['breadcrumbs'][] = $this->title;
                 'sondaggi_domande_id',
                 'pei_accessi_servizi_facilitazione_id',
                 'sondaggi_risposte_sessioni_id',
-//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            'created_by', 
-//            'updated_by', 
-//            'deleted_by', 
-//            'version', 
+//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            'created_by',
+//            'updated_by',
+//            'deleted_by',
+//            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                 ],
@@ -70,7 +71,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 //'end' => 'data_fine',
                 //'color' => 'coloreEvento',
                 //'url' => 'urlEvento'
-            ],                
+            ],
         ]*/
     ]); ?>
 </div>

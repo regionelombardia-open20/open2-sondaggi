@@ -21,6 +21,7 @@ use yii\helpers\Url;
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggio terminato');
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-index text-center sondaggi-warning">
     <?php

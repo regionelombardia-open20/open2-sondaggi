@@ -27,6 +27,7 @@ else {
  $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => 'sondaggi/manage', 'route' => 'sondaggi/sondaggi/manage'];
  $this->params['breadcrumbs'][] = ['label' => $model->titolo, 'url' => \Yii::$app->urlManager->createUrl(['sondaggi/dashboard', 'id' => $model->id]), 'route' => \Yii::$app->urlManager->createUrl(['sondaggi/dashboard', 'id' => $model->id])];
  $this->params['breadcrumbs'][] = ['label' => $this->title];
+ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-create">
     <?=

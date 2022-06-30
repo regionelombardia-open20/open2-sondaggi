@@ -15,8 +15,24 @@ use open20\amos\core\views\AmosGridView;
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', "#compilations");
-// $this->params['breadcrumbs'][] = ['label' => Yii::$app->session->get('previousTitle'), 'url' => Yii::$app->session->get('previousUrl')];
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = ['label' => Yii::$app->session->get('previousTitle'), 'url' => Yii::$app->session->get('previousUrl')];
+$this->params['breadcrumbs'][] = $this->title;
+
+
+$this->params['titleButtons'][] = Html::a(AmosIcons::show('block').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#revoke_all'),
+    Yii::$app->urlManager->createUrl([
+        '/'.$this->context->module->id.'/dashboard/delete-compilations',
+        'idSondaggio' => $model->id,
+    ]),
+    [
+    'class' => 'btn pull-right btn-danger-inverse',
+    'data' => [
+        'confirm' => AmosSondaggi::t('amossondaggi', '#modalRevokeAll')
+        ]
+]);
+
+
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-compilations-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
@@ -58,6 +74,33 @@ $this->title = AmosSondaggi::t('amossondaggi', "#compilations");
                     'value' => function($model) {
                         return \Yii::$app->formatter->asDateTime($model->lastSession->end_date, 'humanalwaysdatetime');
                     }
+                ],
+                [
+                    'class' => 'open20\amos\core\views\grid\ActionColumn',
+                    'template' => '{cancella}',
+                    'buttons' => [
+                        'cancella' => function ($url, $model) {
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                                $url = \yii\helpers\Url::current();
+                                return Html::a(AmosIcons::show('block'),
+                                      Yii::$app->urlManager->createUrl([
+                                          '/'.$this->context->module->id.'/dashboard/delete-compilations',
+                                          'id' => $model->id,
+                                          'idSondaggio' => $model->sondaggi_id,
+                                          'url' => $url
+                                      ]),
+                                      [
+                                      'class' => 'btn btn-danger-inverse',
+                                      'title' => AmosSondaggi::t('amossondaggi', '#revoke_compilation'),
+                                      'data' => [
+                                        'confirm' => AmosSondaggi::t('amossondaggi', '#modalRevokeCompilation')
+                                        ]
+                                      ]);
+                            } else {
+                                return '';
+                            }
+                        },
+                    ]
                 ]
             ],
         ]

@@ -19,6 +19,7 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Gestione pagine');
      $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => 'sondaggi/manage', 'route' => 'sondaggi/sondaggi/manage'];
      $this->params['breadcrumbs'][] = ['label' => $this->title];
  }
+ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
 $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#new_page'),
 Yii::$app->urlManager->createUrl([

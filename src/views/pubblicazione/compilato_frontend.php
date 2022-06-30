@@ -20,7 +20,8 @@ use yii\helpers\Url;
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', 'Sondaggio terminato');
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 if (!empty($forzato)) {
     \Yii::$app->language = $forzato;
 }
@@ -71,7 +72,7 @@ if (!empty($forzato)) {
     $closeUrl = trim($sondaggio->url_chiudi_sondaggio);
     ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($closeUrl)? $closeUrl: Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), (!empty($closeUrl) && AmosSondaggi::instance()->enableRedirectionUrl) ? $closeUrl: Url::previous(),
         [
         'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);

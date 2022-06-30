@@ -136,6 +136,12 @@ class ConsoleController extends \yii\console\Controller
                 $xlsData [$row][1] = $profile->cognome;
                 $xlsData [$row][2] = $profile->user->email;
             }
+            $dateDiff = (new \DateTime())->diff(new \DateTime($sondRisposta->updated_at));
+            if (($dateDiff->invert * $dateDiff->days) > 730 && AmosSondaggi::instance()->resetGdpr) {
+                $xlsData [$row][0] = "#####";
+                $xlsData [$row][1] = "#####";
+                $xlsData [$row][2] = "#####";
+            }
             $xlsData [$row][3] = $sondRisposta->begin_date;
             $xlsData [$row][4] = $sondRisposta->end_date;
             $session_id        = $sondRisposta->id;
@@ -163,7 +169,7 @@ class ConsoleController extends \yii\console\Controller
 
                     }
                 } else if ($domanda->sondaggi_domande_tipologie_id == 12) {
-                    
+
                 } else if ($domanda->sondaggi_domande_tipologie_id == 10 || $domanda->sondaggi_domande_tipologie_id
                     == 11) {
                     $risposta = $query->one();

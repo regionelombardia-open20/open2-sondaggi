@@ -21,10 +21,12 @@ $numberListTag = \Yii::$app->controller->sondaggiModule->numberListTag;
 
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
 $url                            = \yii\helpers\Url::current();
 
 $sondaggioPubblicabile = $model->verificaSondaggioPubblicabile();
+$sondaggioPreview = $model->verificaSondaggioPubblicabile(false);
 
 if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
     $this->params['titleButtons'][] = Html::a(AmosIcons::show('delete').'&nbsp;'.AmosSondaggi::t('amossondaggi',
@@ -165,7 +167,7 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                     Amosicons::show('dashboard', [], 'dash')
                     ?>&nbsp;<?= AmosSondaggi::t('amossondaggi', '#monitoring') ?></a>
                 <?php
-                    if ($sondaggioPubblicabile) {
+                    if ($sondaggioPreview) {
                         echo Html::a(Amosicons::show('eye') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#preview'),
                             Yii::$app->urlManager->createUrl([
                                 '/' . $this->context->module->id . '/pubblicazione/preview',
@@ -300,10 +302,10 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 <?php
                 if (AmosSondaggi::instance()->enableCompilationWorkflow) :
                 ?>
-                <h5 class="m-t-30"><?= AmosSondaggi::t('amossondaggi', 'Compilazioni inviate') ?> </h5>
+                <h5 class="m-t-30"><?= AmosSondaggi::t('amossondaggi', 'Compilazioni completate e inviate') ?> </h5>
                 <p class="m-t-0"> <strong> <?= AmosSondaggi::t('amossondaggi', 'Enti:') . '</strong>'.' '.$model->getCompilazioniStatus(SondaggiRisposteSessioni::WORKFLOW_STATUS_INVIATO, 1).' '.AmosSondaggi::t('amossondaggi', 'su').' '.$partecipazioni ?></p>
-                <h5 class="m-t-30"><?= AmosSondaggi::t('amossondaggi', 'Compilazioni non inviate') ?> </h5>
-                <p class="m-t-0"><strong> <?= AmosSondaggi::t('amossondaggi', 'Utenti:') . '</strong>'.' '.$model->getCompilazioniStatus([SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA,SondaggiRisposteSessioni::WORKFLOW_STATUS_RICHIESTA_INVIO]).' '.AmosSondaggi::t('amossondaggi', 'su').' '.$partecipazioni ?></p>
+                <h5 class="m-t-30"><?= AmosSondaggi::t('amossondaggi', 'Compilazioni completate ma non inviate') ?> </h5>
+                <p class="m-t-0"><strong> <?= AmosSondaggi::t('amossondaggi', 'Utenti:') . '</strong>'.' '.$model->getCompilazioniStatus([SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA, SondaggiRisposteSessioni::WORKFLOW_STATUS_RICHIESTA_INVIO], 1).' '.AmosSondaggi::t('amossondaggi', 'su').' '.$partecipazioni ?></p>
                 <?php
                 endif;
                 ?>

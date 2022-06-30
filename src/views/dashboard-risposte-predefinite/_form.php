@@ -113,7 +113,7 @@ $sondaggioLive = ($model->sondaggiDomande->sondaggi->sondaggio_type == \open20\a
 
     <?= CreatedUpdatedWidget::widget(['model' => $model]) ?>
     <?php if ($model->isNewRecord && isset($model->sondaggi_domande_id) && !$url) : ?>
-        <?php if (!$sondaggioLive && AmosSondaggi::instance()->additionalButtonsInAnswerCreation) { ?>
+        <?php if (!$sondaggioLive) { ?>
             <div class="row">
                 <div class="col-xs-12 text-center">
                     <?= Html::submitButton(AmosSondaggi::tHtml('amossondaggi', 'Inserisci e vai a nuova pagina'), ['class' => 'btn btn-success', 'id' => 'submit-pagina', 'name' => 'pagina']); ?>
@@ -124,7 +124,7 @@ $sondaggioLive = ($model->sondaggiDomande->sondaggi->sondaggio_type == \open20\a
         <hr/>
         <?= CloseSaveButtonWidget::widget([
             'model' => $model,
-            'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::tHtml('amossondaggi', 'Inserisci un\'altra risposta') : AmosSondaggi::tHtml('amossondaggi', 'Salva'),
+            'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::tHtml('amossondaggi', 'Inserisci risposta') : AmosSondaggi::tHtml('amossondaggi', 'Salva'),
             'closeButtonLabel' => AmosSondaggi::t('amossondaggi', 'Chiudi'),
         ]); ?>
     <?php else : ?>

@@ -211,6 +211,8 @@ class DashboardRispostePredefiniteController extends CrudController
         $this->setUpLayout('form');
         $this->model = new SondaggiRispostePredefinite();
         $this->model->sondaggi_domande_id = $idDomanda;
+        // Adding default answer position to "after"
+        $this->model->ordine = 'fine';
         $this->setMenuSidebar(Sondaggi::findOne($idSondaggio), $idDomanda);
 
         if ($this->model->load(Yii::$app->request->post())) {
@@ -244,6 +246,12 @@ class DashboardRispostePredefiniteController extends CrudController
                     ]);
                 }
             }
+            $newPage = Yii::$app->request->post('pagina');
+            $newQuestion = Yii::$app->request->post('domanda');
+
+            if ($newPage === '') return $this->redirect(['/sondaggi/dashboard-domande-pagine/create', 'idSondaggio'=> $idSondaggio]);
+            if ($newQuestion === '') return $this->redirect(['/sondaggi/dashboard-domande/create', 'idSondaggio'=> $idSondaggio]);
+
             return $this->redirect(['/sondaggi/dashboard-risposte-predefinite/index', 'idDomanda'=> $idDomanda]);
 
         } else {

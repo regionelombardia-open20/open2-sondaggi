@@ -25,6 +25,7 @@ $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'So
 if ($url) {
     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Domande del sondaggio'), 'url' => $url];
 }
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
 
 ?>

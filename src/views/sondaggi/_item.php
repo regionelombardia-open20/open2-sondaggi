@@ -131,11 +131,11 @@ if (isset($dateEnd)) {
                             }
                             ?>
                             <div class="footer-list">
-                                <?php if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) { ?>
+                                <?php if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_MANAGE')) { ?>
                                     <span class="partecipanti-poll"><?= AmosSondaggi::t('amossondaggi', 'Partecipanti') . ':' ?><strong> <?= $model->getNumeroPartecipazioni() ?></strong></span>
                                     <?php
                                     if (!$hideStatusPoll) { ?>
-                                        <span class="status-poll"><?= \Yii::t('amossondaggi', 'Stato') ?>:<strong> <?= $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--'; ?></strong></span>
+                                        <span class="status-poll"><?=  AmosSondaggi::t('amossondaggi', 'Stato') ?>:<strong> <?= $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--'; ?></strong></span>
                                     <?php }; ?>
                                 <?php }
                                 /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */

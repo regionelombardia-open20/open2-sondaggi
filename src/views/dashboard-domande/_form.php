@@ -100,19 +100,17 @@ $js2 = <<<JS
          disabled = true;
          $('#sondaggidomande-sondaggi_domande_tipologie_id').val(answerTypes[this.value]).change();
          $('#sondaggi_domande_pagine_id-id').val(answerPages[this.value]).change();
-         $('#sondaggidomande-obbligatoria').val(false).change();
       }
       $('#sondaggidomande-sondaggi_domande_tipologie_id').prop('disabled', disabled);
       $('#sondaggi_domande_pagine_id-id').prop('disabled', disabled);
       $('#sondaggidomande-is_parent').prop('disabled', disabled);
-      $('#sondaggidomande-obbligatoria').prop('disabled', disabled);
 
    })
 
    $('#sondaggidomande_form').on('submit', function() {
        $('#sondaggidomande-sondaggi_domande_tipologie_id').prop('disabled', false);
    });
-
+   
     if ($('#sondaggidomande-sondaggi_domande_tipologie_id').val()) {
         $('#sondaggidomande-sondaggi_domande_tipologie_id').trigger('change');
     }
@@ -167,7 +165,7 @@ $this->registerJs($js2, yii\web\View::POS_READY);
         <?php if (!$sondaggioLive) { ?>
             <div class="col-sm-6">
                 <!--                <label>Opzioni</label>-->
-                <?= $form->field($model, 'obbligatoria')->checkbox(['disabled' => !empty($model->parent_id)]) ?>
+                <?= $form->field($model, 'obbligatoria')->checkbox() ?>
             </div>
             <?php if ($sondaggiModule->enableCriteriValutazione) { ?>
                 <div class="col-sm-6">
@@ -545,7 +543,10 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                 'buttonNewSaveLabel' => $model->isNewRecord ? AmosSondaggi::t('amossondaggi', 'Inserisci') : AmosSondaggi::t('amossondaggi',
                     'Salva'),
                 'closeButtonLabel' => AmosSondaggi::t('amossondaggi', 'Chiudi'),
-                'urlClose' => (isset($url)? $url : \yii\helpers\Url::previous()),
+                'urlClose' => Yii::$app->urlManager->createUrl(['/' . $this->context->module->id . '/dashboard-domande/index',
+                     'idSondaggio' => $model->sondaggi_id,
+                     'url' => $url,
+                 ])
             ]);
             ?>
         <?php endif; ?>

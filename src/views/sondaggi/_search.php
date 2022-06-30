@@ -42,6 +42,11 @@ use open20\amos\sondaggi\models\Sondaggi;
         <div class="col-sm-6"><?php echo $form->field($model, 'date_to')->widget(\kartik\datecontrol\DateControl::className(), [
                 'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
             ]) ?></div>
+    <?php if (AmosSondaggi::instance()->differentiateClosed) { ?>
+        <div class="col-sm-6">
+            <?= $form->field($model, 'closed')->checkbox(); ?>
+        </div>
+    <?php } ?>
     </div>
     <?php // echo $form->field($model, 'sondaggi_id') ?>
 

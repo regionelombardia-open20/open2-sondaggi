@@ -140,6 +140,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
 
     /**
      *
+     * @var bool $enableRedirectionUrl
+     */
+    public $enableRedirectionUrl = true;
+
+    /**
+     *
      * @var bool $enableSingleCompilation
      */
     public $enableSingleCompilation = false;
@@ -194,6 +200,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $enableFrontendCompilation = false;
 
     /**
+     * Shows "show closed" flag in list.
+     * @var boolean
+     */
+    public $differentiateClosed = false;
+
+    /**
      *
      * @var array $compilationWorkflowRules
      */
@@ -221,6 +233,11 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $disableLinkAll = false;
 
     /**
+     * @var $enableBreadcrumbs
+     */
+    public $enableBreadcrumbs = true;
+
+    /**
      * @var array $activatePoolRoles
      */
     public $activatePoolRoles = [];
@@ -235,6 +252,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * @var bool $enableCriteriValutazione
      */
     public $enableCriteriValutazione = false;
+
+    /**
+     * Allows poll delete button to delete everything even if questions/answers are present.
+     * @var boolean
+     */
+    public $pollCascadeDeletion = false;
 
 
     /**
@@ -277,9 +300,10 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $enableForceLanguageByGet = false;
 
     /**
-     * @var bool $sondaggiModelSendNotification
+     * Avoids editing invitations after they're sent
+     * @var bool $disableInvitationsDeletionAfterSent
      */
-    public $sondaggiModelSendNotification = true;
+    public $disableInvitationsDeletionAfterSent = false;
 
     /**
      * @var string $sondaggioDataConfirmMessage
@@ -287,14 +311,19 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $sondaggioDataConfirmMessage = '';
 
     /**
-     * @var bool $additionalButtonsInAnswerCreation
+     * @var array $pdfMethods
+     * All methods for PDF generation
      */
-    public $additionalButtonsInAnswerCreation = true;
+    public $pdfMethods = [
+        'SetFooter' => ['{PAGENO}']
+    ];
 
     /**
-     * @var bool $enableTags
+     * @var bool  $resetGdpr
+     * If true, user data older than 2 years will not be shown in reports
      */
-    public $enableTags = true;
+    public $resetGdpr = false;
+
     /**
      * @inheritdoc
      */

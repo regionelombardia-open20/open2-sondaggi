@@ -212,6 +212,12 @@ class DashboardInvitationsController extends CrudController
     {
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
+        if ($this->model->invited == 1) {
+          \Yii::$app->session->addFlash('danger', AmosSondaggi::t('amossondaggi', "#already_invited"));
+          if ($url)
+            return $this->redirect($url);
+          return $this->redirect(['index', 'idSondaggio' => $this->model->sondaggi_id]);
+        }
         $idSondaggio = $this->model->sondaggi_id;
         $validazioni = [];
         $this->setMenuSidebar(Sondaggi::findOne($idSondaggio), $this->model->id);
@@ -229,7 +235,6 @@ class DashboardInvitationsController extends CrudController
                 return $this->redirect(['update', 'id' => $this->model->id]);
             }
           } else {
-            \Yii::debug($this->model->errors, 'sondaggi');
             return $this->render('update',
             [
                 'model' => $this->model,
@@ -258,6 +263,12 @@ class DashboardInvitationsController extends CrudController
     public function actionDelete($id, $idSondaggio, $url = null)
     {
         $this->model = $this->findModel($id);
+        if ($this->model->invited == 1) {
+          \Yii::$app->session->addFlash('danger', AmosSondaggi::t('amossondaggi', "#already_invited"));
+          if ($url)
+            return $this->redirect($url);
+          return $this->redirect(['index', 'idSondaggio' => $this->model->sondaggi_id]);
+        }
 
         $this->model->delete();
         Yii::$app->getSession()->addFlash('success',
@@ -444,7 +455,7 @@ class DashboardInvitationsController extends CrudController
       $this->model->active = true;
       if ($this->model->save())
         return;
-      return yii\web\BadRequestHttpException;
+      throw new \yii\web\BadRequestHttpException;
     }
 
     /**
@@ -454,9 +465,10 @@ class DashboardInvitationsController extends CrudController
     {
       $this->model = $this->findModel($id);
       $this->model->active = false;
+      $this->model->invited = 0;
       if ($this->model->save())
         return;
-      return yii\web\BadRequestHttpException;
+      throw new \yii\web\BadRequestHttpException;
     }
 
     /**
@@ -484,7 +496,7 @@ class DashboardInvitationsController extends CrudController
       Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
       $root = Tag::find()->andWhere(['codice' => Sondaggi::ROOT_TAG_CUSTOM_POLLS])->one();
       if ($root) {
-        $data = Tag::find()->andWhere(['root' => $root->id])->andWhere(['!=', 'id', $root->id])->all();
+        $data = Tag::find()->andWhere(['root' => $root->id])->andWhere(['!=', 'id', $root->id])->andFilterWhere(['like', 'nome', $q])->all();
         $out = ['results' => ['id' => '', 'text' => '']];
         if (!empty($data)) {
           $out['results'] = [];

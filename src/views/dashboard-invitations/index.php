@@ -45,7 +45,8 @@ JS;
 $this->registerJs($js);
 
 $this->title = AmosSondaggi::t('amossondaggi', '#invitation_lists');
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#new_f'),
 Yii::$app->urlManager->createUrl([
     '/'.$this->context->module->id.'/dashboard-invitations/create',
@@ -79,11 +80,13 @@ Yii::$app->urlManager->createUrl([
                 'name:ntext',
                 'count',
                 'active:statosino',
+                'invited:statosino',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                     'template' => '{enable}{update}{delete}',
                     'buttons' => [
                         'enable' => function ($url, $model) {
+                            if (AmosSondaggi::instance()->disableInvitationsDeletionAfterSent && $model->invited) return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('minus-circle'), '#', [
                                     'title' => AmosSondaggi::t('amossondaggi', '#deactivate_list'),
@@ -106,6 +109,7 @@ Yii::$app->urlManager->createUrl([
                         },
                         'update' => function ($url, $model) {
                             $url = \yii\helpers\Url::current();
+                            if ($model->invited) return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('edit'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/dashboard-invitations/update',
@@ -123,6 +127,7 @@ Yii::$app->urlManager->createUrl([
                         'delete' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
                             $url = \yii\helpers\Url::current();
+                              if ($model->invited) return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('delete'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/dashboard-invitations/delete',

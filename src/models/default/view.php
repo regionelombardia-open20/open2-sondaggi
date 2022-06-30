@@ -35,10 +35,11 @@ use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
 *
 */
 
-$this->title = AmosSondaggi::t('amossondaggi', '<?= ($sondaggio->visualizza_solo_titolo == 1 ? '' : 'Compila') ?>: <?=
+$this->title = AmosSondaggi::t('amossondaggi', '<?= ($sondaggio->visualizza_solo_titolo == 1 ? '' : 'Compila: ') ?><?=
                                                                                                                     (str_replace("'", "\'", $generator->titoloSondaggio))
                                                                                                                     ?>');
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 if(!isset($libero)){
 $libero = FALSE;
 }
@@ -72,7 +73,7 @@ echo "\n?>\n";
                 <img class="icon-sondaggio" src="<?= $baseurl ?>/img/poll.png">
                 </div>
                 <h1><?= "<?= AmosSondaggi::t('amossondaggi', '".  (str_replace("'", "\'", $generator->titoloSondaggio)) . "') ?>" ?></h1>
-                
+
             </div>
 
             <div style="background: #ddd;">
@@ -449,7 +450,7 @@ echo "\n?>\n";
                 if(!isset(\$attivita) && !\$libero): ?>\n
                 <?php
                 \$closeLink = !empty(\$url) ? \$url : '/sondaggi/pubblicazione/index';
-                echo Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), " . (!empty($urlSondaggio) ? "'$urlSondaggio'" : "[\$closeLink]") . ", [
+                echo Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), " . (!empty($urlSondaggio && AmosSondaggi::instance()->enableRedirectionUrl) ? "'$urlSondaggio'" : "[\$closeLink]") . ", [
                     'class' => 'btn btn-secondary undo-edit'
                 ]);
                 ?>\n

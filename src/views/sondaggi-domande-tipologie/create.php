@@ -10,6 +10,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 $this->title = AmosSondaggi::t('amossondaggi', 'Inserisci tipologia');
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Tipologie domande'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-domande-tipologie-create">
     <?= $this->render('_form', [

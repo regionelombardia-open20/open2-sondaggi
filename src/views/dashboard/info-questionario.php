@@ -11,9 +11,10 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 
 $this->title = AmosSondaggi::t('amossondaggi', "Info questionario");
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
-// $this->params['breadcrumbs'][] = ['label' => $model->titolo, 'url' => ['sondaggi/dashboard', 'id' => $model->id]];
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
+$this->params['breadcrumbs'][] = ['label' => $model->titolo, 'url' => ['sondaggi/dashboard', 'id' => $model->id]];
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
  echo $this->render('@vendor/open20/amos-sondaggi/src/views/sondaggi/update', [
         'model' => $model,

@@ -74,27 +74,34 @@ class NotifierController extends Controller
 
             foreach ($sondaggi as $sondaggio) {
                 $queryInv = $sondaggio->getInvitations();
-                $queryInv->andWhere(['invited' => false]);
+                $queryInv->andWhere(['invited' => false])->andWhere(['active' => true]);
+                $sent_to = [];
 
                 $invitations = $queryInv->all();
                 foreach ($invitations as $invitation) {
                     $organizationsQuery = SondaggiInvitationsSearch::searchOrganizations($invitation->toArray())->query;
+                    $invitedOrgs = \yii\helpers\ArrayHelper::getColumn(SondaggiInvitationMm::find()->select('to_id')->andWhere(['sondaggi_id' => $sondaggio->id])->asArray()->all(), 'to_id');
+                    $sent_to = \yii\helpers\ArrayHelper::merge($sent_to, $invitedOrgs);
                     $invitation->count = $organizationsQuery->count();
+                    Console::stdout('Already invited: ' . implode(', ', $sent_to) . PHP_EOL);
                     $invitation->invited = 1;
                     $invitation->save(false);
                     // $organizationsQuery->leftJoin(SondaggiInvitationMm::tableName(), [SondaggiInvitationMm::tableName() . '.sondaggi_id' => $sondaggio->id,
                     //     SondaggiInvitationMm::tableName() . '.to_id' => new Expression('profilo.id'), SondaggiInvitationMm::tableName() . '.deleted_at' => null]);
                     // $organizationsQuery->andWhere([SondaggiInvitationMm::tableName() . '.sondaggi_id' => null,
                     //     SondaggiInvitationMm::tableName() . '.to_id' => null]);
-                    Console::stdout('Query:' . $organizationsQuery->createCommand()->rawSql . PHP_EOL);
                     foreach ($organizationsQuery->each() as $organization) {
-                        Console::stdout('Organization ' . $organization->name . PHP_EOL);
-                        $email = '';
-                        $referente = $organization->referenteOperativo;
-                        if (!is_null($referente)) {
-                            $this->sendMail($sondaggio, $referente, $organization);
-                        } else {
-                            $this->sendMailOrganization($sondaggio, $organization);
+                        // Checks if invite has been sent already to this organization...
+                        if (!in_array($organization->id, $sent_to)) {
+                            Console::stdout('Organization ' . $organization->name . PHP_EOL);
+                            $email = '';
+                            $referente = $organization->referenteOperativo;
+                            $sent_to[] = $organization->id;
+                            if (!is_null($referente)) {
+                                $this->sendMail($sondaggio, $referente, $organization);
+                            } else {
+                                $this->sendMailOrganization($sondaggio, $organization);
+                            }
                         }
 
                     }
@@ -184,7 +191,7 @@ class NotifierController extends Controller
 
             /** @var Email $email */
             $email = new Email();
-            $email->sendMail($from, $to, $subject, $message, $files);
+            $email->sendMail($from, $to, $subject, $message, $files, [], ['profile' => $profile]);
         } catch (\Exception $ex) {
             \Yii::getLogger()->log($ex->getMessage(), Logger::LEVEL_ERROR);
         }
@@ -210,7 +217,7 @@ class NotifierController extends Controller
             'nomeCognome' => $referenteOperativo->nomeCognome,
             'data' => Yii::$app->formatter->asDate($sondaggio->close_date),
         ]);
-        $this->sendEmailGeneral($emailsTo, null, $subject, $message);
+        $this->sendEmailGeneral($emailsTo, $referenteOperativo->user, $subject, $message);
     }
 
     /**
@@ -270,11 +277,23 @@ class NotifierController extends Controller
         ]);
 
         $users = User::find()->where(['status' => User::STATUS_ACTIVE])->all();
+
         foreach($users as $user) {
             if (!empty($user->email) && Yii::$app->authManager->checkAccess($user->id, 'AMMINISTRAZIONE_SONDAGGI')) {
                 Console::stdout('   Sending e-mail to '.$user->email . $type . PHP_EOL);
-                $this->sendEmailGeneral([trim($user->email)], null, $subject, $message);
+                $this->sendEmailGeneral([trim($user->email)], $user, $subject, $message);
             }
+        }
+
+        $additionalEmails = [];
+        if (!empty($sondaggio->additional_emails) && $sondaggio->send_pdf_via_email_closed) {
+            $additionalEmails = explode(';', $sondaggio->additional_emails);
+        }
+
+        foreach($additionalEmails as $email) {
+            $user = User::find()->andWhere(['email' => $email])->one();
+            Console::stdout('   Sending e-mail to '.$email . $type . PHP_EOL);
+            $this->sendEmailGeneral([trim($email)], $user, $subject, $message);
         }
     }
 }

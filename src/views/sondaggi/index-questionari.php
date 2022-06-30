@@ -20,6 +20,8 @@ use yii\helpers\Html;
  */
 
 $this->params['breadcrumbs'][] = $this->params['titleSection'];
+
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-index">
     <?php echo $this->render('_search', ['model' => $model]);   ?>
@@ -55,17 +57,34 @@ $this->params['breadcrumbs'][] = $this->params['titleSection'];
                     }
                 ],
                 'titolo:ntext',
-                'descrizione:ntext',
-                'compilazioni' => [
-                    'label' => AmosSondaggi::t('amossondaggi', 'Partecipanti'),
-                    'value' => function ($model) {
-                        if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI'))
-                        /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                            return ($model->getNumeroPartecipazioni()) ? $model->getNumeroPartecipazioni() : AmosSondaggi::t('amossondaggi',
-                                'Nessuno');
-                        return '';
+                [
+                    'attribute' => 'status',
+                    'value' => function($model) {
+                        return $model->getWorkflowStatus()->getLabel();
                     }
                 ],
+                [
+                    'attribute' => 'publish_date',
+                    'value' => function($model) {
+                        return \Yii::$app->formatter->asDate($model->publish_date);
+                    }
+                ],
+                [
+                    'attribute' => 'close_date',
+                    'value' => function($model) {
+                        return \Yii::$app->formatter->asDate($model->close_date);
+                    }
+                ],
+                // 'compilazioni' => [
+                //     'label' => AmosSondaggi::t('amossondaggi', 'Partecipanti'),
+                //     'value' => function ($model) {
+                //         if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI'))
+                //         /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                //             return ($model->getNumeroPartecipazioni()) ? $model->getNumeroPartecipazioni() : AmosSondaggi::t('amossondaggi',
+                //                 'Nessuno');
+                //         return '';
+                //     }
+                // ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
@@ -75,27 +94,8 @@ $this->params['breadcrumbs'][] = $this->params['titleSection'];
 //            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
-                    'template' => '{compila}{update}{delete}',
+                    'template' => '{anteprima}{compila}{update}{delete}',
                     'buttons' => [
-                        'anteprima' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_READ',
-                                    ['model' => $model])) {
-                                return Html::a(AmosIcons::show('eye'),
-                                        Yii::$app->urlManager->createUrl([
-                                            '/'.$this->context->module->id.'/sondaggi/view',
-                                            'id' => $model->id,
-                                            'url' => $url,
-                                        ]),
-                                        [
-                                        'title' => AmosSondaggi::t('amossondaggi', 'Visualizza anteprima'),
-                                        'class' => 'btn btn-tool-secondary'
-                                ]);
-                            } else {
-                                return '';
-                            }
-                        },
                         'compila' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();

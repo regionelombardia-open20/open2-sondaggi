@@ -7,11 +7,12 @@ use open20\amos\sondaggi\AmosSondaggi;
  * @var open20\amos\sondaggi\models\SondaggiRispostePredefinite $model
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Aggiorna risposta predefinita');
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/index']];
-// if (isset($url)) {
-//     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Risposte predefinite'), 'url' => $url];
-// }
-// $this->params['breadcrumbs'][] = AmosSondaggi::t('amossondaggi', 'Aggiorna');
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/index']];
+if (isset($url)) {
+    $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Risposte predefinite'), 'url' => $url];
+}
+$this->params['breadcrumbs'][] = AmosSondaggi::t('amossondaggi', 'Aggiorna');
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-risposte-predefinite-update">
     <?=

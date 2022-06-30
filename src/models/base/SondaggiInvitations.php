@@ -96,6 +96,9 @@ abstract class SondaggiInvitations extends \open20\amos\core\record\Record
         return [
             'id' => AmosSondaggi::t('amossondaggi', 'ID'),
             'name' => AmosSondaggi::t('amossondaggi', 'Nome'),
+            'count' => AmosSondaggi::t('amossondaggi', 'Conteggio'),
+            'active' => AmosSondaggi::t('amossondaggi', 'Attiva'),
+            'invited' => AmosSondaggi::t('amossondaggi', 'Invitati'),
             'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Poll ID'),
             'invitation_class' => AmosSondaggi::t('amossondaggi', 'Classe To'),
             'invitation_id' => AmosSondaggi::t('amossondaggi', 'ID To')

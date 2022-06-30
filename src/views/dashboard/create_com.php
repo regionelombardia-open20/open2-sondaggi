@@ -8,12 +8,13 @@ use open20\amos\sondaggi\AmosSondaggi;
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Crea comunicazione');
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/index']];
-//
-// if (isset($url)) {
-//     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Comunicazioni'), 'url' => $url];
-// }
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/index']];
+
+if (isset($url)) {
+    $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Comunicazioni'), 'url' => $url];
+}
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-invitations">
     <?=

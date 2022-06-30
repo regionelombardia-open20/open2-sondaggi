@@ -20,7 +20,8 @@ use yii\helpers\Html;
  * @var \open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', 'Pubblica sondaggi');
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);   ?>

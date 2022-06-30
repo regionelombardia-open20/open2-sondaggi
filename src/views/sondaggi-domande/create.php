@@ -20,6 +20,7 @@ if (isset($url)) {
     }
 }
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-domande-create">
     <?=

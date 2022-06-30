@@ -31,7 +31,6 @@ foreach ((Array)$risposteWithFiles as $rispostaWithFile){
         'utente' => $utente,
         'ultimaPagina' => $ultimaPagina,
         'url' => $url,
-        'read' => $read,
-        'useSession' => $useSession
+        'read' => $read
     ], $arrayModelRisposte)) ?>
 </div>

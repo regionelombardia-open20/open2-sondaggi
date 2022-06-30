@@ -15,7 +15,8 @@ use yii\widgets\Pjax;
 
 
 $this->title = AmosSondaggi::t('amossondaggi', '#invitation_lists');
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#new_f'),
 Yii::$app->urlManager->createUrl([
     '/'.$this->context->module->id.'/dashboard/create-communication',

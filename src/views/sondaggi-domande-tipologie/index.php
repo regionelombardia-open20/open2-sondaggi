@@ -11,6 +11,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Tipologie domande');
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-domande-tipologie-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
@@ -40,11 +41,11 @@ $this->params['breadcrumbs'][] = $this->title;
                 ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
                 //['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
-//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            'created_by', 
-//            'updated_by', 
-//            'deleted_by', 
-//            'version', 
+//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            'created_by',
+//            'updated_by',
+//            'deleted_by',
+//            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                 ],

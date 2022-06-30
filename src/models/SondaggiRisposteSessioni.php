@@ -18,6 +18,7 @@ use kartik\mpdf\Pdf;
 use raoul2000\workflow\base\SimpleWorkflowBehavior;
 use yii\helpers\ArrayHelper;
 use yii\helpers\BaseInflector;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 
 /**
  * Class SondaggiRisposteSessioni
@@ -45,11 +46,26 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
             $this->status = $this->getWorkflowSource()->getWorkflow(self::WORKFLOW)->getInitialStatusId();
         }
         $user_id = \Yii::$app->getUser()->id;
-        $this->on('afterEnterStatus{'.self::WORKFLOW_STATUS_RICHIESTA_INVIO.'}',
-        function() use($user_id) {
-            $result = SondaggiUsersInvitationMm::find()->andWhere(['sondaggi_id' => $this->sondaggi_id, 'user_id' => $user_id])->one();
-            $result->forceDelete();
-        }, $this);
+        $session = $this;
+        if ($moduleSondaggi->enableCompilationWorkflow == true) {
+            $this->on('afterEnterStatus{'.self::WORKFLOW_STATUS_RICHIESTA_INVIO.'}',
+            function() use($user_id) {
+                // Deleting associated "standard" users which were enabled to compile the poll
+                $result = SondaggiUsersInvitationMm::find()->andWhere(['sondaggi_id' => $this->sondaggi_id, 'user_id' => $user_id])->one();
+                $result->forceDelete();
+            }, $this);
+            $this->on('afterEnterStatus{'.self::WORKFLOW_STATUS_INVIATO.'}',
+            function($event) use ($session) {
+                // Sending emails on "Sent" status
+                $path = "uploads/Sondaggio_compilato".$session->id.'_'.time().".pdf";
+                $session->generateSondaggiPdf($path);
+                if (AmosSondaggi::instance()->enableCompilationWorkflow) {
+                    if ($session->sondaggi->send_pdf_to_compiler || $session->sondaggi->send_pdf_via_email) {
+                        SondaggiUtility::sendEmailSondaggioCompilato($session->sondaggi, $session->id, $path);
+                    }
+                }
+            }, $this);
+        }
         return parent::init();
     }
 
@@ -140,7 +156,7 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
             ->andWhere(['sondaggi_risposte_sessioni.id' => $id])
 //            ->andWhere(['user_profile.user_id' => \Yii::$app->user->id])
             ->one();
-    
+
         $row = 1;
         $profile = null;
         if (!empty($sondRisposta->user_id)) {
@@ -151,6 +167,8 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
             $profile = $userProfileModel::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
         }
 
+        $dateDiff = (new \DateTime())->diff(new \DateTime($sondRisposta->updated_at));
+
         if ($viewNameSurnameEmail && !empty($profile)) {
             $xlsData [$row][0] = $profile->nome;
             $xlsData [$row][1] = $profile->cognome;
@@ -159,6 +177,11 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
             $xlsData [$row][0] = "";
             $xlsData [$row][1] = "";
             $xlsData [$row][2] = "";
+        }
+        if (($dateDiff->invert * $dateDiff->days) > 730 && AmosSondaggi::instance()->resetGdpr) {
+            $xlsData [$row][0] = "#####";
+            $xlsData [$row][1] = "#####";
+            $xlsData [$row][2] = "#####";
         }
         $session_id        = $sondRisposta->id;
 
@@ -270,17 +293,19 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
             'orientation' => Pdf::ORIENT_PORTRAIT,
             'content' => $content,
             'cssInline' => '',
-            'options' => ['title' => ''],
-            'methods' => [
-                'SetFooter' => ['{PAGENO}']
+            'options' => [
+                'title' => '',
+                'setAutoBottomMargin' => 'pad',
+                'autoMarginPadding' => 1
             ],
+            'methods' => AmosSondaggi::instance()->pdfMethods,
         ]);
 
 //        $pdf->getApi()->SetHTMLFooter($footer);
         $pdf->getApi()->SetMargins(0, 0, 20);
 //        $pdf->getApi()->SetAutoPageBreak(TRUE, 25);
         $pdf->getApi()->margin_header = '6px';
-        $pdf->getApi()->margin_footer = '10px';
+        //$pdf->getApi()->margin_footer = '10px';
 
         if (!empty($path)) {
             return $pdf->output($content, $path, Pdf::DEST_FILE);

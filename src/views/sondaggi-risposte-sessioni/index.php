@@ -10,6 +10,7 @@ use open20\amos\sondaggi\AmosSondaggi;
  */
 $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggi Risposte Sessioni');
 $this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 ?>
 <div class="sondaggi-risposte-sessioni-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
@@ -32,16 +33,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 'unique_id',
                 ['attribute' => 'begin_date', 'format' => ['datetime', ViewUtility::formatDateTime()]],
                 ['attribute' => 'end_date', 'format' => ['datetime', ViewUtility::formatDateTime()]],
-//            'session_tmp:ntext', 
-//            'user_profile_id', 
-//            'sondaggi_id', 
-//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            'created_by', 
-//            'updated_by', 
-//            'deleted_by', 
-//            'version', 
+//            'session_tmp:ntext',
+//            'user_profile_id',
+//            'sondaggi_id',
+//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            'created_by',
+//            'updated_by',
+//            'deleted_by',
+//            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                 ],

@@ -61,7 +61,7 @@ IMPORT AMOS-LAYOUT VARIABLES
 
                 img {
                     object-fit: cover;
-                    height: 100%;
+                    min-height: 100%;
                     width: 100%;
                     max-height: 130px;
                 }
@@ -80,6 +80,7 @@ IMPORT AMOS-LAYOUT VARIABLES
                     -webkit-box-orient: vertical;
                     overflow: hidden;
                     margin-bottom: 10px; 
+                    margin-top: 0;
                 }
             }
 
@@ -109,10 +110,20 @@ IMPORT AMOS-LAYOUT VARIABLES
                 text-transform: uppercase;
                 margin-top: auto;
                 display: flex;
-                justify-content: space-between;
-                flex-direction: row;
-                width: 100%;
-
+                flex-wrap: wrap;
+                align-items: center;
+                // justify-content: space-between;
+                // flex-direction: row;
+                // width: 100%;
+                a:not(:last-child){
+                    margin-right: 10px;
+                }
+                .actions-poll {
+                    margin-left: auto;
+                }
+                .change-status {
+                    margin-right: auto;
+                }
                 .change_status_workflow {
                     background-color: transparent;
                     border: none;
@@ -134,14 +145,14 @@ IMPORT AMOS-LAYOUT VARIABLES
                         width: 50%;
                     }
                 }
-                a.assign-compiler-menu{
-                    width: 100%;
-                    font-weight: bold;
-                }
-                a.read-more{
-                    width: 100%;
-                    text-align: right;
-                }
+                // a.assign-compiler-menu{
+                //     width: 100%;
+                //     font-weight: bold;
+                // }
+                // a.read-more{
+                //     width: 100%;
+                //     text-align: right;
+                // }
 
             }
         }

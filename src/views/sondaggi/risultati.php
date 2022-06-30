@@ -26,8 +26,9 @@ ModuleRisultatiAsset::register($this);
  * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', 'Risultati').': '.$model->titolo;
-// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['index']];
-// $this->params['breadcrumbs'][] = $this->title;
+$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
 $funcResize = "";
 for ($i = 0; $i < count($risposte); $i++) {
