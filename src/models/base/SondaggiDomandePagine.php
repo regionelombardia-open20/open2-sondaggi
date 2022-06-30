@@ -66,7 +66,7 @@ class SondaggiDomandePagine extends \open20\amos\core\record\Record
     {
         return [
             'id' => AmosSondaggi::t('amossondaggi', 'ID'),
-            'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Sondaggio'),
+            'sondaggi_id' => AmosSondaggi::t('amossondaggi', '#poll'),
             'titolo' => AmosSondaggi::t('amossondaggi', 'Titolo'),
             'descrizione' => AmosSondaggi::t('amossondaggi', 'Descrizione'),
             'ordinamento' => AmosSondaggi::t('amossondaggi', 'Ordinamento'),

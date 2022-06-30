@@ -9,4 +9,6 @@ use open20\amos\sondaggi\AmosSondaggi;
 class SondaggiMap extends base\SondaggiMap
 {
 
+    public $byBassRuleCwh = true;
+
 } 

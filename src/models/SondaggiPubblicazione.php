@@ -18,6 +18,8 @@ namespace open20\amos\sondaggi\models;
  */
 class SondaggiPubblicazione extends \open20\amos\sondaggi\models\base\SondaggiPubblicazione
 {
+    public $byBassRuleCwh = true;
+
     public $attivita;
 
     /**

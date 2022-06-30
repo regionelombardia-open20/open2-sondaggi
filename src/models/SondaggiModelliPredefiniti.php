@@ -10,6 +10,8 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiModelliPredefiniti extends \open20\amos\sondaggi\models\base\SondaggiModelliPredefiniti {
 
+    public $byBassRuleCwh = true;
+
     public function representingColumn() {
         return [
 //inserire il campo o i campi rappresentativi del modulo

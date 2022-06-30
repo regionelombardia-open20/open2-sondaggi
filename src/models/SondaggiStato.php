@@ -18,6 +18,7 @@ namespace open20\amos\sondaggi\models;
  */
 class SondaggiStato extends \open20\amos\sondaggi\models\base\SondaggiStato
 {
+    public $byBassRuleCwh = true;
     /**
      * @inheritdoc
      */

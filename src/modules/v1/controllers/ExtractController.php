@@ -131,6 +131,7 @@ class ExtractController extends Controller
      */
     public function actionExtractSondaggioResult($task_id)
     {
+        $name  = '';
         $task = TaskSondaggi::findOne($task_id);
         if(!is_null($task)){
             Yii::$app->response->sendFile($task->filename, $name, ['inline' => false])->send();

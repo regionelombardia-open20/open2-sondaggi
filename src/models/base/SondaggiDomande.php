@@ -77,6 +77,9 @@ class SondaggiDomande extends \open20\amos\core\record\Record
                 'sondaggi_domande_pagine_id', 'sondaggi_domande_tipologie_id', 'created_by', 'updated_by', 'deleted_by',
                 'version', 'sondaggi_map_id', 'domanda_condizionata_testo_libero', 'domanda_per_criteri', 'punteggio_max',
                 'abilita_ordinamento_risposte', 'modello_risposte_id'], 'integer'],
+            [['code'], 'string'],
+            [['code'], 'unique', 'targetAttribute' => ['code', 'sondaggi_id'], 'message' => AmosSondaggi::t('amossondaggi',
+                    '#duplicate_question_code')],
             [['domanda', 'tooltip', 'introduzione', 'introduzione_condizionata'], 'string'],
             [['nome_classe_validazione'], 'string', 'max' => 255],
             [['domanda', 'sondaggi_id', 'sondaggi_domande_pagine_id', 'sondaggi_domande_tipologie_id'], 'required'],
@@ -94,10 +97,14 @@ class SondaggiDomande extends \open20\amos\core\record\Record
             'domanda_condizionata' => AmosSondaggi::t('amossondaggi', 'Domanda condizionata'),
             'domanda_condizionata_testo_libero' => AmosSondaggi::t('amossondaggi',
                 'Domanda condizionata ad una risposta libera (se presente o meno)'),
+            'parent_id' => AmosSondaggi::t('amossondaggi', '#parent_question'),
+            'code' => AmosSondaggi::t('amossondaggi', 'Codice'),
+            'is_parent' => AmosSondaggi::t('amossondaggi', '#is_parent'),
+            'multi_columns' => AmosSondaggi::t('amossondaggi', '#multi_columns'),
             'domanda' => AmosSondaggi::t('amossondaggi', 'Domanda'),
             'obbligatoria' => AmosSondaggi::t('amossondaggi', 'Obbligatoria'),
             'inline' => AmosSondaggi::t('amossondaggi', 'Visualizzazione risposte'),
-            'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Sondaggio'),
+            'sondaggi_id' => AmosSondaggi::t('amossondaggi', '#poll'),
             'sondaggi_map_id' => AmosSondaggi::t('amossondaggi',
                 'Mappa il valore che inserirà l\'utente in uno dei seguenti campi'),
             'introduzione' => AmosSondaggi::t('amossondaggi',
@@ -108,7 +115,7 @@ class SondaggiDomande extends \open20\amos\core\record\Record
             'min_int_multipla' => AmosSondaggi::t('amossondaggi', 'Selezioni minime'),
             'max_int_multipla' => AmosSondaggi::t('amossondaggi', 'Selezioni massime'),
             'nome_classe_validazione' => AmosSondaggi::t('amossondaggi', 'Nome della classe Validatrice'),
-            'modello_risposte_id' => AmosSondaggi::t('amossondaggi', 'Modello'),     
+            'modello_risposte_id' => AmosSondaggi::t('amossondaggi', 'Modello'),
             'sondaggi_domande_pagine_id' => AmosSondaggi::t('amossondaggi', 'Pagina'),
             'sondaggi_domande_tipologie_id' => AmosSondaggi::t('amossondaggi', 'Tipo risposta'),
             'abilita_ordinamento_risposte' => AmosSondaggi::t('amossondaggi', 'Abilita ordinamento delle risposte'),
@@ -201,13 +208,14 @@ class SondaggiDomande extends \open20\amos\core\record\Record
     {
         return $this->hasOne(\open20\amos\sondaggi\models\SondaggiMap::className(), ['id' => 'sondaggi_map_id']);
     }
-    
+
     /**
      * @return \yii\db\ActiveQuery
      */
     public function getModello()
     {
-        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiModelliPredefiniti::className(), ['id' => 'modello_risposte_id']);
+        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiModelliPredefiniti::className(),
+                ['id' => 'modello_risposte_id']);
     }
 
     /**
@@ -220,10 +228,28 @@ class SondaggiDomande extends \open20\amos\core\record\Record
     }
 
     /**
-    * @return \yii\db\ActiveQuery
-    */
+     * @return \yii\db\ActiveQuery
+     */
     public function getDomandaCondizionataTestoLibero()
     {
-    return $this->hasOne(\open20\amos\sondaggi\models\SondaggiDomande::className(), ['id' => 'domanda_condizionata_testo_libero']);
+        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiDomande::className(),
+                ['id' => 'domanda_condizionata_testo_libero']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getChilds()
+    {
+        return $this->hasMany(\open20\amos\sondaggi\models\SondaggiDomande::className(), ['parent_id' => 'id']);
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSondaggiRisposteChilds()
+    {
+        return $this->hasMany(\open20\amos\sondaggi\models\SondaggiRisposte::className(),
+                ['sondaggi_domande_id' => 'id'])->via('childs');
     }
 }

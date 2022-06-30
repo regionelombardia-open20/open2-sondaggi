@@ -20,18 +20,18 @@ use yii\helpers\Url;
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', 'Sondaggio terminato');
-$this->params['breadcrumbs'][] = $this->title;
+// $this->params['breadcrumbs'][] = $this->title;
 if (!empty($forzato)) {
     \Yii::$app->language = $forzato;
 }
 ?>
-<div class="sondaggi-index text-center sondaggi-success">
+<div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
     <?php
     if (!empty($sondaggio->titolo_fine_sondaggio_front) && strlen(trim($sondaggio->titolo_fine_sondaggio_front))) {
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
         <h2 class="p-t-5 nom-b"><?= $sondaggio->titolo_fine_sondaggio_front ?></h2>
@@ -40,7 +40,7 @@ if (!empty($forzato)) {
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
         <h2 class="p-t-5 nom-b"><?= AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il questionario.')
@@ -59,15 +59,21 @@ if (!empty($forzato)) {
             <?php
         }
     } else {
+        if ($sondaggio->frontend != 1):
         ?>
-        <h3><?=
+        <h3 class="m-b-30"><?=
             AmosSondaggi::tHtml('amossondaggi', 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.')
             ?></h3>
-    <?php } ?>
+        <?php
+        endif;
+    }
+
+    $closeUrl = trim($sondaggio->url_chiudi_sondaggio);
+    ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($closeUrl)? $closeUrl: Url::previous(),
         [
-        'class' => 'btn btn-secondary undo-edit mr10'
+        'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);
     ?>
 </div>

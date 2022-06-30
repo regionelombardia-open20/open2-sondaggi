@@ -42,7 +42,7 @@ $form = ActiveForm::begin([
     ]);
 
     $linkDownload = Html::a(Yii::t('amossondaggi', 'qui'), $linkDownloadAsset);
-    echo Yii::t('amossondaggi', "L'importazione delle risposte può essere fatta solo utilizzando il file prediscosto. Segui i seguenti passi:");
+    echo Yii::t('amossondaggi', "L'importazione delle risposte può essere fatta solo utilizzando il file predisposto. Segui i seguenti passi:");
     echo '<ol>';
     echo '<li>' . Yii::t('amossondaggi', 'scarica il file facendo click {linkdownload} e salvalo.', ['linkdownload' => $linkDownload]) . '</li>';
     echo '</ol>';

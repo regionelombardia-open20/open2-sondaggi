@@ -97,6 +97,7 @@ return [
     'Impossibile cancellare la pagina per la presenza di domande.' => 'Unable to delete the page for the presence of questions.',
     'Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA.' => 'The response can not be deleted because the survey it is connected to is not in the DRAFT state.',
     'Impossibile cancellare la risposta in quanto sono presenti domande condizionate da questa risposta.' => 'The answer can not be deleted because there are questions that are conditioned by this response.',
+    'Info questionario' => 'Pool info',
     'Inizio compilazione' => 'Inizio compilazione',
     'Inserisci' => 'Add',
     'Inserisci domanda' => 'Add a question',
@@ -130,6 +131,7 @@ return [
     'Non è possibile inviare le notifiche se non si compilano tutti campi relativi alla notifica in "Gestione sondaggi" e se non si imposta la mail da cui inviare le notifiche.' => 'Non è possibile inviare le notifiche se non si compilano tutti campi relativi alla notifica in "Gestione sondaggi" e se non si imposta la mail da cui inviare le notifiche.',
     'NO' => 'NO',
     'Non sono presenti sondaggi pubblici compilabili' => 'There are no public compilable surveys',
+    '#no_preview_messagge' => 'It is not possible to preview as there are no questions (or no answers have been defined for closed questions)',
     'Notifica la presenza di un nuovo sondaggio' => 'Notify the presence of a new survey',
     'Notifica' => 'Notify',
     'Notifiche aggiunte alla coda di invio correttamente.' => 'Notifications added to the sending queue correctly.',
@@ -142,6 +144,7 @@ return [
     'Pagine dei sondaggi' => 'Survey pages',
     'Pagine del sondaggio: ' => 'Survey pages:',
     'Pagine del sondaggio' => 'Survey pages',
+    'Compila' => 'Compila',
     'Partecipa' => 'Participate',
     'Partecipante' => 'Partecipant',
     'Pei Accessi Servizi Facilitazione ID' => 'Pei Accessi Servizi Facilitazione ID',
@@ -238,5 +241,54 @@ return [
     '#sondaggioterminato' => 'Survey closed',
 
     '#menu_front_sondaggi' => 'Surveys',
+    'Seleziona tipo' => 'Select type',
+    'Completo' => 'Standard',
 
+    "#beforeActionSubtitleSectionGuest" => "To participate in the creation of new news, {ctaLoginRegister}",
+    "#beforeActionCtaLoginRegister" => "log in or register on the platform",
+    "#beforeActionSubtitleSectionLogged" => "",
+
+    '#delete_poll' => 'Delete poll',
+    '#delete_poll_dialog' => 'Are you sure you want to delete this poll?',
+    '#publish_poll' => 'Publish poll',
+    '#publish_poll_dialog' => 'Are you sure you want to publish this poll?',
+    '#depublish_poll' => 'Deactivate poll',
+    '#depublish_poll_dialog' => 'Are you sure you want to deactivate this poll?',
+    '#publication_date' => 'Publication date',
+    '#closing_date' => 'Closing date',
+    '#monitoring' => 'Monitoring',
+    '#duplicate' => 'Duplicate',
+    '#download_participants' => 'Download participants',
+    '#show_results' => 'Show results',
+    '#new_page' => 'New',
+    '#BOZZA_buttonLabel' => 'Save as draft',
+    '#BOZZA_label' => 'You can still edit the compilation',
+    '#BOZZA_description' => 'you will be able to send the request later',
+    '#RICHIESTAINVIO_buttonLabel' => 'Request sending',
+    '#RICHIESTAINVIO_label' => '',
+    '#RICHIESTAINVIO_description' => '',
+    '#INVIATO_buttonLabel' => 'Send',
+    '#INVIATO_label' => '',
+    '#INVIATO_description' => '',
+    '#invito_referenteOperativo_subject' => 'Invito',
+    '#activate_list' => 'Activate_list',
+    '#deactivate_list' => 'Deactivate_list',
+    '#invito_referenteOperativo_message' => 'Gentile {nomeCognome},<br>
+sei stato invitato alla compilazione del questionario {titolo} questionario sulla piattaforma Fabbisogni Online.<br>
+
+Si ricorda di completare il questionario entro {data} fine questionario<br>
+Clicca qui per accedere alla piattaforma Fabbisogni Online.<br>
+<br>
+Una volta effettuato l’accesso, è possibile compilare il questionario dal plugin QUESTIONARI.<br>
+<br>
+Grazie per aver scelto i nostri servizi',
+    '#invito_organization_subject' => 'Invito',
+    '#invito_organization_message' => '{ente} sei stato invitato alla compilazione del questionario {titolo} questionario sulla piattaforma Fabbisogni Online.<br>
+<br>
+Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invitare un proprio operatore a candidarsi come responsabile ente per poter compilare il questionario.<br>
+<br>
+Grazie per aver scelto i nostri servizi',
+    '#no_role_to_activate_pool_message' => 'You are not allowed to activate the survey',
+    '#no_role_to_deactivate_pool_message' => 'You are not allowed to deactivate the survey',
+    'Gestisci questionari' => 'Pools setup'
 ];

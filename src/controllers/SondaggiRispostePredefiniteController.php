@@ -209,11 +209,8 @@ class SondaggiRispostePredefiniteController extends CrudController
                 $this->model->save();
                 $this->model->setOrdinamento($ordinamento, $ordinaDopo);
             }
-            if ($url) {
-                return $this->redirect($url);
-            } else {
-                return $this->redirect('index');
-            }
+            return $this->redirect(['/sondaggi/sondaggi-risposte-predefinite/index', 'idDomanda'=> $idDomanda]);
+
         } else {
             return $this->render('create', [
                 'model' => $this->model,
@@ -339,6 +336,10 @@ class SondaggiRispostePredefiniteController extends CrudController
         if (isset($get['idDomanda'])) {
             $urlCreateNew['idDomanda'] =  filter_input(INPUT_GET, 'idDomanda');
         }
+
+        $domanda = SondaggiDomande::findOne(filter_input(INPUT_GET, 'idDomanda'));
+
+
         if (isset($get['url'])) {
             $urlCreateNew['url'] = $get['url'];
         }
@@ -358,8 +359,16 @@ class SondaggiRispostePredefiniteController extends CrudController
             'data-target' => '#modalImport',
         ]);
 
+        if($domanda) {
+            $backButton = Html::a(AmosIcons::show('long-arrow-return', ['class' => 'm-r-5']) . AmosSondaggi::t('amossondaggi', "Torna alle domande"),
+                ['/sondaggi/sondaggi-domande/index', 'idSondaggio' => $domanda->sondaggi_id, 'idPagina' => $domanda->sondaggi_domande_pagine_id], [
+                    'class' => 'btn btn-secondary',
+                    'title' => AmosSondaggi::t('amossondaggi', "Torna alle domande")
+                ]);
+        }
+
         Yii::$app->view->params['additionalButtons'] = [
-            'htmlButtons' => [$buttonImportaRisposte, $buttonEliminaRisposte]
+            'htmlButtons' => [$backButton, $buttonImportaRisposte, $buttonEliminaRisposte]
         ];
         Yii::$app->view->params['createNewBtnParams'] = [
             'urlCreateNew' => $urlCreateNew,

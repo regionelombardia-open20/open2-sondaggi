@@ -20,16 +20,16 @@ use yii\helpers\Url;
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
 $this->title                   = ($pubblicazioni->one()->sondaggi->visualizza_solo_titolo == 1 ?  $pubblicazioni->one()->sondaggi->titolo : AmosSondaggi::t('amossondaggi',
-        'Sondaggio terminato'));
-$this->params['breadcrumbs'][] = $this->title;
+        '#sondaggioterminato'));
+// $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="sondaggi-index text-center sondaggi-success">
+<div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
     <?php
     if (!empty($pubblicazioni->one()->text_end_title) && strlen(trim($pubblicazioni->one()->text_end_title))) {
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
         <h2 class="p-t-5 nom-b"><?= $pubblicazioni->one()->text_end_title ?></h2>
@@ -38,7 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
         <h2 class="p-t-5 nom-b"><?= AmosSondaggi::t('amossondaggi', 'CONGRATULAZIONI') ?></h2>
@@ -57,15 +57,15 @@ $this->params['breadcrumbs'][] = $this->title;
         }
     } else {
         ?>
-        <h3><?=
-            AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il questionario.').($pubblicazioni->one()->sondaggi->send_pdf_via_email
+        <h3 class="m-b-30"><?=
+            AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il sondaggio.').($pubblicazioni->one()->sondaggi->send_pdf_via_email
             == 1 ? 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.' : '')
             ?></h3>
     <?php } ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url) ? $url : Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url) ? $url : (!empty($pubblicazioni->one()->sondaggi->url_chiudi_sondaggio )? $pubblicazioni->one()->sondaggi->url_chiudi_sondaggio : ['/sondaggi/pubblicazione/index']),
         [
-        'class' => 'btn btn-secondary undo-edit mr10'
+        'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);
     ?>
 </div>

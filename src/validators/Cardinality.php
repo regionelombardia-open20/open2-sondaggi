@@ -56,14 +56,16 @@ class Cardinality extends Validator
                         count = 1;
                 }
             }
-            if(typeof max != 'undefined' && count > max){
-                messages.push("$error_msg_max");
-		return false;
-            } else if(typeof min != 'undefined' && count < min){
-                messages.push("$error_msg_min");
-		return false;
+            if($("#div-$attribute").is(":visible")){
+                if(typeof max != 'undefined' && count > max){
+                    messages.push("$error_msg_max");
+                    return false;
+                } else if(typeof min != 'undefined' && count < min){
+                    messages.push("$error_msg_min");
+                    return false;
+                }
+                return false;
             }
-            return false;
 	}		
         return true;
 JS;

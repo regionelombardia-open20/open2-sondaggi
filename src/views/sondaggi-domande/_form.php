@@ -24,14 +24,18 @@ ModuleSondaggiAsset::register($this);
 $registrazione = true;
 if ((empty($model->getSondaggi()->one()['frontend']) && empty($model->getSondaggi()->one()['abilita_registrazione'])) || !in_array($model->sondaggi_domande_tipologie_id,
         [5, 6])) {
-    $registrazione = false; 
+    $registrazione = false;
 }
+
+$sondaggiModule = AmosSondaggi::instance();
+
+$sondaggioLive = ($model->getSondaggi()->one()->sondaggio_type == \open20\amos\sondaggi\models\base\SondaggiTypes::getLiveType());
 
 $js = <<< JS
        /* setTimeout(
-        function() 
-        {           */ 
-        $("#ordina_dopo").prop("disabled", true);    
+        function()
+        {           */
+        $("#ordina_dopo").prop("disabled", true);
        /* }, 1200);                        */
 JS;
 $this->registerJs($js, yii\web\View::POS_LOAD);
@@ -49,7 +53,7 @@ $js2 = <<<JS
         $('#sondaggi_validazione-id').prop('disabled', true);
     }
 
-    $('#sondaggidomande-sondaggi_domande_tipologie_id').change(function() {
+    $('#sondaggidomande-sondaggi_domande_tipologie_id').on("change", function() {
         var front = $('#sondaggidomande-sondaggi_domande_tipologie_id').val();
          if(front == 5 || front == 6 || front == 13){
         $('#sondaggidomande-sondaggi_map_id').prop('disabled', false);
@@ -62,6 +66,8 @@ $js2 = <<<JS
     }
    });
 JS;
+
+
 
 $this->registerJs($js2, yii\web\View::POS_READY);
 ?>
@@ -102,16 +108,21 @@ $this->registerJs($js2, yii\web\View::POS_READY);
         <div class="col-sm-12">
             <?= $form->field($model, 'tooltip', [])->textarea(['rows' => 3]) ?>
         </div>
-        <div class="col-sm-6">
-            <!--                <label>Opzioni</label>-->
-            <?= $form->field($model, 'obbligatoria')->checkbox() ?>
-        </div>
-        <div class="col-sm-6">
-            <?=
-            $form->field($model, 'domanda_per_criteri')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
-                1 => AmosSondaggi::t('amossondaggi', 'Si')])
-            ?>
-        </div>
+
+        <?php if (!$sondaggioLive) { ?>
+            <div class="col-sm-6">
+                <!--                <label>Opzioni</label>-->
+                <?= $form->field($model, 'obbligatoria')->checkbox() ?>
+            </div>
+            <?php if ($sondaggiModule->enableCriteriValutazione) { ?>
+                <div class="col-sm-6">
+                    <?=
+                    $form->field($model, 'domanda_per_criteri')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
+                        1 => AmosSondaggi::t('amossondaggi', 'Si')])
+                    ?>
+                </div>
+            <?php } ?>
+        <?php } ?>
         <?php if ($registrazione) { ?>
             <div class="col-lg-12 col-sm-12" id="anagrafica-abilitata">
                 <?=
@@ -122,55 +133,70 @@ $this->registerJs($js2, yii\web\View::POS_READY);
         <?php } ?>
 
     </div>
-    <div class="row sondaggio-row">
-        <?php if ($model->sondaggi_id) : ?>
-            <div class="col-xs-12">
-                <?=
-                $form->field($model, 'ordine', ['options' => ['class' => 'nom']])->inline()->radioList(['inizio' => AmosSondaggi::t('amossondaggi',
-                        "All'inizio"), 'fine' => AmosSondaggi::t('amossondaggi', 'Alla fine'), 'dopo' => AmosSondaggi::t('amossondaggi',
-                        'Dopo la seguente domanda')], ['id' => 'ordinamento-radio'])->label(AmosSondaggi::t('amossondaggi',
-                        'Posiziona la domanda').':')
-                ?>
-            </div>
-            <!--?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteDomandeSondaggio()->all(), 'id', 'domanda'), ['id' => 'ordina-dopo'])->label(''); ?-->
-            <div class="col-xs-12">
-                <?=
-                $form->field($model, 'ordina_dopo')->widget(DepDrop::classname(),
-                    [
-                    //'type' => DepDrop::TYPE_SELECT2,
-                    'data' => $model->getDomandaPrecedente() ? [$model->getDomandaPrecedente() => open20\amos\sondaggi\models\SondaggiDomande::findOne($model->getDomandaPrecedente())->domanda]
-                            : [],
-                    'options' => ['id' => 'ordina_dopo'],
-                    //'select2Options' => ['pluginOptions' => ['allowClear' => false]],
-                    'pluginOptions' => [
-                        'depends' => ['sondaggi_domande_pagine_id-id'],
-                        'placeholder' => ['Seleziona ...'],
-                        'url' => Url::to(['/'.$this->context->module->id.'/ajax/domande-by-pagine']),
-                        'initialize' => true,
-                        'params' => ['ordina_dopo'],
-                    ],
-                ])->label(false);
-                ?>
-            </div>
-        <?php else: ?>
-            <div class="col-xs-12 nom">
-                <?=
-                $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine'])->label(AmosSondaggi::t('amossondaggi',
-                        'Posiziona la domanda').':')
-                ?>
-            </div>
-        <?php endif; ?>
-    </div>
+
+    <?php if (!$sondaggioLive) { ?>
+
+        <div class="row sondaggio-row">
+            <?php if ($model->sondaggi_id) : ?>
+                <div class="col-xs-12">
+                    <?=
+                    $form->field($model, 'ordine', ['options' => ['class' => 'nom']])->inline()->radioList(['inizio' => AmosSondaggi::t('amossondaggi',
+                            "All'inizio"), 'fine' => AmosSondaggi::t('amossondaggi', 'Alla fine'), 'dopo' => AmosSondaggi::t('amossondaggi',
+                            'Dopo la seguente domanda')], ['id' => 'ordinamento-radio'])->label(AmosSondaggi::t('amossondaggi',
+                            'Posiziona la domanda').':')
+                    ?>
+                </div>
+                <!--?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteDomandeSondaggio()->all(), 'id', 'domanda'), ['id' => 'ordina-dopo'])->label(''); ?-->
+                <div class="col-xs-12">
+                    <?=
+                    $form->field($model, 'ordina_dopo')->widget(DepDrop::classname(),
+                        [
+                        //'type' => DepDrop::TYPE_SELECT2,
+                        'data' => $model->getDomandaPrecedente() ? [$model->getDomandaPrecedente() => open20\amos\sondaggi\models\SondaggiDomande::findOne($model->getDomandaPrecedente())->domanda]
+                                : [],
+                        'options' => ['id' => 'ordina_dopo'],
+                        //'select2Options' => ['pluginOptions' => ['allowClear' => false]],
+                        'pluginOptions' => [
+                            'depends' => ['sondaggi_domande_pagine_id-id'],
+                            'placeholder' => ['Seleziona ...'],
+                            'url' => Url::to(['/'.$this->context->module->id.'/ajax/domande-by-pagine']),
+                            'initialize' => true,
+                            'params' => ['ordina_dopo'],
+                        ],
+                    ])->label(false);
+                    ?>
+                </div>
+            <?php else: ?>
+                <div class="col-xs-12 nom">
+                    <?=
+                    $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine'])->label(AmosSondaggi::t('amossondaggi',
+                            'Posiziona la domanda').':')
+                    ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    <?php } ?>
     <div class="row sondaggio-row">
         <div class="col-lg-6 col-sm-6">
-            <?=
-            // generated by schmunk42\giiant\crud\providers\RelationProvider::activeField 
-            $form->field($model, 'sondaggi_domande_tipologie_id')->dropDownList(
-                \yii\helpers\ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomandeTipologie::find()->andWhere([
-                        'attivo' => 1])->all(), 'id', 'tipologia'),
-                ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona il tipo di risposta ...')]
-            );
-            ?>
+            <?php if ($sondaggioLive) { ?>
+                <?=
+                // generated by schmunk42\giiant\crud\providers\RelationProvider::activeField
+                $form->field($model, 'sondaggi_domande_tipologie_id')->dropDownList(
+                    \yii\helpers\ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomandeTipologie::find()->andWhere([
+                            'attivo' => 1])->andWhere(['in', 'id', [1, 2, 3, 4]])->all(), 'id', 'tipologia'),
+                    ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona il tipo di risposta ...')]
+                );
+                ?>
+            <?php } else { ?>
+                <?=
+                // generated by schmunk42\giiant\crud\providers\RelationProvider::activeField
+                $form->field($model, 'sondaggi_domande_tipologie_id')->dropDownList(
+                    \yii\helpers\ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomandeTipologie::find()->andWhere([
+                            'attivo' => 1])->all(), 'id', 'tipologia'),
+                    ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona il tipo di risposta ...')]
+                );
+                ?>
+            <?php } ?>
         </div>
         <div class="col-lg-6 col-sm-6">
             <?=
@@ -180,38 +206,40 @@ $this->registerJs($js2, yii\web\View::POS_READY);
             ?>
         </div>
     </div>
-    <div class="row" id="abilita-ordinamento-risposte">
-        <div class="col-lg-6">
-            <?=
-            $form->field($model, 'abilita_ordinamento_risposte')->dropDownList([
-                0 => AmosSondaggi::t('amossondaggi', 'Nessun ordinamento'),
-                1 => AmosSondaggi::t('amossondaggi',
-                    'Si, le risposte saranno ordinabili e condizioneranno l\'ordinamento delle domande condizionate alle risposte.')
-            ]);
-            ?>
+    <?php if (!$sondaggioLive) { ?>
+        <div class="row" id="abilita-ordinamento-risposte">
+            <div class="col-lg-6">
+                <?=
+                $form->field($model, 'abilita_ordinamento_risposte')->dropDownList([
+                    0 => AmosSondaggi::t('amossondaggi', 'Nessun ordinamento'),
+                    1 => AmosSondaggi::t('amossondaggi',
+                        'Si, le risposte saranno ordinabili e condizioneranno l\'ordinamento delle domande condizionate alle risposte.')
+                ]);
+                ?>
+            </div>
+            <div class="col-lg-6">
+                <?=
+                $form->field($model, 'validazione')->widget(Select2::classname(),
+                    [
+                    'data' => ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomandeRule::find()->orderBy('nome')->asArray()->all(),
+                        'id', 'nome'),
+                    'options' => [
+                        'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona ...'),
+                        'id' => 'sondaggi_validazione-id',
+                        'disabled' => true,
+                        'multiple' => true,
+                    ],
+                ]);
+                ?>
+            </div>
         </div>
-        <div class="col-lg-6">
-            <?=
-            $form->field($model, 'validazione')->widget(Select2::classname(),
-                [
-                'data' => ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiDomandeRule::find()->orderBy('nome')->asArray()->all(),
-                    'id', 'nome'),
-                'options' => [
-                    'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona ...'),
-                    'id' => 'sondaggi_validazione-id',
-                    'disabled' => true,
-                    'multiple' => true,
-                ],
-            ]);
-            ?>
+        <div class="row" id="selezione-classe-validatrice">
+            <div class="col-lg-12 col-sm-12">
+                <?= $form->field($model, 'nome_classe_validazione')->textInput(); ?>
+            </div>
         </div>
-    </div>
-    <div class="row" id="selezione-classe-validatrice">
-        <div class="col-lg-12 col-sm-12">
-            <?= $form->field($model, 'nome_classe_validazione')->textInput(); ?>
-        </div>
-    </div>
-    
+    <?php } ?>
+
     <div class="row" id="selezione-modello">
         <div class="col-lg-12 col-sm-12">
             <?=
@@ -251,8 +279,15 @@ $this->registerJs($js2, yii\web\View::POS_READY);
             ?>
         </div>
     </div>
-    <div class="row">
 
+    <?php
+    $hide                    = '';
+    if ($sondaggioLive) {
+        $hide = 'display:none;';
+    }
+    ?>
+
+    <div class="row" style="<?= $hide ?>">
         <div class="col-lg-6 col-sm-6">
             <?php
             if ($model->sondaggi_id) :
@@ -300,56 +335,60 @@ $this->registerJs($js2, yii\web\View::POS_READY);
         </div>
     </div>
 
-    <div class="row">
+    <?php if (!$sondaggioLive) { ?>
+        <div class="row">
 
-        <div class="col-lg-12 col-sm-12">
-            <label></label>
-            <?= $form->field($model, 'domanda_condizionata')->checkbox(['id' => 'domcond']) ?>
-        </div>
-        <div class="col-lg-12 col-sm-12">
-            <?php
-            if ($model->domanda_condizionata) :
-                $model->condizione_necessaria = $model->getSondaggiRispostePredefinitesCondizionate()->all();
-            endif;
-            ?>
-            <?=
-            $form->field($model, 'condizione_necessaria')->dropDownList(
-                yii\helpers\ArrayHelper::map($model->getTutteDomandeDellePagine()->all(), 'id', 'risposta', 'domanda'),
-                ['prompt' => AmosSondaggi::t('amossondaggi',
-                    'Seleziona la risposta o le risposte a cui condizionare la domanda'), 'id' => 'condizione_necessaria-id',
-                'multiple' => true, 'size' => $model->getTutteDomandeDellePagine()->count() + 5]
-            )
-            ?>
-            <?php /*
-              $form->field($model, 'condizione_necessaria')->widget(DepDrop::classname(), [
-              'type' => DepDrop::TYPE_SELECT2,
-              'data' => $model->domanda_condizionata ? [$model->getSondaggiRispostePredefinitesCondizionate()->one()['id'] => $model->getSondaggiRispostePredefinitesCondizionate()->one()['risposta']] : [],
-              'options' => ['id' => 'condizione_necessaria-id', 'enabled' => TRUE],
-              'select2Options' => ['pluginOptions' => ['allowClear' => true]],
-              'pluginOptions' => [
-              'depends' => ['sondaggi_id-id'],
-              'placeholder' => ['Seleziona ...'],
-              'url' => Url::to(['/' . $this->context->module->id . '/ajax/condizione-by-risposta']),
-              'initialize' => true,
-              'params' => ['sondaggi_id-id'],
-              ],
-              ]);
-             */ ?>
-        </div>
+            <div class="col-lg-12 col-sm-12">
+                <label></label>
+                <?= $form->field($model, 'domanda_condizionata')->checkbox(['id' => 'domcond']) ?>
+            </div>
+            <div class="col-lg-12 col-sm-12">
+                <?php
+                if ($model->domanda_condizionata) :
+                    $model->condizione_necessaria = $model->getSondaggiRispostePredefinitesCondizionate()->all();
+                endif;
+                ?>
+                <?=
+                $form->field($model, 'condizione_necessaria')->dropDownList(
+                    yii\helpers\ArrayHelper::map($model->getTutteDomandeDellePagine()->all(), 'id', 'risposta',
+                        'domanda'),
+                    ['prompt' => AmosSondaggi::t('amossondaggi',
+                        'Seleziona la risposta o le risposte a cui condizionare la domanda'), 'id' => 'condizione_necessaria-id',
+                    'multiple' => true, 'size' => $model->getTutteDomandeDellePagine()->count() + 5]
+                )
+                ?>
+                <?php /*
+                  $form->field($model, 'condizione_necessaria')->widget(DepDrop::classname(), [
+                  'type' => DepDrop::TYPE_SELECT2,
+                  'data' => $model->domanda_condizionata ? [$model->getSondaggiRispostePredefinitesCondizionate()->one()['id'] => $model->getSondaggiRispostePredefinitesCondizionate()->one()['risposta']] : [],
+                  'options' => ['id' => 'condizione_necessaria-id', 'enabled' => TRUE],
+                  'select2Options' => ['pluginOptions' => ['allowClear' => true]],
+                  'pluginOptions' => [
+                  'depends' => ['sondaggi_id-id'],
+                  'placeholder' => ['Seleziona ...'],
+                  'url' => Url::to(['/' . $this->context->module->id . '/ajax/condizione-by-risposta']),
+                  'initialize' => true,
+                  'params' => ['sondaggi_id-id'],
+                  ],
+                  ]);
+                 */ ?>
+            </div>
 
-    </div>
-    <div class="row">
-
-        <div class="col-lg-12">
-            <?=
-            $form->field($model, 'domanda_condizionata_testo_libero')->dropDownList(
-                yii\helpers\ArrayHelper::map($model->getTutteDomandeLibere()->orderBy('ordinamento')->all(), 'id',
-                    'domanda'),
-                ['prompt' => AmosSondaggi::t('amossondaggi', 'Selezionare, questa selezione scarterà la precedente'), 'id' => 'condizione_necessaria-libera-id']
-            )
-            ?>
         </div>
-    </div>
+        <div class="row">
+
+            <div class="col-lg-12">
+                <?=
+                $form->field($model, 'domanda_condizionata_testo_libero')->dropDownList(
+                    yii\helpers\ArrayHelper::map($model->getTutteDomandeLibere()->orderBy('ordinamento')->all(), 'id',
+                        'domanda'),
+                    ['prompt' => AmosSondaggi::t('amossondaggi', 'Selezionare, questa selezione scarterà la precedente'),
+                    'id' => 'condizione_necessaria-libera-id']
+                )
+                ?>
+            </div>
+        </div>
+    <?php } ?>
 
     <div class="col-lg-6 col-sm-6">
 

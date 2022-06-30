@@ -40,7 +40,7 @@ $listaModels = $lista->getModels();
         WidgetGraphicsActions::widget([
             'widget' => $widget,
             'tClassName' => AmosSondaggi::className(),
-            'actionRoute' => '/sondaggi/sondaggi/create',
+            'actionRoute' => '/sondaggi/dashboard/create',
             'toRefreshSectionId' => $toRefreshSectionId
         ]);
     } ?>
@@ -55,7 +55,7 @@ $listaModels = $lista->getModels();
     <?php
     if (count($listaModels) == 0) {
         $textReadAll = AmosSondaggi::t('amossondaggi', '#addSondaggio');
-        $linkReadAll = '/sondaggi/sondaggi/create';
+        $linkReadAll = '/sondaggi/dashboard/create';
         $checkPermNew = true;
     } else {
         $textReadAll = AmosSondaggi::t('amossondaggi', '#showAll') . AmosIcons::show('chevron-right');

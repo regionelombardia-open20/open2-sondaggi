@@ -15,12 +15,15 @@ use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\View;
 use yii\gii\CodeFile;
+use open20\amos\attachments\components\AttachmentsList;
 
 /**
  * Class GeneratoreSondaggio
  * @package open20\amos\sondaggi\models
  */
 class GeneratoreSondaggio extends \yii\base\Model {
+
+        public $byBassRuleCwh = true;
 	public $template = 'default';
 	public $templates = [];
 	public $ns = '';
@@ -155,7 +158,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				if ( $pagina->id == $Domanda->sondaggi_domande_pagine_id ) {
 					$rules[] = "['domanda_" . $Domanda->id . "', 'required', 'when' => function(\$model) {\n"
 					           . $this->getWhenCondition( $tipoCondizionataArr )
-					           . "}, 'whenClient' => 'function (attribute, value) {                         
+					           . "}, 'whenClient' => 'function (attribute, value) {
                             return $(attribute.container).is(\":visible\");
                             }'"
 					           . "]\n";
@@ -192,109 +195,169 @@ class GeneratoreSondaggio extends \yii\base\Model {
 			$min     = $Domanda['min_int_multipla'];
 			$max     = $Domanda['max_int_multipla'];
 			$minMaxRule = $this->generaRuleMinMax('domanda_' . $Domanda['id'], $min, $max);
-			switch ( $tipo ) {
-				case 'checkbox':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
-					if (!empty($min) || !empty($max)) {
-						$rules[] = $minMaxRule;
-					}					
-					break;
-				case 'radio':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
-					break;
-				case 'select':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
-					break;
-				case 'select-multiple':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
-					if (!empty($min) || !empty($max)) {
-						$rules[] = $minMaxRule;
-					}
-					break;
-				case 'string':
-					$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'string', 'max' => 255]";
-					$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
-					if ( ! empty( $validazioniCustom ) ) {
-						foreach ( $validazioniCustom as $validazione ) {
-							$regola = $validazione->sondaggiDomandeRule;
-							if ( ! empty( $regola ) ) {
-								if ( $regola->custom == 0 ) {
-									$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
-								} else if ( $regola->custom == 1 ) {
-									if ( ! empty( $regola->namespace ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
-									}
-									if ( ! empty( $regola->codice_custom ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
+			if (!empty($Domanda->parent_id)) {
+				switch ($tipo) {
+					case 'select':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['integer']]";
+						break;
+					case 'radio':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
+						break;
+					case 'string':
+						$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['string', 'max' => 255]]";
+						$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
+						if ( ! empty( $validazioniCustom ) ) {
+							foreach ( $validazioniCustom as $validazione ) {
+								$regola = $validazione->sondaggiDomandeRule;
+								if ( ! empty( $regola ) ) {
+									if ( $regola->custom == 0 ) {
+										$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['{$regola->standard}']]";
+									} else if ( $regola->custom == 1 ) {
+										if ( ! empty( $regola->namespace ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['{$regola->namespace}']]";
+										}
+										if ( ! empty( $regola->codice_custom ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => [{$regola->codice_custom}]]";
+										}
 									}
 								}
 							}
 						}
-					}
-					break;
-				case 'text':
-					$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'string']";
-					$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
-					if ( ! empty( $validazioniCustom ) ) {
-						foreach ( $validazioniCustom as $validazione ) {
-							$regola = $validazione->sondaggiDomandeRule;
-							if ( ! empty( $regola ) ) {
-								if ( $regola->custom == 0 ) {
-									$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
-								} else if ( $regola->custom == 1 ) {
-									if ( ! empty( $regola->namespace ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
-									}
-									if ( ! empty( $regola->codice_custom ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
-									}
-								}
-							}
-						}
-					}
-					break;
-				case 'date':
-					$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
-					$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
-					if ( ! empty( $validazioniCustom ) ) {
-						foreach ( $validazioniCustom as $validazione ) {
-							$regola = $validazione->sondaggiDomandeRule;
-							if ( ! empty( $regola ) ) {
-								if ( $regola->custom == 0 ) {
-									$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
-								} else if ( $regola->custom == 1 ) {
-									if ( ! empty( $regola->namespace ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
-									}
-									if ( ! empty( $regola->codice_custom ) ) {
-										$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
+						break;
+					case 'text':
+						$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['string']]";
+						$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
+						if ( ! empty( $validazioniCustom ) ) {
+							foreach ( $validazioniCustom as $validazione ) {
+								$regola = $validazione->sondaggiDomandeRule;
+								if ( ! empty( $regola ) ) {
+									if ( $regola->custom == 0 ) {
+										$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['{$regola->standard}']]";
+									} else if ( $regola->custom == 1 ) {
+										if ( ! empty( $regola->namespace ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => ['{$regola->namespace}']]";
+										}
+										if ( ! empty( $regola->codice_custom ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'each', 'rule' => [{$regola->codice_custom}]]";
+										}
 									}
 								}
 							}
 						}
-					}
-					break;
-				case 'img':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
-					break;
-				case 'img-multiple':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
-					if (!empty($min) || !empty($max)) {
-						$rules[] = $minMaxRule;
-					}
-					break;
-				case 'file':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
-					break;
-				case 'file-multiple':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
-					break;
-				case 'custom':
-					$rules[] = "[['domanda_" . $Domanda['id'] . "'], '$percorso_validator" . $Domanda['nome_classe_validazione'] . "']";
-					break;
+						break;
+
+				}
+			} else {
+				switch ( $tipo ) {
+					case 'checkbox':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						if (!empty($min) || !empty($max)) {
+							$rules[] = $minMaxRule;
+						}
+						break;
+					case 'checkbox+text':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						if (!empty($min) || !empty($max)) {
+							$rules[] = $minMaxRule;
+						}
+						break;
+					case 'radio':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
+						break;
+					case 'select':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
+						break;
+					case 'select-multiple':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						if (!empty($min) || !empty($max)) {
+							$rules[] = $minMaxRule;
+						}
+						break;
+					case 'string':
+						$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'string', 'max' => 255]";
+						$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
+						if ( ! empty( $validazioniCustom ) ) {
+							foreach ( $validazioniCustom as $validazione ) {
+								$regola = $validazione->sondaggiDomandeRule;
+								if ( ! empty( $regola ) ) {
+									if ( $regola->custom == 0 ) {
+										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
+									} else if ( $regola->custom == 1 ) {
+										if ( ! empty( $regola->namespace ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
+										}
+										if ( ! empty( $regola->codice_custom ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
+										}
+									}
+								}
+							}
+						}
+						break;
+					case 'text':
+						$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'string']";
+						$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
+						if ( ! empty( $validazioniCustom ) ) {
+							foreach ( $validazioniCustom as $validazione ) {
+								$regola = $validazione->sondaggiDomandeRule;
+								if ( ! empty( $regola ) ) {
+									if ( $regola->custom == 0 ) {
+										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
+									} else if ( $regola->custom == 1 ) {
+										if ( ! empty( $regola->namespace ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
+										}
+										if ( ! empty( $regola->codice_custom ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
+										}
+									}
+								}
+							}
+						}
+						break;
+					case 'date':
+						$rules[]           = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						$validazioniCustom = $Domanda->sondaggiDomandeRuleMms;
+						if ( ! empty( $validazioniCustom ) ) {
+							foreach ( $validazioniCustom as $validazione ) {
+								$regola = $validazione->sondaggiDomandeRule;
+								if ( ! empty( $regola ) ) {
+									if ( $regola->custom == 0 ) {
+										$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->standard}']";
+									} else if ( $regola->custom == 1 ) {
+										if ( ! empty( $regola->namespace ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], '{$regola->namespace}']";
+										}
+										if ( ! empty( $regola->codice_custom ) ) {
+											$rules[] = "[['domanda_" . $Domanda['id'] . "'], {$regola->codice_custom}]";
+										}
+									}
+								}
+							}
+						}
+						break;
+					case 'img':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
+						break;
+					case 'img-multiple':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'integer']";
+						if (!empty($min) || !empty($max)) {
+							$rules[] = $minMaxRule;
+						}
+						break;
+					case 'file':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						break;
+					case 'file-multiple':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'safe']";
+						break;
+					case 'custom':
+						$rules[] = "[['domanda_" . $Domanda['id'] . "'], '$percorso_validator" . $Domanda['nome_classe_validazione'] . "']";
+						break;
+				}
 			}
-		}             
-                
+		}
+
 		return $rules;
 	}
 
@@ -329,9 +392,9 @@ class GeneratoreSondaggio extends \yii\base\Model {
 		$campi   = [];
 		$domande = $pagina->getSondaggiDomandes()->orderBy( 'ordinamento ASC' );
 		foreach ( $domande->all() as $Domanda ) {
+			if (!empty($Domanda->parent_id)) continue;
 			$tipo                     = SondaggiDomandeTipologie::findOne( $Domanda['sondaggi_domande_tipologie_id'] )->html_type;
 			$idD                      = $Domanda['id'];
-			$user_id                  = \Yii::$app->user->id;
 			$tooltip                  = addslashes( $Domanda->tooltip );
 			$introduzione             = ( ( ! empty( trim( $Domanda->introduzione ) ) ) ? \Yii::$app->formatter->asHtml( str_replace( '<p></p>',
 				'', trim( $Domanda->introduzione ) ) ) : '' );
@@ -407,8 +470,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				$idRispostaParent = $domCondizione->id;
 			}
 
-			$checkboxoptions = "['class' => 'sortable-response', 'data' => ['question' => '{$idD}']]";
-			$generalOptions  = "['data' => ['domanda' => '{$idD}']]";
+			$checkboxoptions = "['class' => 'sortable-response', 'tabindex' => \$read ? '-1' : null, 'data' => ['question' => '{$idD}'], 'itemOptions' => ['tabindex' => \$read ? '-1' : null]]";
+			$generalOptions  = "['data' => ['domanda' => '{$idD}'], 'itemOptions' => ['tabindex' => \$read ? '-1' : null]]";
 			if ( $Domanda->abilita_ordinamento_risposte ) {
 				$sposasu  = \open20\amos\sondaggi\AmosSondaggi::t( 'amossondaggi', 'Sposta su' );
 				$sposagiu = \open20\amos\sondaggi\AmosSondaggi::t( 'amossondaggi', 'Sposta giu' );
@@ -416,7 +479,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				$draganddrop     = '<span class=\\\"am am-swap-vertical dragger\\\"></span>';
 				$checkboxoptions = "['item' => function(\$index, \$label, \$name, \$checked, \$value) {"
 				                   . "\$check = (\$checked? 'checked' : '');"
-				                   . "return \"<div class=\\\"checkbox checkbox-sortable\\\"><label><input type=\\\"checkbox\\\" {\$check} name='{\\\$name}' value=\\\"{\$value}\\\"/>{\$label}</label><div class=\\\"direction\\\"><span class=\\\"am am-chevron-up mover\\\" title=\\\"$sposasu\\\" data-direction=\\\"up\\\"></span><span class=\\\"am am-chevron-down mover\\\" title=\\\"$sposagiu\\\" data-direction=\\\"down\\\"></span></div></div>\";}, 'class' => 'sortable-response', 'data' => ['question' => '{$idD}']]";
+				                   . "return \"<div class=\\\"checkbox checkbox-sortable\\\"><label><input type=\\\"checkbox\\\" {\$check} name='{\\\$name}' value=\\\"{\$value}\\\"/>{\$label}</label><div class=\\\"direction\\\"><span class=\\\"am am-chevron-up mover\\\" title=\\\"$sposasu\\\" data-direction=\\\"up\\\"></span><span class=\\\"am am-chevron-down mover\\\" title=\\\"$sposagiu\\\" data-direction=\\\"down\\\"></span></div></div>\";}, 'class' => 'sortable-response', 'data' => ['question' => '{$idD}'], 'itemOptions' => ['tabindex' => \$read ? '-1' : null]]";
 			}
 			if ( $condizionata > 0 && ! empty( $padreCondizione ) && $padreCondizione->abilita_ordinamento_risposte == 1 ) {
 				if ( ! empty( $domCondizione ) ) {
@@ -441,209 +504,321 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				$extraAttributes .= ' data-sortby="' . $idRispC . '" ';
 			}
 
+			$allegati = null;
+			if ($Domanda->file) {
+				$allegati = AttachmentsList::widget([
+					'model' => $Domanda,
+					'attribute' =>  'file',
+					'viewDeleteBtn' => false
+				]);
+			}
+
 
 			/* TODO: verificare se si può ed evitare di ripetere il testo introduttivo e l'apertura e chiusura del div in tutti i campi ma metterli prima e dopo lo switch */
 
-			switch ( $tipo ) {
-				case 'checkbox':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php \n"
-					           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->inline($inline)->checkboxList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $checkboxoptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'radio':
+			// Generazione form per domande multiple. Viene generata una tabella in base alla tipologia di risposta scelta
+			if ($Domanda->is_parent) {
+				$content = "<?php \$reflect = new \\ReflectionClass(\$model);?>";
+				$content .= (! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+				 . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+				 . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+				 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+				 . "<div class=\"col-lg-12 col-sm-12\">".$Domanda->domanda."</div>";
+				$content .= '<table class="table"><tr><th></th>';
+				if ($tipo == 'radio') {
+					$cols = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->orderBy('ordinamento ASC')->all();
+					foreach($cols as $col) {
+						$content .= '<th>'.$col->risposta.'</th>';
+					}
+				} else {
+					foreach($Domanda->multi_columns as $key => $column) {
+						$content .= '<th scope="col">'.$column.'</th>';
+					}
+				}
+				$content .= '</th>';
+				foreach($Domanda->getChildren()->all() as $child) {
+					$content .= '<tr><th scope="row">'.$child->domanda.'</th>';
+					switch ( $tipo ) {
+						case 'select':
+							foreach($Domanda->multi_columns as $key => $column) {
+									$content .= "<td><?php echo \$form->field(\$model, 'domanda_{$child->id}', ['options' => ['name' =>  \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => {$idD}])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
+									 . "'language' => substr(Yii::\$app->language, 0, 2),\n"
+									 . "'options' => ['value' => [SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one()->sondaggi_risposte_predefinite_id], 'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...'), 'id' => 'select-domanda_{$child->id}_{$key}', 'name' => \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['question' => '{$child->id}']],\n"
+									 . "'pluginOptions' => [\n"
+									 . "    'allowClear' => true\n"
+									 . "],\n"
+									 . "'toggleAllSettings' => [\n"
+									 . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
+									 . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
+									 . "],\n"
+									 . "])->label('');\n"
+									 . "?></td>\n";
+								}
+							break;
+							case 'radio':
+								$content .= "<td><?php \n"
+								 . "\$dati_{$child->id} = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
+								 . "echo \$form->field(\$model, 'domanda_{$child->id}', ['enableLabel' => false, 'options' => [ 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->radioList(ArrayHelper::map(\$dati_{$child->id}, 'id', 'risposta'), ['separator' => '</td><td>'])->label(false);\n"
+								 . "?></td>\n";
+								break;
 
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" $extraAttributes data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php \n"
-					           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->inline($inline)->radioList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'select':
-					//$campi[] = "echo \$form->field(\$model, 'domanda_$idD')->dropDownList(ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'), ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...')]);";
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
-					           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
-					           . "'options' => ['placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...'), 'id' => 'select-domanda_$idD', 'data' => ['question' => '{$idD}']],\n"
-					           . "'pluginOptions' => [\n"
-					           . "    'allowClear' => true\n"
-					           . "],\n"
-					           . "'toggleAllSettings' => [\n"
-					           . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
-					           . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
-					           . "],\n"
-					           . "])->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'descrizione':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-sezione\"><?= \$model->attributeLabels()['domanda_$idD'] . '$tooltipHtml' ?></div>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'select-multiple':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>"
-							: '' )
-					           . "<?php \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
-					           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
-					           . "'options' => ['placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una o più risposte ...'), 'id' => 'select-domanda_$idD', 'multiple' => true, 'data' => ['question' => '{$idD}']],\n"
-					           . "'pluginOptions' => [\n"
-					           . "    'allowClear' => true\n"
-					           . "],\n"
-					           . "'toggleAllSettings' => [\n"
-					           . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
-					           . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
-					           . "],\n"
-					           . "])->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'string':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->textInput(['maxlength' => true], $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'text':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php \n"
-					           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->textarea(['rows' => 6], $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
-					           . "?>\n"
-					           . $js
-					           . "</div>\n";
-					break;
-				case 'file':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php echo Html::tag('label', \$model->attributeLabels()['domanda_{$idD}']. '$tooltipHtml'); ?>
-                    <?php
-                    echo
-                    FileInput::widget([
-                        'name' => 'domanda_{$idD}_user_{$user_id}',
-                            'options' => ['data' => ['domanda' => $idD]],
-                          'pluginOptions' => [
-                            'showPreview' => false,
-                            'showCaption' => true,
-                            'showRemove' => true,
-                            'showUpload' => false
-                        ]
-                    ]);\n
-                    echo '<p>'. AmosSondaggi::t('amossondaggi', 'Puoi inserire un solo allegato, aggiungendone un altro questo sostituirà il precedente.').'</p>';
+							case 'string':
+								foreach($Domanda->multi_columns as $key => $column) {
+									$content .= "<td><?php \n"
+														 . "echo Html::input('text', \$reflect->getShortName() . '[domanda_{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+														 . "?></td>\n";
+									}
+								break;
 
-                  if(!empty(\$file_$idD) && strpos(\yii\helpers\Url::current(), '/frontend/compila?id') === false){
-                      echo AttachmentsList::widget([
-                        'model' => \$file_$idD,
-                        'attribute' =>  'domanda_$idD'
-                      ]); \n
-                  } \n
+							case 'text':
+								foreach($Domanda->multi_columns as $key => $column) {
+									$content .= "<td><?php \n"
+									 . "echo Html::input('text', \$reflect->getShortName() . '[{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+									 . "?></td>\n";
+									break;
+							}
+						}
+					$content .= '</tr>';
+				}
+				$content .= '</table>'.$js.'</div>';
+				$campi[] = $content;
 
-                  echo \$form->field(\$model, 'domanda_$idD')->hiddenInput(['class' => 'no-evaluate-input', 'value' => 'file'])->label(false);
+			} else {
+				// Generazione form per domande singole
+				switch ( $tipo ) {
+					case 'checkbox':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+												. "<?php \n"
+						           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->checkboxList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $checkboxoptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					/*case 'checkbox+text':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+											 . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+												. "<?php \n"
+											 . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
+											 . "foreach(\$dati_$idD as \$answer) {?>\n"
+											 . "<label for=''>Html::checkbox(\$reflect->getShortName() . '[domanda_{$child->id}][$key]', \$model, \$checked);</label><input type='text' name='' value=''><br>\n"
+											 . "<?php}?>".$js".</div>";
 
-                  ?>
-                </div>
-                    ";
-					break;
-				case 'file-multiple':
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-xs-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php echo Html::tag('label', \$model->attributeLabels()['domanda_{$idD}']. '$tooltipHtml'); ?>
-                    <?php
-                    echo
-                    FileInput::widget([
-                        'name' => 'domanda_{$idD}_user_{$user_id}[]',
-                          'pluginOptions' => [
-                            'showPreview' => false,
-                            'showCaption' => true,
-                            'showRemove' => true,
-                            'showUpload' => false
-                        ],
-                        'options' => ['multiple' => true, 'data' => ['domanda' => $idD]]
-                    ]);\n
 
-                  if(!empty(\$file_$idD)){
-                      echo AttachmentsList::widget([
-                        'model' => \$file_$idD,
-                        'attribute' =>  'domanda_$idD'
-                      ]); \n
-                  } \n
 
-                  echo \$form->field(\$model, 'domanda_$idD')->hiddenInput(['class' => 'no-evaluate-input', 'value' => 'file'])->label(false);
+											 . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->checkboxList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), \yii\helpers\ArrayHelper::merge($checkboxoptions, ['item' => function(\$index, \$label, \$name, \$checked, \$value)\n"
+											 . "{return \"<label><input type='checkbox' {\$checked} name='{\$name}' value='{\$value}'>{\$label}</label><input type='text' name='\". \$reflect->getShortName() . \"[domanda_$idD][\".\$index.\"]'>\";}])->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+											 . "?>\n"
+											 . $js
+											 . "</div>\n";
+						break;*/
+					case 'radio':
 
-                  ?>
-                </div>
-                    ";
-					break;
-				case 'date'://da implementare
-					$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
-					           . "<div class=\"col-lg-12 col-sm-12\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
-					           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-					           . "<?php echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->widget(DateControl::classname(), [ \n
-                          'options' => [ \n
-                                'id' => 'date_control_rispDomanda_$idD', \n
-                                'layout' => '{input} {picker} ' . (empty(\$model->domanda_$idD)? '' : '{remove}')], \n
-                                    'data' => ['question' => $idD] \n
-                        ]); ?> \n"
-					           . "<script>"
-					           . "$( document ).ready(function() {"
-					           . "if($('#date_control_rispDomanda_$idD').val() == ''){
-                                $('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').remove();
-                            } else {
-                                if($('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').length == 0){
-                                    $('#date_control_rispDomanda_$idD-disp-kvdate').append('<span class=\"input-group-addon kv-date-remove\" title=\"Pulisci campo\"><i class=\"glyphicon glyphicon-remove\"></i></span>');
-                                    initDPRemove('date_control_rispDomanda_$idD-disp');
-                                }
-                            }"
-					           . "$('#date_control_rispDomanda_$idD').change(function(){
-                            if($('#date_control_rispDomanda_$idD').val() == ''){
-                                $('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').remove();
-                            } else {
-                                if($('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').length == 0){
-                                    $('#date_control_rispDomanda_$idD-disp-kvdate').append('<span class=\"input-group-addon kv-date-remove\" title=\"Pulisci campo\"><i class=\"glyphicon glyphicon-remove\"></i></span>');
-                                    initDPRemove('date_control_rispDomanda_$idD-disp');
-                                }
-                            }
-                        });"
-					           . "});"
-					           . "</script>"
-					           . "</div>";
-					break;
-				case 'img'://da implementare
-					$campi[] = "";
-					break;
-				case 'img-multiple'://da implementare
-					$campi[] = "";
-					break;
-				case 'custom'://da implementare
-					$campi[] = "";
-					break;
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" $extraAttributes data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php \n"
+						           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->radioList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'select':
+						//$campi[] = "echo \$form->field(\$model, 'domanda_$idD')->dropDownList(ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'), ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...')]);";
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null,'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
+						           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
+						           . "'options' => ['placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...'), 'id' => 'select-domanda_$idD', 'data' => ['question' => '{$idD}']],\n"
+						           . "'pluginOptions' => [\n"
+						           . "    'allowClear' => true\n"
+						           . "],\n"
+						           . "'toggleAllSettings' => [\n"
+						           . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
+						           . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
+						           . "],\n"
+						           . "])->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'descrizione':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<div class=\"testo-introduttivo testo-sezione\"><?= \$model->attributeLabels()['domanda_$idD'] . '$tooltipHtml' ?></div>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'select-multiple':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>"
+								: '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
+						           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
+						           . "'options' => ['style' => \$read ? 'pointer-events: none;' : null, 'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una o più risposte ...'), 'id' => 'select-domanda_$idD', 'multiple' => true, 'data' => ['question' => '{$idD}']],\n"
+						           . "'pluginOptions' => [\n"
+						           . "    'allowClear' => true\n"
+						           . "],\n"
+						           . "'toggleAllSettings' => [\n"
+						           . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
+						           . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
+						           . "],\n"
+						           . "])->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'string':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->textInput(['maxlength' => true], $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'text':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php \n"
+						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->textarea(['rows' => 6], $generalOptions)->label(\$model->attributeLabels()[ 'domanda_$idD'] . '$tooltipHtml');\n"
+						           . "?>\n"
+						           . $js
+						           . "</div>\n";
+						break;
+					case 'file':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php echo Html::tag('label', \$model->attributeLabels()['domanda_{$idD}']. '$tooltipHtml', ['class'=>'control-label']); ?>
+	                    <?php
+											if (!\$read) {
+		                    echo
+		                    FileInput::widget([
+		                        'name' => 'domanda_{$idD}',
+		                            'options' => ['data' => ['domanda' => $idD]],
+		                          'pluginOptions' => [
+		                            'showPreview' => false,
+		                            'showCaption' => true,
+		                            'showRemove' => !true,
+		                            'showUpload' => false
+		                        ]
+		                    ]);\n
+		                    echo '<p>'. AmosSondaggi::t('amossondaggi', 'Puoi inserire un solo allegato, aggiungendone un altro questo sostituirà il precedente.').'</p>';
+										}
+
+	                  if(!empty(\$file_$idD) && strpos(\yii\helpers\Url::current(), '/frontend/compila?id') === false){
+	                      echo AttachmentsList::widget([
+	                        'model' => \$file_$idD,
+	                        'attribute' =>  'domanda_$idD',
+													'viewDeleteBtn' => !\$read
+	                      ]); \n
+	                  } \n
+
+	                  echo \$form->field(\$model, 'domanda_$idD')->hiddenInput(['class' => 'no-evaluate-input', 'value' => 'file'])->label(false);
+
+	                  ?>
+	                </div>
+	                    ";
+						break;
+					case 'file-multiple':
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-xs-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php echo Html::tag('label', \$model->attributeLabels()['domanda_{$idD}']. '$tooltipHtml', ['class'=>'control-label']); ?>
+	                    <?php
+	                    if (!\$read) echo
+	                    FileInput::widget([
+	                        'name' => 'domanda_{$idD}[]',
+	                          'pluginOptions' => [
+	                            'showPreview' => false,
+	                            'showCaption' => true,
+	                            'showRemove' => true,
+	                            'showUpload' => false
+	                        ],
+	                        'options' => ['multiple' => true, 'data' => ['domanda' => $idD]]
+	                    ]);\n
+
+	                  if(!empty(\$file_$idD)){
+	                      echo AttachmentsList::widget([
+	                        'model' => \$file_$idD,
+	                        'attribute' =>  'domanda_$idD',
+													'viewDeleteBtn' => !\$read
+	                      ]); \n
+	                  } \n
+
+	                  echo \$form->field(\$model, 'domanda_$idD')->hiddenInput(['class' => 'no-evaluate-input', 'value' => 'file'])->label(false);
+
+	                  ?>
+	                </div>
+	                    ";
+						break;
+					case 'date'://da implementare
+						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo\">$introduzione</div>" : '' )
+						           . "<div class=\"col-lg-12 col-sm-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"col-lg-12 col-sm-12 testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class=\"col-lg-12 col-sm-12\">$allegati</div>" : '' )
+						           . "<?php echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(DateControl::classname(), [ \n
+	                          'options' => [ \n
+	                                'id' => 'date_control_rispDomanda_$idD', \n
+	                                'layout' => '{input} {picker} ' . (empty(\$model->domanda_$idD)? '' : '{remove}')], \n
+	                                    'data' => ['question' => $idD] \n
+	                        ]); ?> \n"
+						           . "<script>"
+						           . "$( document ).ready(function() {"
+						           . "if($('#date_control_rispDomanda_$idD').val() == ''){
+	                                $('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').remove();
+	                            } else {
+	                                if($('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').length == 0){
+	                                    $('#date_control_rispDomanda_$idD-disp-kvdate').append('<span class=\"input-group-addon kv-date-remove\" title=\"Pulisci campo\"><i class=\"glyphicon glyphicon-remove\"></i></span>');
+	                                    initDPRemove('date_control_rispDomanda_$idD-disp');
+	                                }
+	                            }"
+						           . "$('#date_control_rispDomanda_$idD').change(function(){
+	                            if($('#date_control_rispDomanda_$idD').val() == ''){
+	                                $('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').remove();
+	                            } else {
+	                                if($('#date_control_rispDomanda_$idD-disp-kvdate .input-group-addon.kv-date-remove').length == 0){
+	                                    $('#date_control_rispDomanda_$idD-disp-kvdate').append('<span class=\"input-group-addon kv-date-remove\" title=\"Pulisci campo\"><i class=\"glyphicon glyphicon-remove\"></i></span>');
+	                                    initDPRemove('date_control_rispDomanda_$idD-disp');
+	                                }
+	                            }
+	                        });"
+						           . "});"
+						           . "</script>"
+						           . "</div>";
+						break;
+					case 'img'://da implementare
+						$campi[] = "";
+						break;
+					case 'img-multiple'://da implementare
+						$campi[] = "";
+						break;
+					case 'custom'://da implementare
+						$campi[] = "";
+						break;
+				}
 			}
 			if ( ! empty( $arrRispPreCond ) ) {
 				$campi[] = $arrRispPreCond;
@@ -809,7 +984,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 		$labels  = [];
 		$domande = $pagina->getSondaggiDomandes();
 		foreach ( $domande->all() as $Domanda ) {
-			$labels[] = "'domanda_" . $Domanda['id'] . "' => AmosSondaggi::t('amossondaggipubblicazione', '" . addslashes( $Domanda['domanda'] ) . "')";
+			$labels[] = "'domanda_" . $Domanda['id'] . "' => AmosSondaggi::t('amossondaggi', '" . addslashes( $Domanda['domanda'] ) . "')";
 		}
 
 		return $labels;
@@ -826,7 +1001,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
         } else if (!empty($min) && empty($max)) {
             $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => $min]";
         } else if (empty($min) && !empty($max)) {
-            $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'max' => $max]";
+            $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => 0, 'max' => $max]";
         }
 
         return $minMaxRule;
@@ -872,7 +1047,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 	public function generaSave( $pagina ) {
 		$Pagina      = SondaggiDomandePagine::findOne( [ 'id' => $pagina ] );
 		$domande     = $Pagina->getSondaggiDomandes();
-		$user_id     = \Yii::$app->user->id;
 		$salvataggio = [];
 		foreach ( $domande->all() as $Domanda ) {
 			$tipo            = SondaggiDomandeTipologie::findOne( [ 'id' => $Domanda['sondaggi_domande_tipologie_id'] ] )->html_type;
@@ -895,172 +1069,212 @@ class GeneratoreSondaggio extends \yii\base\Model {
 			$salvataggio[] = "if (!is_array(\$this->domanda_{$Domanda['id']}) && \$this->domanda_{$Domanda['id']} != NULL) {"
 			                 . "\$this->domanda_{$Domanda['id']} = [\$this->domanda_{$Domanda['id']}];\n"
 			                 . "}\n";
-			switch ( $tipo ) {
-				case 'checkbox':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'radio':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'select':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'select-multiple':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'string':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->risposta_libera = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'text':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->risposta_libera = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'date':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = new SondaggiRisposte();\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "\$risposta->risposta_libera = \$Risposta;\n"
-					                 . "$ordinamento"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'file':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
-					                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
-					                 . "\$file = UploadedFile::getInstanceByName(\"domanda_{$Domanda['id']}_user_{$user_id}\");\n"
-					                 . "if(!empty(\$file)){\n"
-					                 . "\$file->saveAs(\Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}_user_{$user_id}\") . \$file->name);\n"
-					                 . "\$dir = \Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}_user_{$user_id}\");\n"
-					                 . "\Yii::\$app->getModule('attachments')->attachFile(\$dir .\$file->name , new SondaggiRisposte(), \"domanda_{$Domanda['id']}_user_{$user_id}\", true, true);\n"
-					                 . "}\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "\$attachfile = File::find()->andWhere(['model' => get_class(new SondaggiRisposte()), 'attribute' => \"domanda_{$Domanda['id']}_user_{$user_id}\"])->one();\n"
-					                 . "if(!empty(\$attachfile)){\n"
-					                 . "\$attachfile->itemId = \$risposta->id;\n"
-					                 . "\$attachfile->attribute = \"domanda_{$Domanda['id']}\";\n"
-					                 . "\$attachfile->save(false);\n"
-					                 . "}\n"
-					                 . "\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'file-multiple':
-					$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
-					                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
-					                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
-					                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
-					                 . "\$files = UploadedFile::getInstancesByName(\"domanda_{$Domanda['id']}_user_{$user_id}\");\n"
-					                 . "foreach(\$files as \$file){\n"
-					                 . "\$file->saveAs(\Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}_user_{$user_id}\") . \$file->name);\n"
-					                 . "\$dir = \Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}_user_{$user_id}\");\n"
-					                 . "\Yii::\$app->getModule('attachments')->attachFile(\$dir .\$file->name , new SondaggiRisposte(), \"domanda_{$Domanda['id']}_user_{$user_id}\", true, true);\n"
-					                 . "}\n"
-					                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
-					                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
-					                 . "if(\$accesso){\n"
-					                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
-					                 . "}\n"
-					                 . "\$risposta->save();\n"
-					                 . "\$attachfiles = File::find()->andWhere(['model' => get_class(new SondaggiRisposte()), 'attribute' => \"domanda_{$Domanda['id']}_user_{$user_id}\"])->all();\n"
-					                 . "foreach(\$attachfiles as \$attachfile){\n"
-					                 . "\$attachfile->itemId = \$risposta->id;\n"
-					                 . "\$attachfile->attribute = \"domanda_{$Domanda['id']}\";\n"
-					                 . "\$attachfile->save(false);\n"
-					                 . "} \n"
-					                 . "\n"
-					                 . "}\n"
-					                 . "}\n";
-					break;
-				case 'img'://da implementare
-					break;
-				case 'img-multiple'://da implementare
-					break;
-				case 'custom'://da implementare
-					break;
+			if (!empty($Domanda->parent_id)) {
+				switch($tipo) {
+					case 'select':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+													 . "foreach (\$this->domanda_{$Domanda['id']} as \$key => \$Risposta) {\n"
+													 . "\$risposta = new SondaggiRisposte();\n"
+													 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+													 . "\$risposta->column = \$key;\n"
+													 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+													 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+													 . "$ordinamento"
+													 . "if(\$accesso){\n"
+													 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+													 . "}\n"
+													 . "\$risposta->save();\n"
+													 . "}\n"
+													 . "}\n";
+							break;
+						case 'string':
+						case 'text':
+							$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+														 . "foreach (\$this->domanda_{$Domanda['id']} as \$key => \$Risposta) {\n"
+														 . "\$risposta = new SondaggiRisposte();\n"
+														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+														 . "\$risposta->column = \$key;\n"
+														 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+														 . "\$risposta->risposta_libera = \$Risposta;\n"
+														 . "$ordinamento"
+														 . "if(\$accesso){\n"
+														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+														 . "}\n"
+														 . "\$risposta->save();\n"
+														 . "}\n"
+														 . "}\n";
+							 break;
+					case 'radio':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+														 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "\$risposta = new SondaggiRisposte();\n"
+														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+														 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+														 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+														 . "$ordinamento"
+														 . "if(\$accesso){\n"
+														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+														 . "}\n"
+														 . "\$risposta->save();\n"
+														 . "}\n"
+														 . "}\n";
+						break;
+				}
+			} else {
+				switch ( $tipo ) {
+					case 'checkbox':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'radio':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'select':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'select-multiple':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->sondaggi_risposte_predefinite_id = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'string':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->risposta_libera = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'text':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->risposta_libera = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'date':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = new SondaggiRisposte();\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "\$risposta->risposta_libera = \$Risposta;\n"
+						                 . "$ordinamento"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'file':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$risposta) {\n"
+						                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
+						                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
+														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+														 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+														 . "if(\$accesso){\n"
+														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+														 . "}\n"
+														 . "\$risposta->save();\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'file-multiple':
+						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
+						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+						                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
+						                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
+						                 . "\$files = UploadedFile::getInstancesByName(\"domanda_{$Domanda['id']}\");\n"
+						                 . "foreach(\$files as \$file){\n"
+						                 . "\$file->saveAs(\Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}\") . \$file->name);\n"
+						                 . "\$dir = \Yii::\$app->getModule('attachments')->getUserDirPath(\"domanda_{$Domanda['id']}\");\n"
+						                 . "\Yii::\$app->getModule('attachments')->attachFile(\$dir .\$file->name , \$risposta, \"domanda_{$Domanda['id']}\", true, true);\n"
+						                 . "}\n"
+						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
+						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
+						                 . "if(\$accesso){\n"
+						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
+						                 . "}\n"
+						                 . "\$risposta->save();\n"
+						                 . "\$attachfiles = File::find()->andWhere(['model' => get_class(new SondaggiRisposte()), 'attribute' => \"domanda_{$Domanda['id']}\"])->all();\n"
+						                 . "foreach(\$attachfiles as \$attachfile){\n"
+						                 . "\$attachfile->itemId = \$risposta->id;\n"
+						                 . "\$attachfile->attribute = \"domanda_{$Domanda['id']}\";\n"
+						                 . "\$attachfile->save(false);\n"
+						                 . "} \n"
+						                 . "\n"
+						                 . "}\n"
+						                 . "}\n";
+						break;
+					case 'img'://da implementare
+						break;
+					case 'img-multiple'://da implementare
+						break;
+					case 'custom'://da implementare
+						break;
+				}
 			}
 		}
 		$salvataggio[] = "if(\$completato){\n"

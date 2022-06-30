@@ -41,7 +41,7 @@ class WidgetGraphicsUltimiSondaggi extends WidgetGraphic {
 
         $listaSondaggi = $search->ultimiSondaggi($_GET, 3);
         $viewToRender = 'ultimi_sondaggi';
-
+        $viewToRender = 'ultimi_sondaggi_cms';
 
         return $this->render($viewToRender, [
                     'lista' => $listaSondaggi,

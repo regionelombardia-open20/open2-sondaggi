@@ -15,9 +15,11 @@ use open20\amos\core\controllers\CrudController;
 use open20\amos\core\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\base\SondaggiTypes;
 use open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\amos\upload\models\FilemanagerMediafile;
 use Yii;
 use yii\helpers\Url;
@@ -45,6 +47,7 @@ class SondaggiDomandePagineController extends CrudController
      */
     public function init()
     {
+
         $this->setModelObj(new SondaggiDomandePagine());
         $this->setModelSearch(new SondaggiDomandePagineSearch());
 
@@ -59,6 +62,7 @@ class SondaggiDomandePagineController extends CrudController
         parent::init();
 
         $this->setUpLayout();
+
     }
 
     /**
@@ -68,22 +72,44 @@ class SondaggiDomandePagineController extends CrudController
     {
         $get = Yii::$app->request->get();
         $buttonLabel = AmosSondaggi::t('amossondaggi', 'Aggiungi pagina');
+        $sondaggio = Sondaggi::findOne(filter_input(INPUT_GET, 'idSondaggio'));
+
+        $canCreate = true;
+        if ($sondaggio) {
+            if ($sondaggio->sondaggio_type == SondaggiTypes::SONDAGGI_TYPE_LIVE) {
+                if ($sondaggio->hasAlreadyPage()) {
+                    $canCreate = false;
+                }
+
+            }
+        }
 
         $urlCreateNew = ['create'];
         if (isset($get['idSondaggio'])) {
-            $urlCreateNew['idSondaggio'] =  filter_input(INPUT_GET, 'idSondaggio');
+            $urlCreateNew['idSondaggio'] = filter_input(INPUT_GET, 'idSondaggio');
         }
         if (isset($get['idPagina'])) {
-            $urlCreateNew['idPagina'] =  filter_input(INPUT_GET, 'idPagina');
+            $urlCreateNew['idPagina'] = filter_input(INPUT_GET, 'idPagina');
         }
         if (isset($get['url'])) {
             $urlCreateNew['url'] = $get['url'];
         }
-        Yii::$app->view->params['createNewBtnParams'] = [
-            'urlCreateNew' => $urlCreateNew,
-            'createNewBtnLabel' => $buttonLabel
-
-        ];
+        if($canCreate) {
+            Yii::$app->view->params['createNewBtnParams'] = [
+                'urlCreateNew' => $urlCreateNew,
+                'createNewBtnLabel' => $buttonLabel
+            ];
+        }
+        if (!empty($get['idSondaggio'])) {
+            $backButton = Html::a(AmosIcons::show('long-arrow-return', ['class' => 'm-r-5']) . AmosSondaggi::t('amossondaggi', "Torna ai sondaggi"),
+                ['/sondaggi/sondaggi/index'], [
+                    'class' => 'btn btn-secondary',
+                    'title' => AmosSondaggi::t('amossondaggi', "Torna ai sondaggi")
+                ]);
+            Yii::$app->view->params['additionalButtons'] = [
+                'htmlButtons' => [$backButton]
+            ];
+        }
     }
 
     /**
@@ -223,6 +249,16 @@ class SondaggiDomandePagineController extends CrudController
      */
     public function actionDelete($id, $idSondaggio, $url = null)
     {
+        $retMessage = SondaggiUtility::deletePage($id);
+
+        if ($retMessage != 'ok') {
+            Yii::$app->getSession()->addFlash('danger', $retMessage);
+        } else {
+            Yii::$app->getSession()->addFlash('success',
+                AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
+        }
+
+        /*
         $this->model = $this->findModel($id);
         $domande = $this->model->getSondaggiDomandes()->count();
         if ($domande) {
@@ -235,6 +271,8 @@ class SondaggiDomandePagineController extends CrudController
                 Yii::$app->getSession()->addFlash('success', AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
             }
         }
+        */
+
         if ($url) {
             return $this->redirect($url);
         } else {

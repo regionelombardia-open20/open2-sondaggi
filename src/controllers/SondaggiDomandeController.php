@@ -14,9 +14,11 @@ use open20\amos\core\controllers\CrudController;
 use open20\amos\core\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\base\SondaggiTypes;
 use open20\amos\sondaggi\models\search\SondaggiDomandeSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomande;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use Yii;
 use yii\helpers\Url;
 
@@ -47,8 +49,8 @@ class SondaggiDomandeController extends CrudController
         $this->setAvailableViews([
             'grid' => [
                 'name' => 'grid',
-                'label' => AmosIcons::show('view-list-alt').Html::tag('p',
-                    AmosSondaggi::tHtml('amossondaggi', 'Tabella')),
+                'label' => AmosIcons::show('view-list-alt') . Html::tag('p',
+                        AmosSondaggi::tHtml('amossondaggi', 'Tabella')),
                 'url' => '?currentView=grid'
             ]
         ]);
@@ -63,9 +65,9 @@ class SondaggiDomandeController extends CrudController
      */
     protected function setCreateNewBtnParams()
     {
-        $get          = Yii::$app->request->get();
+        $get = Yii::$app->request->get();
         $urlCreateNew = ['create'];
-        $buttonLabel  = AmosSondaggi::t('amossondaggi', 'Aggiungi domanda');
+        $buttonLabel = AmosSondaggi::t('amossondaggi', 'Aggiungi domanda');
 
         if (isset($get['idSondaggio'])) {
             $urlCreateNew['idSondaggio'] = filter_input(INPUT_GET, 'idSondaggio');
@@ -76,6 +78,7 @@ class SondaggiDomandeController extends CrudController
         if (isset($get['url'])) {
             $urlCreateNew['url'] = $get['url'];
         }
+
         Yii::$app->view->params['createNewBtnParams'] = [
             'urlCreateNew' => $urlCreateNew,
             'createNewBtnLabel' => $buttonLabel
@@ -85,9 +88,21 @@ class SondaggiDomandeController extends CrudController
     /**
      * This method is useful to set all common params for all list views.
      */
-    protected function setListViewsParams()
+    protected function setListViewsParams($idSondaggio = null)
     {
-        $this->setCreateNewBtnParams();
+        $sondaggio = Sondaggi::findOne($idSondaggio);
+        $canCreate = true;
+        if ($sondaggio) {
+            if ($sondaggio->sondaggio_type == SondaggiTypes::SONDAGGI_TYPE_LIVE) {
+                if ($sondaggio->hasAlreadyDomande()) {
+                    $canCreate = false;
+                }
+
+            }
+        }
+        if ($canCreate) {
+            $this->setCreateNewBtnParams();
+        }
         $this->setUpLayout('list');
         Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKey(), Url::previous());
         Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKeyDateTime(), date('Y-m-d H:i:s'));
@@ -102,7 +117,18 @@ class SondaggiDomandeController extends CrudController
         Url::remember();
         $this->setUrl($url);
         $this->setDataProvider($this->getModelSearch()->search(Yii::$app->request->getQueryParams()));
-        $this->setListViewsParams();
+        $this->setListViewsParams($idSondaggio);
+
+        if ($idSondaggio) {
+            $backButton = Html::a(AmosIcons::show('long-arrow-return', ['class' => 'm-r-5']) . AmosSondaggi::t('amossondaggi', "Torna alle pagine"),
+                ['/sondaggi/sondaggi-domande-pagine/index', 'idSondaggio' => $idSondaggio], [
+                    'class' => 'btn btn-secondary',
+                    'title' => AmosSondaggi::t('amossondaggi', "Torna alle pagine")
+                ]);
+            Yii::$app->view->params['additionalButtons'] = [
+                'htmlButtons' => [$backButton]
+            ];
+        }
 //        return parent::actionIndex($layout); // TODO sistemare questo punto cambiando totalmente la action in quanto non compatibile con gli standard di PHP 7
         return parent::actionIndex();
     }
@@ -135,23 +161,25 @@ class SondaggiDomandeController extends CrudController
     public function actionCreate($idSondaggio, $idPagina = null, $url = null)
     {
         $this->setUpLayout('form');
-        $this->model              = new SondaggiDomande();
+        $this->model = new SondaggiDomande();
         $this->model->sondaggi_id = $idSondaggio;
         if ($idPagina) {
             $this->model->sondaggi_domande_pagine_id = $idPagina;
         }
         if ($this->model->load(Yii::$app->request->post())) {
             $condizioneNecessaria = (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : [
-                ];
-            $ordinamento          = Yii::$app->request->post()['SondaggiDomande']['ordine'];
-            $ordinaDopo           = 0;
+            ];
+            $ordinamento = Yii::$app->request->post()['SondaggiDomande']['ordine'];
+            $ordinaDopo = 0;
             if (strlen($ordinamento) == 0) {
                 $ordinamento = 'fine';
             }
             if ($ordinamento == 'dopo') {
                 $ordinaDopo = Yii::$app->request->post()['SondaggiDomande']['ordina_dopo'];
             }
-            $this->model->save();
+            if($this->model->save()){
+                \Yii::$app->session->addFlash('success', AmosSondaggi::t('amossondaggi', "Domanda creata correttamente"));
+            }
             $this->model->setOrdinamento($ordinamento, $ordinaDopo,
                 (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
 
@@ -159,30 +187,28 @@ class SondaggiDomandeController extends CrudController
 
             if ($this->model->domanda_condizionata) {
                 foreach ($condizioneNecessaria as $cond) {
-                    $condizione                                   = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
+                    $condizione = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
                     $condizione->sondaggi_risposte_predefinite_id = $cond;
-                    $condizione->sondaggi_domande_id              = $this->model->id;
+                    $condizione->sondaggi_domande_id = $this->model->id;
                     $condizione->save();
                 }
             }
             if ($this->model->modello_risposte_id) {
-                 $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
+                $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
             }
-            if ($url) {
-                $this->redirect($url);
-            } else {
-                return $this->redirect(['update',
-                        'id' => $this->model->id,
-                        'url' => ($url) ? $url : null,
-                ]);
-            }
+//            if ($url) {
+//                $this->redirect($url);
+//            } else {
+                return $this->redirect(['/sondaggi/sondaggi-domande/index', 'idSondaggio'=> $idSondaggio, 'idPagina'=> $idPagina, 'url' => $url ]);
+
+//            }
         }
 
         return $this->render('create',
-                [
+            [
                 'model' => $this->model,
                 'url' => ($url) ? $url : null,
-        ]);
+            ]);
     }
 
     /**
@@ -199,16 +225,16 @@ class SondaggiDomandeController extends CrudController
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
         $validazioni = [];
-        foreach ((array)$this->model->sondaggiDomandeRuleMms as $v){
+        foreach ((array)$this->model->sondaggiDomandeRuleMms as $v) {
             $validazioni[] = $v->sondaggi_domande_rule_id;
         }
         $this->model->validazione = $validazioni;
 
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
             $condizioneNecessaria = (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : [
-                ];
-            $ordinamento          = Yii::$app->request->post()['SondaggiDomande']['ordine'];
-            $ordinaDopo           = 0;
+            ];
+            $ordinamento = Yii::$app->request->post()['SondaggiDomande']['ordine'];
+            $ordinaDopo = 0;
             if (strlen($ordinamento) == 0) {
                 $ordinamento = 'fine';
             }
@@ -220,19 +246,19 @@ class SondaggiDomandeController extends CrudController
                 $this->model->setOrdinamento($ordinamento, $ordinaDopo,
                     (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
             }
-            $this->model->setValidazione($this->model->validazione); 
+            $this->model->setValidazione($this->model->validazione);
             \open20\amos\sondaggi\models\SondaggiDomandeCondizionate::deleteAll(['sondaggi_domande_id' => $id]);
             if ($this->model->domanda_condizionata) {
                 foreach ($condizioneNecessaria as $cond) {
-                    $condizione                                   = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
+                    $condizione = new \open20\amos\sondaggi\models\SondaggiDomandeCondizionate();
                     $condizione->sondaggi_risposte_predefinite_id = $cond;
-                    $condizione->sondaggi_domande_id              = $this->model->id;
+                    $condizione->sondaggi_domande_id = $this->model->id;
                     $condizione->save();
                 }
             }
 
             if ($this->model->modello_risposte_id) {
-                 $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
+                $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
             }
             if ($url) {
                 return $this->redirect($url);
@@ -241,10 +267,10 @@ class SondaggiDomandeController extends CrudController
             }
         } else {
             return $this->render('update',
-                    [
+                [
                     'model' => $this->model,
                     'url' => ($url) ? $url : null,
-            ]);
+                ]);
         }
     }
 
@@ -260,6 +286,16 @@ class SondaggiDomandeController extends CrudController
      */
     public function actionDelete($id, $idSondaggio, $url = null)
     {
+        $retMessage = SondaggiUtility::deleteAnswer($id);
+
+        if ($retMessage != 'ok') {
+            Yii::$app->getSession()->addFlash('danger', $retMessage);
+        } else {
+            Yii::$app->getSession()->addFlash('success',
+                AmosSondaggi::tHtml('amossondaggi', "Domanda cancellata correttamente."));
+        }
+
+        /*
         $this->model = $this->findModel($id);
 
         $risposte = $this->model->getSondaggiRispostePredefinites()->count();
@@ -279,6 +315,9 @@ class SondaggiDomandeController extends CrudController
                     AmosSondaggi::tHtml('amossondaggi', "Domanda cancellata correttamente."));
             }
         }
+
+        */
+
         if ($url) {
             return $this->redirect($url);
         } else {

@@ -56,11 +56,11 @@ IMPORT STYLE-CUSTOM
     }
 }
 
-.btn.btn-secondary,
-.btn.btn-navigation-primary {
-    font-size: 20px;
-    text-transform: uppercase;
-}
+// .btn.btn-secondary,
+// .btn.btn-navigation-primary {
+//     font-size: 20px;
+//     text-transform: uppercase;
+// }
 
 .btn.btn-file {
     padding: 6px 12px;
@@ -146,15 +146,15 @@ textarea {
 
 .select2-container--krajee .select2-selection,
 .form-control:not(textarea) {
-    border-radius: 0 !important;
-    border: none !important;
+    // border-radius: 0 !important;
+    // border: none !important;
     box-shadow: none !important;
-    background: transparent !important;
-    padding-left: 0 !important;
+    // background: transparent !important;
+    //padding-left: 0 !important;
 
-    @media screen and (min-width:992px) {
-        border-bottom: 1px solid #000 !important;
-    }
+    // @media screen and (min-width:992px) {
+    //     border-bottom: 1px solid #000 !important;
+    // }
 }
 
 .select2-container--krajee .select2-dropdown {
@@ -216,7 +216,7 @@ textarea {
 
     .form-group {
         margin: 0 0 30px;
-        border-bottom: 1px solid #ccc;
+        // border-bottom: 1px solid #ccc;
         display: flex;
         flex-direction: row;
         flex-wrap: wrap;
@@ -248,21 +248,23 @@ textarea {
             font-weight: bold;
         }
 
-        .row {
-            width: 100%;
-            margin: 0;
+        // .row {
+        //     width: 100%;
+        //     margin: 0;
 
-            >div.col-xs-12 {
-                padding: 0;
-            }
-        }
+        //     >div.col-xs-12 {
+        //         padding: 0;
+        //     }
+        // }
 
         .control-label {
             font-weight: normal;
             width: 100%;
+            margin-top: 50px;
+            text-transform: uppercase;
 
             +div {
-                text-align: right;
+                //text-align: right;
                 margin-top: 10px;
             }
         }
@@ -270,6 +272,19 @@ textarea {
         .testo-introduttivo {
             background: @light-background-primary-color;
             border-left: 15px solid @brand-primary-color;
+        }
+
+        label {
+            font-size: 1rem;
+            line-height: 22px;
+            padding-left: 0;
+            margin-right: 20px;
+            font-weight: normal;
+
+            input[type="checkbox"] {
+                margin: 5px 7px 0 0;
+                position: relative;
+            }
         }
 
         // @media screen and (max-width:991px) {
@@ -321,13 +336,10 @@ textarea {
 
 
 .bk-btnFormContainer {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
+    display: block;
     padding-top: 20px !important;
     padding-bottom: 50px !important;
+    text-align: right;
     //border-top: 1px solid darken(@light-background-color, 10%);
 
     *:not(:first-child) {
@@ -337,8 +349,7 @@ textarea {
 
 .sondaggi-index {
     .am {
-        font-size: 8vw;
-        margin-bottom: 15px;
+
 
         +h2 {
             margin: 0;
@@ -379,6 +390,7 @@ textarea {
 .sondaggi-compilazione {
     display: flex;
     flex-direction: column;
+
     .container-padding {
         .icon-sondaggio {
             width: 60px;
@@ -402,7 +414,7 @@ textarea {
     .testo-introduttivo {
         background: transparent !important;
         border: none !important;
-        padding: 0;
+
         margin-top: 50px;
 
         &.testo-vincolato {

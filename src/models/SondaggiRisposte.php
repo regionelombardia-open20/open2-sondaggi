@@ -20,6 +20,7 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiRisposte extends \open20\amos\sondaggi\models\base\SondaggiRisposte
 {
+    public $byBassRuleCwh = true;
 
     public $attachment;
     public $attachment_multiple;
@@ -46,7 +47,7 @@ class SondaggiRisposte extends \open20\amos\sondaggi\models\base\SondaggiRispost
         }
         return ArrayHelper::merge(parent::rules(), [
             //[['regola_pubblicazione', 'destinatari', 'validatori'], 'safe'],
-            [['domanda_'.$this->sondaggi_domande_id], 'file', 'maxFiles' => 0],
+            [['domanda_'.$this->sondaggi_domande_id], 'file', 'maxFiles' => $i],
         ]);
     }
 

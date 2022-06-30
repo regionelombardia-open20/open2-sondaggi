@@ -65,7 +65,8 @@ return [
 * @param integer $accesso Id dell'accesso al servizio di facilitazione se il sondaggio è stato compilato in quell'occasione
 * @param integer $completato 0 | 1 di default a 0 se non specificato e indica se la pagina che si sta salvando è l'ultima o meno
 */
-public function save($sessione, $accesso = NULL, $completato = false) {
+public function save($sessione, $accesso = NULL, $completato = false, $read = false) {
+if ($read) return;
 <?php foreach ($salvataggio as $Save): ?>
     <?= "\n" . $Save . "\n" ?>
 <?php endforeach; ?>

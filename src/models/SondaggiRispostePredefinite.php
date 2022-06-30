@@ -22,6 +22,7 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\SondaggiRispostePredefinite
 {
+    public $byBassRuleCwh = true;
     public $tipo_domanda;
     public $ordine;
     public $ordina_dopo;
@@ -136,12 +137,13 @@ class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\Sond
                         TRUE,
                         FALSE);
                     $Array = $rowData[0];
-                    $rispostaPredefinitaName = $Array[0];
+                    $rispostaPredefinitaName   = $Array[0];
+                    $rispostaPredefinitaCodice = $Array[1];
                     if(!empty($rispostaPredefinitaName)) {
                         $rispostaPredefinita = new SondaggiRispostePredefinite();
                         $rispostaPredefinita->risposta = $rispostaPredefinitaName;
                         $rispostaPredefinita->sondaggi_domande_id = $idDomanda;
-                        $rispostaPredefinita->risposta = $rispostaPredefinitaName;
+                        $rispostaPredefinita->code = $rispostaPredefinitaCodice;
                         $rispostaPredefinita->ordinamento = $i;
                         $ok = $rispostaPredefinita->save();
                         if($ok){
@@ -155,9 +157,9 @@ class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\Sond
         }
         return $count > 0;
     }
-    
+
     /**
-     * 
+     *
      * @param type $idModello
      * @param type $idDomanda
      * @return type

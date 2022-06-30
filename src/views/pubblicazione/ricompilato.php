@@ -20,15 +20,15 @@ use yii\helpers\Url;
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', '#sondaggioterminato');
-$this->params['breadcrumbs'][] = $this->title;
+// $this->params['breadcrumbs'][] = $this->title;
 ?>
-<div class="sondaggi-index text-center sondaggi-success">
+<div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
     <?php
     if (!empty($pubblicazioni->one()->text_end_title) && strlen(trim($pubblicazioni->one()->text_end_title))) {
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
         <h2 class="p-t-5 nom-b"><?= $pubblicazioni->one()->text_end_title ?></h2>
@@ -37,7 +37,7 @@ $this->params['breadcrumbs'][] = $this->title;
         ?>
         <?=
         AmosIcons::show('check-circle', [
-            'class' => 'am-4 success m-t-15'
+            'class' => 'am-4 success m-t-30'
         ])
         ?>
     <?php } ?>
@@ -55,15 +55,15 @@ $this->params['breadcrumbs'][] = $this->title;
         }
     } else {
         ?>
-        <h3><?=
+        <h3 class="m-b-30"><?=
             AmosSondaggi::tHtml('amossondaggi', '#thankyoumessage').($pubblicazioni->one()->sondaggi->send_pdf_via_email
             == 1 ? 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.' : '')
             ?></h3>
     <?php } ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url)?$url:Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url)?$url:'/sondaggi/pubblicazione/index',
         [
-        'class' => 'btn btn-secondary undo-edit mr10'
+        'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);
     ?>
 </div>

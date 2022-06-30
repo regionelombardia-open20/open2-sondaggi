@@ -26,19 +26,19 @@ ModuleRisultatiAsset::register($this);
  * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
 $this->title                   = AmosSondaggi::t('amossondaggi', 'Risultati').': '.$model->titolo;
-$this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['index']];
-$this->params['breadcrumbs'][] = $this->title;
+// $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['index']];
+// $this->params['breadcrumbs'][] = $this->title;
 
 $funcResize = "";
 for ($i = 0; $i < count($risposte); $i++) {
     $funcResize .= 'drawChartw'.$i.'();';
 }
 
-$this->registerJs('  
+$this->registerJs('
     jQuery(document).ready(function() {
-    $(window).resize(function(){        
-           '.$funcResize.'           
-    });   
+    $(window).resize(function(){
+           '.$funcResize.'
+    });
   });
     ', yii\web\View::POS_END);
 ?>
@@ -62,7 +62,7 @@ $this->registerJs('
                 Html::a(AmosSondaggi::t('amossondaggi', '&nbsp;&nbsp;<strong>>></strong>&nbsp;&nbsp;'),
                     (($idPagina != 0) ? ['risultati', 'id' => $model->id, 'idPagina' => 0, 'filter' => $filter] : null),
                     ['class' => 'btn btn-success', 'disabled' => (($idPagina != 0) ? false : true)]);
-                ?>           
+                ?>
             </div>
             <?php if ($idPagina == -1): ?>
                 <div class="col-lg-12">
@@ -92,7 +92,7 @@ $this->registerJs('
                                 'height' => 700,
                                 'hAxis' => ['title' => AmosSondaggi::t('amossondaggi', 'Numero dei partecipanti'),
                                     'gridlines' => [
-                                        'color' => null, //set grid line transparent                                    
+                                        'color' => null, //set grid line transparent
                                     ]],
                                 'vAxis' => ['title' => null, 'slantedText' => false],
                             ]
@@ -125,7 +125,7 @@ $this->registerJs('
                                     'height' => 700,
                                     'hAxis' => ['title' => AmosSondaggi::t('amossondaggi', 'Numero partecipanti'),
                                         'gridlines' => [
-                                            'color' => null, //set grid line transparent                                    
+                                            'color' => null, //set grid line transparent
                                         ]],
                                     'vAxis' => ['title' => null, 'slantedText' => false],
                                 ]
@@ -276,7 +276,7 @@ $this->registerJs('
                                             'height' => 700,
                                             'hAxis' => ['title' => AmosSondaggi::t('amossondaggi', 'Numero partecipanti'),
                                                 'gridlines' => [
-                                                    'color' => null, //set grid line transparent                                    
+                                                    'color' => null, //set grid line transparent
                                                 ]],
                                             'vAxis' => ['title' => null, 'slantedText' => false],
                                         ]
@@ -352,7 +352,7 @@ $this->registerJs('
                         ])
                         ?>
                     <?php else: ?>
-                        <h4><?= AmosSondaggi::t('amossondaggi', 'Nessuna risposta libera per il sondaggio.') ?></h4>
+                        <h4><?= AmosSondaggi::t('amossondaggi', '#no_free_answer_in_poll') ?></h4>
                     <?php endif; ?>
                 </div>
             <?php else: ?>
@@ -510,6 +510,7 @@ $this->registerJs('
                         //}
                     } else {
                         foreach ($domande->all() as $Domanda) {
+                            $isParent = $Domanda->is_parent;
                             ?>
                             <?php if ($ind == 0): ?>
                                 <h3><?= $Domanda->sondaggiDomandePagine->titolo ?></h3>
@@ -521,7 +522,7 @@ $this->registerJs('
                             <?php
                             if (!empty($risposte[$Domanda->id]) && count($risposte[$Domanda->id]) > 0):
                                 echo GraficiGoogle::widget([
-                                    'visualization' => 'PieChart',
+                                    'visualization' => ($isParent ? 'ColumnChart' : 'PieChart'),
                                     'data' => $risposte[$Domanda->id],
                                     'options' => [
                                         'title' => $Domanda->domanda,
@@ -547,7 +548,8 @@ $this->registerJs('
                                             'gridlines' => [
                                                 'color' => null  //set grid line transparent
                                             ]],
-                                        'hAxis' => ['title' => 'Risposte'],
+                                        'hAxis' => ['title' => ($isParent ? AmosSondaggi::t('amossondaggi', 'Domande') : AmosSondaggi::t('amossondaggi',
+                                                    'Risposte'))],
                                     ]
                                 ]);
                             else :
@@ -560,9 +562,9 @@ $this->registerJs('
                     }
                     ?>
                 </div>
-            <?php endif; ?>
+        <?php endif; ?>
         </div>
-        <?php $form = ActiveForm::begin(); ?>
+            <?php $form = ActiveForm::begin(); ?>
         <div class="col-lg-4"><?=
             $form->field($filter, 'data_inizio')->widget(DateControl::className(),
                 [
@@ -582,7 +584,7 @@ $this->registerJs('
             ])->label(AmosSondaggi::t('amossondaggi', 'Data fine'))
             ?></div>
 
-        <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0) { ?>
+            <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0) { ?>
             <div class="col-lg-4"><?=
                 $form->field($filter, 'area_formativa')->widget(Select2::classname(),
                     [
@@ -623,16 +625,19 @@ $this->registerJs('
             <div class="col-lg-8"><?=
                 Html::submitButton('Cerca', ['class' => 'btn btn-success', 'style' => 'margin-top:25px;']);
                 ?></div>
-        <?php } else { ?>
+            <?php } else { ?>
             <div class="col-lg-4"><?=
                 Html::submitButton('Cerca', ['class' => 'btn btn-success', 'style' => 'margin-top:25px;']);
                 ?></div>
-        <?php } ?>
+<?php } ?>
 
     </div>
 
-    <?php ActiveForm::end(); ?>
+<?php ActiveForm::end(); ?>
 </div>
 <div class="col-lg-12 menu-sondaggio-chiudi">
-    <?= Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), ['index'], ['class' => 'btn btn-success']); ?>
+    <?php
+    $link = (!empty($url)) ? $url : 'index';
+    echo Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), [$url], ['class' => 'btn btn-success', 'onclick' => "window.open('', '_self', ''); window.close();"]);
+    ?>
 </div>

@@ -41,7 +41,7 @@ $this->params['breadcrumbs'][] = $this->title;
         'gridView' => [
             'columns' => [
                 //['class' => 'yii\grid\SerialColumn'],
-                //'id',                               
+                //'id',
                 'domanda:ntext',
                 'domanda_condizionata:statosino',
                 [
@@ -57,13 +57,13 @@ $this->params['breadcrumbs'][] = $this->title;
                     }
                 ],
                 //'ordinamento',
-//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            'created_by', 
-//            'updated_by', 
-//            'deleted_by', 
-//            'version', 
+//            ['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            'created_by',
+//            'updated_by',
+//            'deleted_by',
+//            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                     'template' => '{update} {risposte} {aggrisposta} {delete}',

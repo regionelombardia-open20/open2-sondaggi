@@ -8,6 +8,7 @@
  * @package    open20\amos\sondaggi\views\sondaggi
  * @category   CategoryName
  */
+
 use open20\amos\attachments\components\AttachmentsInput;
 use open20\amos\core\forms\ActiveForm;
 use open20\amos\core\forms\CreatedUpdatedWidget;
@@ -37,10 +38,13 @@ if (isset($public)) {
         $postPublic = $public;
     }
 }
-$js = 'var publicPost = \''.$postPublic.'\';';
+$js = 'var publicPost = \'' . $postPublic . '\';';
 $this->registerJs($js, View::POS_BEGIN);
 
 $statusToRenderToHide = $model->getStatusToRenderToHide();
+
+$standardId = \open20\amos\sondaggi\models\base\SondaggiTypes::SONDAGGI_TYPE_STANDARD;
+$liveId = \open20\amos\sondaggi\models\base\SondaggiTypes::SONDAGGI_TYPE_LIVE;
 
 $js2 = <<<JS
 
@@ -135,17 +139,36 @@ $js2 = <<<JS
             $('#si-frontend').hide();
         }
    });
+    
+    $('#sondaggio-type-id').on('select2:select', function(){
+        hideShowSondaggiLive($(this).val());
+    });
+    
+    
+    function hideShowSondaggiLive(sondaggiotype){
+          if(sondaggiotype == '$liveId'){
+            $('.container-not-live').hide();
+            $('.container-live').show();
+        }else {
+            $('.container-not-live').show();
+            $('.container-live').hide();
+        }
+    }
+    
+    hideShowSondaggiLive($('#sondaggio-type-id').val());
 JS;
 
 $this->registerJs($js2, View::POS_READY);
+
+$sondaggi_types = (new open20\amos\sondaggi\models\base\SondaggiTypes())->types;
 ?>
 
 <?php
-$form              = ActiveForm::begin([
-        'options' => [
-            'enctype' => 'multipart/form-data'
-        ]
-    ]);
+$form = ActiveForm::begin([
+    'options' => [
+        'enctype' => 'multipart/form-data'
+    ]
+]);
 ?>
 
 <?=
@@ -158,41 +181,91 @@ WorkflowTransitionStateDescriptorWidget::widget([
     'viewWidgetOnNewRecord' => false
 ]);
 ?>
+<div class="row">
 
 <div class="sondaggi-form col-xs-12">
-
     <?php $this->beginBlock('generale'); ?>
     <div class="row">
-        <div class="col-sm-8">
+        <div class="col-sm-7">
+            <?php
+            $textTootlip = AmosSondaggi::t('amossondaggi', "<strong>Completo</strong>: sondaggio completo con tutte le tipologie di risposta  <br> <strong>Live</strong>:  sondaggio live che prevede una sola domanda con risposte a insieme chiuso");
+            $icon = " <span  data-toggle=\"tooltip\" data-html=\"true\" data-placement=\"top\" title=\"$textTootlip\">" . \open20\amos\core\icons\AmosIcons::show('info') . "</span>"; ?>
+            <?=
+            $form->field($model, 'sondaggio_type')->widget(\kartik\select2\Select2::className(), [
+                'data' => $sondaggi_types,
+                'options' => [
+                    'id' => 'sondaggio-type-id',
+                    'placeholder' => AmosSondaggi::t('amossondaggi', "Seleziona...")
+                ]
+            ])->label(AmosSondaggi::t('amossondaggi', "Tipologia sondaggio") . $icon);
+            ?>
             <?= $form->field($model, 'titolo')->textarea(['rows' => 2]) ?>
             <?= $form->field($model, 'visualizza_solo_titolo')->checkbox() ?>
             <?= $form->field($model, 'descrizione')->textarea(['rows' => 4]) ?>
+
         </div>
 
-        <div class="col-sm-4">
-            <div class="col-lg-8 col-sm-8 pull-right">
+        <div class="col-sm-5">
+           
                 <?=
                 $form->field($model, 'file')->widget(AttachmentsInput::classname(),
                     [
-                    'options' => [// Options of the Kartik's FileInput widget
-                        'multiple' => false, // If you want to allow multiple upload, default to false
-                        'accept' => "image/*"
-                    ],
-                    'pluginOptions' => [// Plugin options of the Kartik's FileInput widget
-                        'maxFileCount' => 1,
-                        'showRemove' => false, // Client max files,
-                        'indicatorNew' => false,
-                        'allowedPreviewTypes' => ['image'],
-                        'previewFileIconSettings' => false,
-                        'overwriteInitial' => false,
-                        'layoutTemplates' => false
-                    ]
-                ])->label(AmosSondaggi::t('amossondaggi', 'Immagine'))
+                        'options' => [// Options of the Kartik's FileInput widget
+                            'multiple' => false, // If you want to allow multiple upload, default to false
+                            'accept' => "image/*"
+                        ],
+                        'pluginOptions' => [// Plugin options of the Kartik's FileInput widget
+                            'maxFileCount' => 1,
+                            'showRemove' => false, // Client max files,
+                            'indicatorNew' => false,
+                            'allowedPreviewTypes' => ['image'],
+                            'previewFileIconSettings' => false,
+                            'overwriteInitial' => false,
+                            'layoutTemplates' => false
+                        ]
+                    ])->label(AmosSondaggi::t('amossondaggi', 'Immagine'))
                 ?>
-            </div>
+           
         </div>
     </div>
 
+    <div class="row container-live" style="display:none">
+    <div class="col-xs-12">
+    <h5><?= AmosSondaggi::t('amossondaggi', "Configurazioni sondaggi live") ?></h5>
+    </div>
+        
+        <div class="col-md-6">
+            <?= $form->field($model, 'begin_date_hour_live')->widget(\kartik\datecontrol\DateControl::className(), [
+                'type' => \kartik\datecontrol\DateControl::FORMAT_DATETIME
+            ]) ?>
+        </div>
+
+        <div class="col-md-6">
+            <?= $form->field($model, 'end_date_hour_live')->widget(\kartik\datecontrol\DateControl::className(), [
+                'type' => \kartik\datecontrol\DateControl::FORMAT_DATETIME
+            ]) ?>
+        </div>
+        <div class="col-md-6">
+            <?php if (empty($model->graphics_live)) {
+                $model->graphics_live = Sondaggi::SONDAGGI_LIVE_CHART_PIE;
+            } ?>
+            <?= $form->field($model, 'graphics_live')->widget(\kartik\select2\Select2::className(), [
+                'data' => Sondaggi::sondaggiLiveTypeCharts(),
+
+            ])->label(AmosSondaggi::t('amossondaggi', "Grafico di sintesi da mostare")) ?>
+        </div>
+        <div class="col-md-6">
+            <?= $form->field($model, 'how_show_live')->widget(\kartik\select2\Select2::className(), [
+                'data' => [
+                    '1' => 'Dopo compilazione',
+                    '2' => 'Sempre',
+                ]
+
+            ])->label(AmosSondaggi::t('amossondaggi', "Mostra grafico andamento sondaggio"))?>
+        </div>
+       
+    </div>
+    <hr style="border-style:dashed" class="m-t-20 m-b-20">
     <div class="row">
         <div class="col-sm-6">
             <!--                <label>Opzioni</label>-->
@@ -200,20 +273,38 @@ WorkflowTransitionStateDescriptorWidget::widget([
         </div>
         <div class="col-sm-12">
             <?=
-                $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
+            $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
                 ->label(AmosSondaggi::t('amossondaggi', 'Elenco di email a cui verrà inviato il sondaggio compilato.'))
             ?>
         </div>
 
-        <div class="col-lg-6 col-sm-6">
+        <div class="col-md-6 container-not-live">
+            <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
+        </div>
+        <div class="col-lg-6 col-sm-6 container-not-live">
             <?= $form->field($model, 'compilazioni_disponibili')->textInput() ?>
         </div>
-        <div class="col-lg-6 col-sm-6">
-            <?=
-            $form->field($model, 'frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
-                    'Si')])
-            ?>
-        </div>
+        <?php
+        if (!AmosSondaggi::instance()->forceOnlyFrontend) { // Se non è settata l'intenzione di forzare il campo frontend forzatamente a 1
+            if (AmosSondaggi::instance()->enableFrontendCompilation) {
+                ?>
+                <div class="col-lg-6 col-sm-6 container-not-live">
+                    <?=
+                    $form->field($model, 'frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
+                            'Si')])
+                    ?>
+                </div>
+                <div class="col-md-6 container-not-live">
+                    <?=
+                    $form->field($model, 'sondaggio_chiuso_frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi',
+                            'No'),
+                        1 => AmosSondaggi::t('amossondaggi', 'Si')])
+                    ?>
+                </div>
+                <?php
+            }
+        }
+        ?>
     </div>
     <div class="row" id="compilabile_in_frontend">
         <div class="col-md-6">
@@ -222,15 +313,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
         <div class="col-md-6">
             <?= $form->field($model, 'url_sondaggio_non_compilabile')->textInput() ?>
         </div>
-        <div class="col-md-6">
-            <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
-        </div>
-        <div class="col-md-6">
-            <?=
-            $form->field($model, 'sondaggio_chiuso_frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
-                1 => AmosSondaggi::t('amossondaggi', 'Si')])
-            ?>
-        </div>
+
         <div class="col-md-12">
             <?= $form->field($model, 'thank_you_page_sondaggio_chiuso')->textInput() ?>
         </div>
@@ -247,7 +330,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
             if (!empty($moduleTranslation)) {
                 $arrLanguage = (new \yii\db\Query())->from('language')->andWhere(['=', 'status', 1])->select(['language_id',
-                        'name'])->all();
+                    'name'])->all();
                 foreach ($arrLanguage as $k => $v) {
                     $languages[$v['language_id']] = $v['name'];
                 }
@@ -258,18 +341,39 @@ WorkflowTransitionStateDescriptorWidget::widget([
                 ['prompt' => AmosSondaggi::t('amossondaggi', 'Non forzare. Usa quella dell\'utente')]);
             ?>
         </div>
-    </div>
-    <div class="row">
+        <?php if ($sondaggiModule->enableForceLanguageByGet) { ?>
         <div class="col-md-6">
-            <?=
-            $form->field($model, 'abilita_criteri_valutazione')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
-                1 => AmosSondaggi::t('amossondaggi', 'Si')], ['id' => 'abilita_criteri_valutazione-id'])
+        <?=
+            $form->field($model, 'use_get_language')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
+                1 => AmosSondaggi::t('amossondaggi', 'Si')])
             ?>
         </div>
+        <?php } ?>
+        <?php if ($sondaggiModule->enableExtraFieldByGet) { ?>
+        <div class="col-md-6">
+            <?=
+            $form->field($model, 'field_extra')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
+                1 => AmosSondaggi::t('amossondaggi', 'Si')])
+            ?>
+        </div>
+        <?php } ?>
+    </div>
+
+    <div class="row container-not-live" style="display:none">
+        <?php if ($sondaggiModule->enableCriteriValutazione) { ?>
+            <div class="col-md-6">
+                <?=
+                $form->field($model, 'abilita_criteri_valutazione')->dropDownlist([0 => AmosSondaggi::t('amossondaggi',
+                        'No'),
+                    1 => AmosSondaggi::t('amossondaggi', 'Si')], ['id' => 'abilita_criteri_valutazione-id'])
+                ?>
+            </div>
+        <?php } ?>
         <div class="col-md-6" id="div_max_valutatori-id">
             <?= $form->field($model, 'n_max_valutatori')->textInput(['id' => 'n_max_valutatori-id']) ?>
         </div>
     </div>
+
 
     <div class="clearfix"></div>
     <?php $this->endBlock(); ?>
@@ -282,44 +386,47 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
     <?php $this->beginBlock('messaggi'); ?>
     <div id="no-frontend">
-        <div class="row">
-            <div class="col-lg-12">
-                <?=
-                $form->field($model, 'text_not_compilable_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi',
+        <div class="container-not-live">
+            <div class="row">
+                <div class="col-lg-12">
+                    <?=
+                    $form->field($model, 'text_not_compilable_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi',
                         'NO'), 1 => AmosSondaggi::t('amossondaggi', 'SI')])
-                ?>
+                    ?>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12" id="areatext-not-compilable">
+                    <?=
+                    $form->field($model, 'text_not_compilable')->textarea(['rows' => 4])
+                    ?>
+                </div>
+                <div class="col-lg-12" id="htmltext-not-compilable">
+                    <?=
+                    $form->field($model, 'text_not_compilable')->widget(TextEditorWidget::className(),
+                        [
+                            'clientOptions' => [
+                                'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                                'lang' => substr(Yii::$app->language, 0, 2)
+                            ],
+                            'options' => [
+                                'id' => 'text_not_compilable-id-html',
+                            ]
+                        ])
+                    ?>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-12" id="areatext-not-compilable">
-                <?=
-                $form->field($model, 'text_not_compilable')->textarea(['rows' => 4])
-                ?>
-            </div>
-            <div class="col-lg-12" id="htmltext-not-compilable">
-                <?=
-                $form->field($model, 'text_not_compilable')->widget(TextEditorWidget::className(),
-                    [
-                    'clientOptions' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ],
-                    'options' => [
-                        'id' => 'text_not_compilable-id-html',
-                    ]
-                ])
-                ?>
-            </div>
-        </div>
-        <div class="row">
+        <div class="row container-not-live">
             <div class="col-lg-12">
                 <?=
                 $form->field($model, 'text_end_html')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'NO'), 1 => AmosSondaggi::t('amossondaggi',
-                        'SI')])
+                    'SI')])
                 ?>
             </div>
         </div>
-        <div class="row">
+
+        <div class="row container-not-live">
             <div class="col-lg-12">
                 <?= $form->field($model, 'text_end_title')->textinput() ?>
             </div>
@@ -332,18 +439,20 @@ WorkflowTransitionStateDescriptorWidget::widget([
                 <?=
                 $form->field($model, 'text_end')->widget(TextEditorWidget::className(),
                     [
-                    'clientOptions' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ],
-                    'options' => [
-                        'id' => 'text_end-id-html',
-                    ]
-                ])
+                        'clientOptions' => [
+                            'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                            'lang' => substr(Yii::$app->language, 0, 2)
+                        ],
+                        'options' => [
+                            'id' => 'text_end-id-html',
+                        ]
+                    ])
                 ?>
             </div>
         </div>
     </div>
+
+
     <div id="si-frontend">
         <div class="row">
             <div class="col-lg-12">
@@ -367,13 +476,13 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <div class="col-lg-6">
                 <?=
                 $form->field($model, 'mail_registrazione_custom')->dropDownList([0 => AmosSondaggi::t('amossondaggi',
-                        'No'), 1 => AmosSondaggi::t('amossondaggi', 'Si')])
+                    'No'), 1 => AmosSondaggi::t('amossondaggi', 'Si')])
                 ?>
             </div>
             <div class="col-lg-6">
                 <?=
                 $form->field($model, 'mail_conf_community')->dropDownList([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
-                        'Si')])
+                    'Si')])
                 ?>
             </div>
         </div>
@@ -390,7 +499,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <div class="col-lg-12">
                 <?=
                 $form->field($model, 'mail_contenuto_nuovo_utente')->textarea(['rows' => 4])->label(AmosSondaggi::t('amossondaggi',
-                        'Testo').' '.AmosSondaggi::t('amossondaggi',
+                        'Testo') . ' ' . AmosSondaggi::t('amossondaggi',
                         '(variabili comprese: {{{link}}} - {{{link_esteso}}} - {{{nome}}} - {{{cognome}}})'))
                 ?>
             </div>
@@ -406,7 +515,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
             <div class="col-lg-12">
                 <?=
                 $form->field($model, 'mail_contenuto_utente_presente')->textarea(['rows' => 4])->label(AmosSondaggi::t('amossondaggi',
-                        'Testo').' '.AmosSondaggi::t('amossondaggi',
+                        'Testo') . ' ' . AmosSondaggi::t('amossondaggi',
                         '(variabili disponibili: {{{link}}} - {{{link_esteso}}} - {{{nome}}} - {{{cognome}}})'))
                 ?>
             </div>
@@ -473,11 +582,11 @@ WorkflowTransitionStateDescriptorWidget::widget([
                 <?=
                 $form->field($model, 'mail_message')->widget(TextEditorWidget::className(),
                     [
-                    'clientOptions' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ]
-                ])
+                        'clientOptions' => [
+                            'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                            'lang' => substr(Yii::$app->language, 0, 2)
+                        ]
+                    ])
                 ?>
             </div>
         </div>
@@ -491,16 +600,18 @@ WorkflowTransitionStateDescriptorWidget::widget([
         ];
     }
     ?>
-    
+
     <?php if (!empty($moduleCwh)): ?>
         <?php $this->beginBlock('survey_recipients'); ?>
-        <div class="row">
+        <div class="">
             <div class="col-xs-12 receiver-section">
-                <?= \open20\amos\cwh\widgets\DestinatariPlusTagWidget::widget([
+                <?=
+                \open20\amos\cwh\widgets\DestinatariPlusTagWidget::widget([
                     'model' => $model,
                     'moduleCwh' => $moduleCwh,
                     'scope' => $scope
-                ]); ?>
+                ]);
+                ?>
             </div>
         </div>
         <div class="clearfix"></div>
@@ -531,7 +642,7 @@ WorkflowTransitionStateDescriptorWidget::widget([
         'model' => $model,
         'workflowId' => Sondaggi::WORKFLOW,
         'viewWidgetOnNewRecord' => true,
-        'closeButton' => Html::a(AmosSondaggi::t('amossondaggi', 'Annulla'), Yii::$app->session->get('previousUrl'),
+        'closeButton' => Html::a(AmosSondaggi::t('amossondaggi', 'Annulla'), \Yii::$app->request->referrer,
             ['class' => 'btn btn-secondary']),
         'initialStatusName' => "BOZZA",
         'initialStatus' => Sondaggi::WORKFLOW_STATUS_BOZZA,
@@ -557,4 +668,5 @@ WorkflowTransitionStateDescriptorWidget::widget([
     ?>
 
     <?php ActiveForm::end(); ?>
+</div>
 </div>

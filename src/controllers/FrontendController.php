@@ -10,6 +10,7 @@
 
 namespace open20\amos\sondaggi\controllers;
 
+use open20\amos\admin\AmosAdmin;
 use open20\amos\admin\models\UserProfile;
 use open20\amos\attachments\components\AttachmentsList;
 use open20\amos\attachments\models\File;
@@ -34,7 +35,8 @@ use open20\amos\sondaggi\assets\ModuleRisultatiFrontendAsset;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Url;
-use yii\web\ForbiddenHttpException;
+use yii\helpers\VarDumper;
+use yii\base\InvalidConfigException;
 use yii\web\UploadedFile;
 use yii\web\Controller;
 use open20\amos\admin\utility\UserProfileUtility;
@@ -62,6 +64,7 @@ class FrontendController extends Controller
     public $model;
     public $modelSearch;
 
+    /**
     /**
      * @inheritdoc
      */
@@ -110,12 +113,18 @@ class FrontendController extends Controller
      * @return string
      */
     public function actionCompila($id, $idPagina = null, $utente = null, $idSessione = null, $accesso = null,
-                                  $url = null)
+                                  $url = null, $language = null, $field_extra = null)
     {
+
+        $sondaggiModule = Yii::$app->getModule('sondaggi');
+        if (empty($sondaggiModule)) {
+            throw new InvalidConfigException('Module Sondaggi not configured');
+        }
+
         $pageNonCompilabile = '/pubblicazione/non_compilabile_frontend';
         $thankYouPage       = '/pubblicazione/compilato_frontend';
         $thankYouPageisUrl  = false;
-        $this->layout       = '@frontend/views/layouts/main';
+        $this->layout       = $sondaggiModule->frontendControllerLayoutPath;
         $pathFront          = \Yii::getAlias("@backend/web/uploads/");
         ModuleRisultatiFrontendAsset::register(\Yii::$app->getView());
 //        if (!$utente) {
@@ -195,6 +204,10 @@ class FrontendController extends Controller
             $newModel    = new $percorso;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
+
+                if ($this->model->frontend == 1) {
+                    $this->model->setFrontendCookie($idSessione);
+                }
 
 //                foreach ($domandeWithFilesIds as $idDomanda) {
 //                    $files = UploadedFile::getInstanceByName("domanda_$idDomanda");
@@ -225,20 +238,29 @@ class FrontendController extends Controller
                         return $this->redirect($thankYouPage);
                     } else {
                         return $this->render($thankYouPage,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model]);
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model, 'sessione' => $sessione,  'language' => $language, 'field_extra' => $field_extra]);
                     }
                 } else {
                     $prossimoModel = new $percorsoNew;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
                 }
             } else {
                 return $this->render('/pubblicazione/compila',
                         ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
             }
         } else {
+
+            // se sono in frontend ed è stato settato un cookie con l'idSessione - allora prendo quello!
+            if ($this->model->frontend == 1) {
+                $cookieValues = $this->model->getFrontendCookie();
+                if (isset($cookieValues['idSessione']) && !empty($cookieValues['idSessione'])) {
+                    $idSessione = $cookieValues['idSessione'];
+                }
+            }
+
             $inCorso = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $id])->andWhere(['id' => $idSessione]);
             if ($inCorso->count() == 0) {
                 if ($primaPagina) {
@@ -258,13 +280,15 @@ class FrontendController extends Controller
                 $sessione->end_date    = null;
                 $sessione->sondaggi_id = $id;
                 $sessione->user_id     = $utente;
+                $sessione->lang = $language;
+                $sessione->field_extra = $field_extra;
                 $sessione->save();
                 $idSessione            = $sessione->id;
                 $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
                 $pagina                = new $modelloPagina;
                 return $this->render('/pubblicazione/compila',
                         ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente, 'id' => $id,
-                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
             } else {
                 $nonCompletato = 0;
                 foreach ($inCorso->all() as $InCorso) {
@@ -327,7 +351,7 @@ class FrontendController extends Controller
 
                         return $this->render('/pubblicazione/compila',
                                 ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {//se non esistono risposte date al sondaggio
                         $newModel = null;
                         $percorso = ($this->percorso_model.$id."\\Pagina_".$primaPagina);
@@ -335,7 +359,7 @@ class FrontendController extends Controller
                             $newModel = new $percorso;
                             return $this->render('/pubblicazione/compila',
                                     ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                         } else {
                             return $this->redirect(['/sondaggi/sondaggi-domande-pagine/index', 'idSondaggio' => $id]);
                         }
@@ -350,48 +374,66 @@ class FrontendController extends Controller
                         $sessione->end_date    = null;
                         $sessione->sondaggi_id = $id;
                         $sessione->user_id     = $utente;
+                        $sessione->lang = $language;
+                        $sessione->field_extra = $field_extra;
                         $sessione->save();
                         $idSessione            = $sessione->id;
                         $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
                         $pagina                = new $modelloPagina;
                         return $this->render('/pubblicazione/compila',
                                 ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {
                         return $this->render($pageNonCompilabile,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones()]);
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'language' => $language, 'field_extra' => $field_extra]);
                     }
                 }
             }
         }
     }
 
+    /**
+     * @param $id
+     * @param null $idPagina
+     * @param null $utente
+     * @param null $idSessione
+     * @param null $accesso
+     * @param null $url
+     * @param null $urlLive
+     * @param bool $isSondaggioLive
+     * @return mixed
+     */
     public function actionCompilaSenzaLayout($id, $idPagina = null, $utente = null, $idSessione = null, $accesso = null,
-                                  $url = null)
+                                  $url = null, $urlLive = null, $isSondaggioLive = false, $language = null, $field_extra = null)
     {
+        $renderAction = 'renderAjax';
+        if($isSondaggioLive){
+            $renderAction = 'renderPartial';
+        }
         $pageNonCompilabile = '/pubblicazione/non_compilabile_frontend';
         $thankYouPage       = '/pubblicazione/compilato_frontend';
+        if(!empty($urlLive)){
+            $thankYouPage = $urlLive;
+        }
         $thankYouPageisUrl  = false;
         $this->layout       = '@frontend/views/layouts/main';
         $pathFront          = \Yii::getAlias("@backend/web/uploads/");
-        ModuleRisultatiFrontendAsset::register(\Yii::$app->getView());
-//        if (!$utente) {
-//            $utente = Yii::$app->getUser()->getId();
-//        }
+       // ModuleRisultatiFrontendAsset::register(\Yii::$app->getView());
+        if (!$utente) {
+            $utente = Yii::$app->getUser()->getId();
+        }
         $this->model        = Sondaggi::findOne(['id' => $id]);
 
-        if ($this->model->frontend !== 1 || $this->model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO) {
-            return $this->goHome();
-        }
+
         if($this->model->sondaggio_chiuso_frontend == 1 && !empty($this->model->thank_you_page_sondaggio_chiuso)){
             return $this->redirect($this->model->thank_you_page_sondaggio_chiuso);
         }
         if (!empty(trim($this->model->thank_you_page))) {
             if (strpos($this->model->thank_you_page, '@') === 0) {
-                $thankYouPage = \Yii::getAlias($this->model->thank_you_page);
+              //  $thankYouPage = \Yii::getAlias($this->model->thank_you_page);
             } else {
-                $thankYouPage      = $this->model->thank_you_page;
-                $thankYouPageisUrl = true;
+             //   $thankYouPage      = $this->model->thank_you_page;
+               // $thankYouPageisUrl = true;
             }
         }
         $pagineQuery         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
@@ -415,7 +457,6 @@ class FrontendController extends Controller
             $idPag          = array_search($primaPagina, $arrayPag);
             $prossimaPagina = (isset($arrayPag[$idPag + 1])) ? $arrayPag[$idPag + 1] : 0;
         }
-
         $risposteWithFiles = [];
         if ($primaPagina) {
             $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
@@ -452,11 +493,6 @@ class FrontendController extends Controller
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
-//                foreach ($domandeWithFilesIds as $idDomanda) {
-//                    $files = UploadedFile::getInstanceByName("domanda_$idDomanda");
-//                    \Yii::$app->getModule('attachments')->attachFile($files->tempName, new SondaggiRisposte(), $attribute = "domanda_$idDomanda", $dropOriginFile = true, $saveWithoutModel = true);
-//                }
-//                foreach ($domandeWithFilesModels as $doma
                 if ($completato) {
                     $path        = (!empty($pathFront) ? $pathFront : "uploads/")."Sondaggio_compilato".$idSessione.'_'.time().".pdf";
                     $user        = null;
@@ -473,26 +509,23 @@ class FrontendController extends Controller
                     if (empty($this->model->send_pdf_via_email)) {
                         $path = null;
                     }
-                    $this->sendEmailSondaggioCompilato($this->model, $idSessione, $path,
+                   /*$this->sendEmailSondaggioCompilato($this->model, $idSessione, $path,
                         (!empty($user['user']) ? $user['user'] : []),
-                        ($this->model->abilita_registrazione ? null : $dati_utente), $user['new']);
-                    if ($thankYouPageisUrl) {
-                        header('Location: ' . $thankYouPage);
-                        //return $this->redirect($thankYouPage);
-                    } else {
-                        return $this->renderAjax($thankYouPage,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model]);
-                    }
+                        ($this->model->abilita_registrazione ? null : $dati_utente), $user['new']);*/
+
+                    return $this->redirect(\Yii::$app->request->referrer . '#sondaggio_html');
+                        return $this->renderAjax('/pubblicazione/compilato_frontend',
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model, 'language' => $language, 'field_extra' => $field_extra]);
                 } else {
                     $prossimoModel = new $percorsoNew;
-                    return $this->renderAjax('/pubblicazione/compila',
+                    return $this->$renderAction('/pubblicazione/compila',
                             ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'urlLive' => \yii\helpers\Url::current(), 'language' => $language, 'field_extra' => $field_extra]);
                 }
             } else {
-                return $this->renderAjax('/pubblicazione/compila',
+                return $this->$renderAction('/pubblicazione/compila',
                         ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
             }
         } else {
             $inCorso = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $id])->andWhere(['id' => $idSessione]);
@@ -518,9 +551,10 @@ class FrontendController extends Controller
                 $idSessione            = $sessione->id;
                 $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
                 $pagina                = new $modelloPagina;
-                return $this->renderAjax('/pubblicazione/compila',
+
+                return $this->$renderAction('@vendor/open20/amos-sondaggi/src/views/pubblicazione/compila',
                         ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente, 'id' => $id,
-                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
             } else {
                 $nonCompletato = 0;
                 foreach ($inCorso->all() as $InCorso) {
@@ -581,17 +615,17 @@ class FrontendController extends Controller
                             }
                         }
 
-                        return $this->renderAjax('/pubblicazione/compila',
+                        return $this->$renderAction('/pubblicazione/compila',
                                 ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {//se non esistono risposte date al sondaggio
                         $newModel = null;
                         $percorso = ($this->percorso_model.$id."\\Pagina_".$primaPagina);
                         if (class_exists($percorso)) {
                             $newModel = new $percorso;
-                            return $this->renderAjax('/pubblicazione/compila',
+                            return $this->$renderAction('/pubblicazione/compila',
                                     ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                         } else {
                             return $this->redirect(['/sondaggi/sondaggi-domande-pagine/index', 'idSondaggio' => $id]);
                         }
@@ -610,12 +644,12 @@ class FrontendController extends Controller
                         $idSessione            = $sessione->id;
                         $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
                         $pagina                = new $modelloPagina;
-                        return $this->renderAjax('/pubblicazione/compila',
+                        return $this->$renderAction('/pubblicazione/compila',
                                 ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {
-                        return $this->renderAjax($pageNonCompilabile,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones()]);
+                        return $this->$renderAction($pageNonCompilabile,
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(),  'language' => $language, 'field_extra' => $field_extra]);
                     }
                 }
             }
@@ -975,7 +1009,11 @@ class FrontendController extends Controller
         $row     = 1;
         $profile = null;
         if (!empty($sondRisposta->user_id)) {
-            $profile = UserProfile::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
+            /** @var AmosAdmin $adminModule */
+            $adminModule = AmosAdmin::instance();
+            /** @var UserProfile $userProfileModel */
+            $userProfileModel = $adminModule->createModel('UserProfile');
+            $profile = $userProfileModel::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
         }
         $session_id = $sondRisposta->id;
         if (!empty($profile)) {
@@ -1019,10 +1057,16 @@ class FrontendController extends Controller
                         $attachments    = $risposta->$attribute;
                         $listAttachUrls = [];
                         $risposteString = "<ul>";
-                        /** @var  $attach File */
-                        foreach ($attachments as $attach) {
-                            $risposteString .= "<li><a href='".\Yii::$app->params['platform']['backendUrl'].$attach->getUrl()."'>".$attach->name."</a></li>";
+
+                        if ($attachments instanceof File) {
+                            $risposteString .= "<li><a href='" . \Yii::$app->params['platform']['backendUrl'] . $attachments->getUrl() . "'>" . $attach->name . "</a></li>";
+                        } elseif(is_array($attachments)) {
+                            /** @var  $attach File */
+                            foreach ($attachments as $attach) {
+                                $risposteString .= "<li><a href='" . \Yii::$app->params['platform']['backendUrl'] . $attach->getUrl() . "'>" . $attach->name . "</a></li>";
+                            }
                         }
+
                         $risposteString         .= '</ul>';
                         $xlsData [$row][$colum] = $risposteString;
 //                        $xlsData [$row][$colum] = "<ul><li>".implode("</li><li>", $listAttachUrls)."</ul>";
@@ -1035,7 +1079,10 @@ class FrontendController extends Controller
                 $risposteArray = [];
                 foreach ($query->all() as $risposta) {
                     if ($risposta->sondaggiRispostePredefinite) {
-                        $risposteArray [] = $risposta->sondaggiRispostePredefinite->risposta;
+                        if (empty($risposta->sondaggiRispostePredefinite->code))
+                            $risposteArray [] = $risposta->sondaggiRispostePredefinite->risposta;
+                        else
+                            $risposteArray [] = $risposta->sondaggiRispostePredefinite->code . ' - '. $risposta->sondaggiRispostePredefinite->risposta;
                     }
                 }
 //                    $xlsData [$row][$colum] = implode("\n", $risposteArray);

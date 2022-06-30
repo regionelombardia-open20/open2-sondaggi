@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -26,26 +25,29 @@ use yii\web\Controller;
  */
 class AjaxController extends Controller
 {
+
     /**
      * @inheritdoc
      */
     public function behaviors()
     {
-        $behaviors = ArrayHelper::merge(parent::behaviors(), [
-            'access' => [
-                'class' => AccessControl::className(),
-                'rules' => [
-                    [
-                        'allow' => true,
-                        'actions' => [
-                            'domande-by-pagine',
-                            'pagine',
-                            'pagine-by-sondaggio',
-                        ],
-                        'roles' => ['@']
+        $behaviors = ArrayHelper::merge(parent::behaviors(),
+                [
+                'access' => [
+                    'class' => AccessControl::className(),
+                    'rules' => [
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'domande-by-pagine',
+                                'pagine',
+                                'pagine-by-sondaggio',
+                                'change-status-session'
+                            ],
+                            'roles' => ['@']
+                        ]
                     ]
                 ]
-            ]
         ]);
         return $behaviors;
     }
@@ -54,10 +56,10 @@ class AjaxController extends Controller
     {
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
-            $id = end($_POST['depdrop_parents']);
+            $id          = end($_POST['depdrop_parents']);
             $id_selected = end($_POST['depdrop_params']);
-            $pagine = SondaggiDomandePagine::find()->andWhere(['sondaggi_id' => $id])->asArray()->all();
-            $selected = null;
+            $pagine      = SondaggiDomandePagine::find()->andWhere(['sondaggi_id' => $id])->asArray()->all();
+            $selected    = null;
             if ($id != null && count($pagine) > 0) {
                 $selected = '';
                 foreach ($pagine as $i => $pagina) {
@@ -77,14 +79,33 @@ class AjaxController extends Controller
         return Json::encode(['output' => '', 'selected' => '']);
     }
 
+    public function actionChangeStatusSession($id, $new_state)
+    {
+        if (\Yii::$app->request->isAjax) {
+            $model = \open20\amos\sondaggi\models\SondaggiRisposteSessioni::findOne($id);
+
+            if (\Yii::$app->user->can($new_state, ['model' => $model])) {
+                $model->status = $new_state;
+
+                if ($model->save(false)) {
+                    \Yii::$app->getSession()->addFlash('success',
+                        AmosSondaggi::t('amossondaggi', 'Stato cambiato correttamente.'));
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function actionDomandeByPagine()
     {
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
-            $id = end($_POST['depdrop_parents']);
+            $id          = end($_POST['depdrop_parents']);
             $id_selected = end($_POST['depdrop_params']);
-            $pagine = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $id])->orderBy('ordinamento ASC')->asArray()->all();
-            $selected = null;
+            $pagine      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $id])->orderBy('ordinamento ASC')->asArray()->all();
+            $selected    = null;
             if ($id != null && count($pagine) > 0) {
                 $selected = '';
                 foreach ($pagine as $i => $pagina) {
@@ -108,13 +129,13 @@ class AjaxController extends Controller
     {
         $out = ['more' => false];
         if (!is_null($search)) {
-            $query = new Query();
+            $query          = new Query();
             $query->select('id, titolo AS text')
                 ->from('sondaggi_domande_pagine')
-                ->where('titolo LIKE "%' . $search . '%"');
+                ->where('titolo LIKE "%'.$search.'%"');
             //->limit(20);
-            $command = $query->createCommand();
-            $data = $command->queryAll();
+            $command        = $query->createCommand();
+            $data           = $command->queryAll();
             $out['results'] = array_values($data);
         } elseif ($id > 0) {
             $out['results'] = ['id' => $id, 'text' => SondaggiDomandePagine::findOne($id)->titolo];

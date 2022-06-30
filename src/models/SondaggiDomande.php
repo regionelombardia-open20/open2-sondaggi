@@ -13,6 +13,7 @@ namespace open20\amos\sondaggi\models;
 use open20\amos\sondaggi\AmosSondaggi;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
+use open20\amos\attachments\behaviors\FileBehavior;
 use open20\amos\sondaggi\models\SondaggiDomandeRuleMm;
 
 /**
@@ -29,6 +30,12 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
     public $ordine;
     public $ordina_dopo;
     public $validazione;
+    public $byBassRuleCwh = true;
+
+    /**
+     * @var File[] $file
+     */
+    public $file;
 
     /**
      * @inheritdoc
@@ -48,8 +55,11 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
         return ArrayHelper::merge(parent::rules(),
                 [
                 //[['regola_pubblicazione', 'destinatari', 'validatori'], 'safe'],
+                [['file'], 'file', 'maxFiles' => 0],
                 [['ordina_dopo'], 'integer'],
-                [['condizione_necessaria', 'validazione'], 'safe'],
+                [['is_parent'], 'boolean'],
+                [['parent_id'], 'default'],
+                [['condizione_necessaria', 'validazione', 'is_parent', 'parent_id', 'multi_columns'], 'safe'],
                 ['ordine', 'string'],
                 ['min_int_multipla', 'number', 'min' => 0],
                 ['max_int_multipla', 'number', 'min' => 0],
@@ -65,6 +75,58 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
                     ."return $('#sondaggidomande-sondaggi_domande_tipologie_id').val() == 14;"
                     ."}"],
         ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return ArrayHelper::merge(parent::behaviors(), [
+            'fileBehavior' => [
+                'class' => FileBehavior::className(),
+                'permission' => 'COMPILA_SONDAGGIO'
+            ],
+        ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function afterFind()
+    {
+        parent::afterFind();
+        if (empty($this->file))
+            $this->getFile();
+        $this->multi_columns = json_decode($this->multi_columns, true);
+        return true;
+    }
+
+    public function beforeSave($insert) {
+        if (!parent::beforeSave($insert)) {
+            return false;
+        }
+        $this->multi_columns = json_encode($this->multi_columns);
+        return true;
+    }
+
+    /**
+     * Getter for $this->file;
+     * @return \yii\db\ActiveQuery
+     */
+    public function getFile()
+    {
+        if (empty($this->file)) {
+            $query             = $this->hasMultipleFiles('file');
+            $query->multiple   = false;
+            $this->file = $query->all();
+        }
+        return $this->file;
+    }
+
+    public function setFile($file)
+    {
+        $this->file = $file;
     }
 
     public function checkIntervalloSelezioniMultiple($model, $attribute)
@@ -89,15 +151,6 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
       'tagValues' => '',
       'regola_pubblicazione' => 'Pubblicata per',
       'destinatari' => 'Per i condominii',
-      ]);
-      }
-
-      public function behaviors()
-      {
-      return ArrayHelper::merge(parent::behaviors(), [
-      'CwhNetworkBehaviors' => [
-      'class' => CwhNetworkBehaviors::className(),
-      ]
       ]);
       }
 
@@ -126,6 +179,14 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
                 ->andWhere(['sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
                 ->andWhere(['!=', 'id', $this->id])
                 ->andWhere(['in', 'sondaggi_domande_tipologie_id', [5, 6]]);
+    }
+
+    public function getChildren() {
+        return SondaggiDomande::find()->andWhere(['parent_id' => $this->id]);
+    }
+
+    public function getParent() {
+        return SondaggiDomande::findOne($this->parent_id);
     }
 
     public function getTutteDomandeDellePagine()
@@ -331,11 +392,22 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
     }
 
     /**
-     * @param $user_id
+     *
+     * @param int $user_id
+     * @param int $session_id
      * @return \yii\db\ActiveQuery
      */
     public function getRispostePerUtente($user_id = null, $session_id)
     {
+		if($this->is_parent){
+			$query = $this->getSondaggiRisposteChilds()
+            ->leftJoin('sondaggi_risposte_sessioni',
+                'sondaggi_risposte_sessioni.id = sondaggi_risposte.sondaggi_risposte_sessioni_id')
+            ->andWhere(['sondaggi_risposte_sessioni.id' => $session_id]);
+        if (!empty($user_id)) {
+            $query->andWhere(['sondaggi_risposte_sessioni.user_id' => $user_id]);
+        }
+		} else {
         $query = $this->getSondaggiRispostes()
             ->leftJoin('sondaggi_risposte_sessioni',
                 'sondaggi_risposte_sessioni.id = sondaggi_risposte.sondaggi_risposte_sessioni_id')
@@ -343,6 +415,7 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
         if (!empty($user_id)) {
             $query->andWhere(['sondaggi_risposte_sessioni.user_id' => $user_id]);
         }
+		}
         return $query;
     }
 
@@ -351,7 +424,7 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
      * @param type $ids_validazioni
      */
     public function setValidazione($ids_validazioni)
-    { 
+    {
         if (!empty($this->id)) {
             SondaggiDomandeRuleMm::deleteAll(['sondaggi_domande_id' => $this->id]);
             if (!empty($ids_validazioni)) {

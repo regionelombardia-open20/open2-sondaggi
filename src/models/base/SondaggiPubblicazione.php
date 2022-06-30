@@ -53,7 +53,7 @@ class SondaggiPubblicazione extends \open20\amos\core\record\Record {
     public function rules() {
         return [
             [['ruolo', 'sondaggi_id', 'tipologie_entita'], 'required'],
-            [['sondaggi_id', 'tipologie_entita', 'entita_id', 'created_by', 'updated_by', 'deleted_by', 'version', 'text_end_html', 'text_not_compilable_html'], 'integer'],
+            [['sondaggi_id', 'tipologie_entita', 'entita_id', 'closing_at', 'created_by', 'updated_by', 'deleted_by', 'version', 'text_end_html', 'text_not_compilable_html'], 'integer'],
             [['created_at', 'updated_at', 'deleted_at', 'mail_message', 'mail_subject', 'text_not_compilable', 'text_end', 'text_end_title'], 'safe'],
             [['ruolo'], 'string', 'max' => 255],
             [['ruolo'], 'string', 'max' => 255]
@@ -69,6 +69,7 @@ class SondaggiPubblicazione extends \open20\amos\core\record\Record {
             'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Sondaggio'),
             'tipologie_entita' => AmosSondaggi::t('amossondaggi', 'Tipologie attività'),
             'entita_id' => AmosSondaggi::t('amossondaggi', 'Attività formativa'),
+            'closing_at' => AmosSondaggi::t('amossondaggi', 'Chiude il'),
             'text_end_html' => AmosSondaggi::t('amossondaggi', 'Messaggio di fine sondaggio in HTML'),
             'text_not_compilable_html' => AmosSondaggi::t('amossondaggi', 'Messaggio di sondaggio non compilabile in HTML'),
             'mail_message' => AmosSondaggi::t('amossondaggi', 'Testo della e-mail di notifica'),

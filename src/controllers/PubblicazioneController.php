@@ -26,10 +26,11 @@ use open20\amos\sondaggi\models\SondaggiDomande;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
 use open20\amos\sondaggi\models\SondaggiRisposte;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\models\SondaggiUsersInvitationMm;
 use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\amos\sondaggi\widgets\icons\WidgetIconSondaggiGeneral;
-use kartik\mpdf\Pdf;
 use Yii;
+use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Url;
@@ -37,6 +38,9 @@ use yii\web\ForbiddenHttpException;
 use yii\web\UploadedFile;
 use open20\amos\sondaggi\assets\ModuleRisultatiAsset;
 use open20\amos\core\widget\WidgetAbstract;
+use open20\amos\admin\AmosAdmin;
+use open20\amos\organizzazioni\models\ProfiloUserMm;
+use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
 
 /**
  * Class PubblicazioneController
@@ -56,6 +60,7 @@ class PubblicazioneController extends CrudController
     public $percorso_view;
     public $percorso_validator;
     public $alias_path;
+    public $sondaggiModule;
 
     /**
      * @inheritdoc
@@ -81,13 +86,14 @@ class PubblicazioneController extends CrudController
     public function init()
     {
         $this->initDashboardTrait();
+        $this->sondaggiModule = AmosSondaggi::instance();
 
         if (!defined('DS')) {
             define('DS', DIRECTORY_SEPARATOR);
         }
 
-        $this->setModelObj(new Sondaggi());
-        $this->setModelSearch(new SondaggiSearch());
+        $this->setModelObj($this->sondaggiModule->createModel('Sondaggi'));
+        $this->setModelSearch($this->sondaggiModule->createModel('SondaggiSearch'));
 
         $this->setAvailableViews([
             'list' => [
@@ -123,17 +129,33 @@ class PubblicazioneController extends CrudController
                         [
                             'allow' => true,
                             'actions' => [
+                                'compila',
+                                'ri-compila',
+                                'review'
+                            ],
+                            'roles' => ['COMPILA_SONDAGGIO']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
                                 'notifica',
                                 'pubblica',
+                                'depubblica',
                                 'pubblicazione',
+                                'preview',
                                 'sondaggio-pubblico',
                                 'sondaggi-pubblici',
                                 'all-admin',
-                                'genera-sondaggio',
-                                'compila',
-                                'ri-compila'
+                                'genera-sondaggio'
                             ],
-                            'roles' => ['@']
+                            'roles' => ['AMMINISTRAZIONE_SONDAGGI']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'preview'
+                            ],
+                            'roles' => ['SONDAGGI_READ']
                         ],
                         [
                             'allow' => true,
@@ -145,7 +167,20 @@ class PubblicazioneController extends CrudController
                         [
                             'allow' => true,
                             'actions' => [
+                                'load-users',
+                                'assign-compiler',
+                                'remove-compiler'
+                            ],
+                            'roles' => ['RESPONSABILE_ENTE']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
                                 'own-interest',
+                                'by-user-organization',
+                                'by-user-organization-open',
+                                'by-user-organization-closed',
+                                'view-compilation',
                                 'all',
                             ],
                             'roles' => ['COMPILATORE_SONDAGGI']
@@ -154,6 +189,7 @@ class PubblicazioneController extends CrudController
                             'allow' => true,
                             'actions' => [
                                 'own-interest',
+                                'by-user-organization',
                                 'all',
                             ],
                             'roles' => ['COMPILATORE_AZIONI']
@@ -236,9 +272,9 @@ class PubblicazioneController extends CrudController
     public function setTitleAndBreadcrumbs($pageTitle)
     {
         Yii::$app->view->title                 = $pageTitle;
-        Yii::$app->view->params['breadcrumbs'] = [
-            ['label' => $pageTitle]
-        ];
+        // Yii::$app->view->params['breadcrumbs'] = [
+        //     ['label' => $pageTitle]
+        // ];
     }
 
     /**
@@ -249,7 +285,7 @@ class PubblicazioneController extends CrudController
      */
     public function actionIndex($layout = null)
     {
-        return $this->redirect(['/sondaggi/pubblicazione/own-interest']);
+        return $this->redirect(['/sondaggi/pubblicazione/all']);
 
         Url::remember();
         $this->setDataProvider($this->modelSearch->searchDominio(Yii::$app->request->getQueryParams()));
@@ -271,8 +307,77 @@ class PubblicazioneController extends CrudController
      */
     public function actionOwnInterest()
     {
-        $this->setDataProvider($this->modelSearch->searchOwnInterest(Yii::$app->request->getQueryParams()));
-        return $this->baseListsAction(AmosSondaggi::t('amossondaggi', '#page_title_own_interest'), true, true);
+        if ($this->sondaggiModule->hideOwnInterest) {
+            return $this->redirect(['sondaggi/manage']);
+        }
+        \Yii::debug(Yii::$app->request->getQueryParams(), 'sondaggi');
+        $dataProvider = $this->modelSearch->searchOwnInterest(Yii::$app->request->getQueryParams());
+
+        $this->setDataProvider($dataProvider);
+
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
+        // $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+        // $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/all');
+        // $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+        //         'amossondaggi', 'Visualizza la lista di tutti i sondaggi'
+        // );
+        return $this->baseListsAction(AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse '), true, true);
+    }
+
+    /**
+     * @return string
+     */
+    public function actionByUserOrganization()
+    {
+        $dataProvider = $this->modelSearch->searchByUserOrganization(Yii::$app->request->getQueryParams());
+
+        $this->setDataProvider($dataProvider);
+
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
+        // $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+        // $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/all');
+        // $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+        //         'amossondaggi', 'Visualizza la lista di tutti i sondaggi'
+        // );
+        return $this->baseListsAction(AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse '), true, true);
+    }
+
+    /**
+     * @return string
+     */
+    public function actionByUserOrganizationOpen()
+    {
+        $dataProvider = $this->modelSearch->searchByUserOrganizationOpen(Yii::$app->request->getQueryParams());
+
+        $this->setDataProvider($dataProvider);
+
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', '#open_polls');
+        $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', '#closed_polls');
+        $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi',
+                '/sondaggi/pubblicazione/by-user-organization-closed');
+        // $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+        //         'amossondaggi', 'Visualizza la lista di tutti i sondaggi'
+        // );
+        return $this->baseListsAction(AmosSondaggi::t('amossondaggi', '#open_polls'), true, true);
+    }
+
+    /**
+     * @return string
+     */
+    public function actionByUserOrganizationClosed()
+    {
+        $dataProvider = $this->modelSearch->searchByUserOrganizationClosed(Yii::$app->request->getQueryParams());
+
+        $this->setDataProvider($dataProvider);
+
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', '#closed_polls');
+        $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', '#open_polls');
+        $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi',
+                '/sondaggi/pubblicazione/by-user-organization-open');
+        // $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+        //         'amossondaggi', 'Visualizza la lista di tutti i sondaggi'
+        // );
+        return $this->baseListsAction(AmosSondaggi::t('amossondaggi', '#closed_polls'), true, true);
     }
 
     /**
@@ -282,6 +387,15 @@ class PubblicazioneController extends CrudController
      */
     public function actionAll()
     {
+        if ($this->sondaggiModule->enableDashboard == true) {
+            return $this->redirect('/sondaggi/pubblicazione/own-interest');
+        }
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+        $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
+        $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/own-interest');
+        $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+                'amossondaggi', 'Visualizza la lista dei sondaggi di mio interesse'
+        );
         $this->setDataProvider($this->modelSearch->searchAll(Yii::$app->request->getQueryParams()));
         return $this->baseListsAction(AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi'), true, true);
     }
@@ -291,7 +405,7 @@ class PubblicazioneController extends CrudController
      */
     public function actionCreate()
     {
-        return $this->redirect('/sondaggi/sondaggi/create');
+        return $this->redirect('/sondaggi/dashboard/create');
     }
 
     /**
@@ -319,8 +433,25 @@ class PubblicazioneController extends CrudController
         Url::remember();
         $dataprovider = $this->modelSearch->search(Yii::$app->request->getQueryParams(), 'admin-scope', null);
         $dataprovider->query->andWhere(['!=', 'status', Sondaggi::WORKFLOW_STATUS_BOZZA]);
+
+        $this->setAvailableViews([
+            'grid' => [
+                'name' => 'grid',
+                'label' => AmosIcons::show('view-list-alt').Html::tag('p',
+                    AmosSondaggi::tHtml('amossondaggi', 'Tabella')),
+                'url' => '?currentView=grid'
+            ]
+        ]);
+        $this->setCurrentView($this->getAvailableView('grid'));
+
         $this->setDataProvider($dataprovider);
         $this->setListViewsParams(true, true);
+
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Pubblica i sondaggi');
+        $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+        $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/all');
+        $this->view->params['titleLinkAll'] = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
+
         return $this->render('pubblicazione',
                 [
                 'dataProvider' => $this->getDataProvider(),
@@ -336,6 +467,9 @@ class PubblicazioneController extends CrudController
      */
     public function actionPubblica($idSondaggio, $url = null)
     {
+        if (!Yii::$app->controller->sondaggiModule->currentUserCanActivatePool()) {
+            throw new ForbiddenHttpException();
+        }
         $dir_models = $this->alias_path.DS.$this->base_dir.DS."models".DS."q".$idSondaggio;
         $dir_views  = $this->alias_path.DS.$this->base_dir.DS."views".DS."q".$idSondaggio;
 
@@ -346,6 +480,15 @@ class PubblicazioneController extends CrudController
             mkdir($dir_views, 0777, true);
         }
         $sondaggio  = Sondaggi::findOne(['id' => $idSondaggio]);
+
+        if (!$sondaggio->verificaSondaggioPubblicabile()) {
+            Yii::$app->getSession()->addFlash('danger',
+            AmosSondaggi::t('amossondaggi', '#cannot_publish'));
+            if (!empty($url))
+                return $this->redirect($url);
+            return $this->redirect('index');
+        }
+
         $pagine     = $sondaggio->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
         $num_pagine = $pagine->count();
         $np         = 1;
@@ -358,14 +501,41 @@ class PubblicazioneController extends CrudController
                 $this->percorso_validator, $this->percorso_model.$idSondaggio);
         }
         $sondaggio->status = Sondaggi::WORKFLOW_STATUS_VALIDATO;
-        $sondaggio->save();
+        $sondaggio->save(false);
+
+        $user_id = \Yii::$app->getUser()->id;
+        SondaggiUtility::sendEmailPublishedPoll($sondaggio->id, $user_id);
         if ($url) {
             Yii::$app->getSession()->addFlash('success',
-                AmosSondaggi::tHtml('amossondaggi', 'Sondaggio pubblicato correttamente.'));
+                AmosSondaggi::tHtml('amossondaggi', '#poll_activated'));
             return $this->redirect($url);
         } else {
             Yii::$app->getSession()->addFlash('success',
-                AmosSondaggi::tHtml('amossondaggi', 'Sondaggio pubblicato correttamente.'));
+                AmosSondaggi::tHtml('amossondaggi', '#poll_activated'));
+            return $this->redirect('index');
+        }
+    }
+
+    /**
+     * Riporta il sondaggio in bozza
+     * @param string|null $url
+     * @return \yii\web\Response
+     */
+    public function actionDepubblica($idSondaggio, $url = null)
+    {
+        if (!Yii::$app->controller->sondaggiModule->currentUserCanActivatePool()) {
+            throw new ForbiddenHttpException();
+        }
+        $sondaggio = Sondaggi::findOne(['id' => $idSondaggio]);
+        $sondaggio->sendToStatus(Sondaggi::WORKFLOW_STATUS_BOZZA);
+        $sondaggio->save(false);
+        if ($url) {
+            Yii::$app->getSession()->addFlash('success',
+                AmosSondaggi::tHtml('amossondaggi', '#poll_deactivated'));
+            return $this->redirect($url);
+        } else {
+            Yii::$app->getSession()->addFlash('success',
+                AmosSondaggi::tHtml('amossondaggi', '#poll_deactivated'));
             return $this->redirect('index');
         }
     }
@@ -408,6 +578,154 @@ class PubblicazioneController extends CrudController
     }
 
     /**
+     * Action che permette di visualizzare il sondaggio
+     * @param int $id Id del sondaggio da compilare
+     * @param int|null $idPagina
+     * @param int|null $utente User ID
+     * @param null $idSessione
+     * @param null $accesso
+     * @param null $url
+     * @return string
+     */
+    public function actionPreview($id, $idPagina = null, $utente = null, $idSessione = null, $accesso = null,
+                                  $url = null)
+    {
+        $dir_models = $this->alias_path.DS.$this->base_dir.DS."models".DS."q".$id;
+        $dir_views  = $this->alias_path.DS.$this->base_dir.DS."views".DS."q".$id;
+
+        if (!is_dir($dir_models)) {
+            mkdir($dir_models, 0777, true);
+        }
+        if (!is_dir($dir_views)) {
+            mkdir($dir_views, 0777, true);
+        }
+        $sondaggio  = Sondaggi::findOne(['id' => $id]);
+        $pagine     = $sondaggio->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
+        $num_pagine = $pagine->count();
+        $np         = 1;
+        $generatore = new GeneratoreSondaggio();
+        foreach ($pagine->all() as $pagina) {
+            $generatore->creaValidator($this->percorso_validator, $pagina['id']);
+            $generatore->creaView("backend".DS.$this->base_dir.DS."views".DS."q".$id, $pagina['id'],
+                $this->percorso_view.$id);
+            $generatore->creaModel("backend".DS.$this->base_dir.DS."models".DS."q".$id, $pagina['id'],
+                $this->percorso_validator, $this->percorso_model.$id);
+        }
+
+        $this->setUpLayout('main');
+        if (!$utente) {
+            $utente = Yii::$app->getUser()->getId();
+        }
+        $this->model = Sondaggi::findOne(['id' => $id]);
+
+        $orgId       = null;
+        if (AmosSondaggi::instance()->compilationToOrganization) {
+            $orgId = $this->model->getOrgEntity($utente)->id;
+        }
+
+        ModuleRisultatiAsset::register(\Yii::$app->getView());
+        ModuleSondaggiAsset::register(\Yii::$app->getView());
+
+        $pagineQuery         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
+        $pagine              = $pagineQuery->all();
+        $primaPagina         = $pagine[0]['id'];
+        $ultimaPagina        = $pagine[$pagineQuery->count() - 1]['id'];
+        $prossimaPagina      = null;
+        $arrayPag            = [];
+        $completato          = false;
+        $domandeWithFilesIds = [];
+        foreach ($pagine as $Pag) {
+            $arrayPag[] = $Pag['id'];
+        }
+        if ($idPagina) {
+            if ($idPagina != $ultimaPagina) {
+                $idPag          = array_search($idPagina, $arrayPag);
+                $prossimaPagina = $arrayPag[$idPag + 1];
+            }
+        } else {
+            $idPagina       = $primaPagina;
+            $idPag          = array_search($primaPagina, $arrayPag);
+            $prossimaPagina = (isset($arrayPag[$idPag + 1])) ? $arrayPag[$idPag + 1] : 0;
+        }
+
+        $risposteWithFiles = [];
+        if ($primaPagina) {
+            $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
+            $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
+            $risposteWithFiles      = [];
+            $domandeWithFilesModels = $query->all();
+            foreach ((Array) $domandeWithFilesModels as $domandaSondaggio) {
+                $domandeWithFilesIds []        = $domandaSondaggio->id;
+                $risposta                      = new SondaggiRisposte();
+                $risposta->sondaggi_domande_id = $domandaSondaggio->id;
+                $risposteWithFiles []          = $risposta;
+            }
+        }
+
+        if (Yii::$app->request->isPost) {
+            $data     = Yii::$app->request->post();
+            $idPagina = $data['idPagina'];
+            \Yii::debug($data, 'sondaggi');
+            if ($idPagina != $ultimaPagina) {
+                $idPag          = array_search($idPagina, $arrayPag);
+                $prossimaPagina = $arrayPag[$idPag + 1];
+            }
+            else {
+                if (!empty($url))
+                    return $this->redirect([$url]);
+                else
+                    return $this->redirect(['/sondaggi']);
+            }
+
+            $utente      = $data['utente'];
+            $idSessione  = null;
+            $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
+            $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
+            $newModel    = new $percorso;
+            if ($newModel->load($data) && $newModel->validate()) {
+                $prossimoModel = new $percorsoNew;
+                return $this->render('/pubblicazione/compila',
+                    ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+
+            } else {
+                return $this->render('/pubblicazione/compila',
+                    ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+            }
+        } else {
+            if ($primaPagina) {
+                $paginaSondaggio = SondaggiDomandePagine::findOne($primaPagina);
+                $query           = $paginaSondaggio->getSondaggiDomandesWithFiles();
+
+                foreach ($query->all() as $domandaSondaggio) {
+                    $risposta                      = new SondaggiRisposte();
+                    $risposta->sondaggi_domande_id = $domandaSondaggio->id;
+                    $risposteWithFiles []          = $risposta;
+                }
+            }
+
+            $idSondaggio           = $id;
+            $sessione              = new SondaggiRisposteSessioni();
+            $sessione->begin_date  = date('Y-m-d H:i:s');
+            $sessione->end_date    = null;
+            $sessione->sondaggi_id = $id;
+            $sessione->user_id     = $utente;
+            $sessione->lang = $language;
+            $sessione->field_extra = $field_extra;
+            if (AmosSondaggi::instance()->compilationToOrganization) {
+                $sessione->organization_id = $orgId;
+            }
+            $idSessione    = $sessione->id;
+            $modelloPagina = $this->percorso_model.$id."\\Pagina_".$primaPagina;
+            $pagina        = new $modelloPagina;
+            return $this->render('/pubblicazione/compila',
+                    ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente, 'id' => $id,
+                    'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+        }
+    }
+
+    /**
      * Action che permette di compilare il sondaggio
      * @param int $id Id del sondaggio da compilare
      * @param int|null $idPagina
@@ -418,9 +736,9 @@ class PubblicazioneController extends CrudController
      * @return string
      */
     public function actionCompila($id, $idPagina = null, $utente = null, $idSessione = null, $accesso = null,
-                                  $url = null)
+                                  $url = null, $read = false, $language = null, $field_extra = null)
     {
-        $draft = false;
+        $draft              = false;
         $pageNonCompilabile = '/pubblicazione/non_compilabile';
         $thankYouPage       = '/pubblicazione/compilato';
         $this->setUpLayout('main');
@@ -428,12 +746,33 @@ class PubblicazioneController extends CrudController
             $utente = Yii::$app->getUser()->getId();
         }
         $this->model = Sondaggi::findOne(['id' => $id]);
+    
+        if ($read && !empty($this->model->sondaggiRisposteSessionisByEntity[0])) {
+            return $this->redirect(['pubblicazione/view-compilation', 'id' => $this->model->sondaggiRisposteSessionisByEntity[0]->id, 'url' => $url]);
+        }
+        
+        $orgId       = null;
+        if (AmosSondaggi::instance()->compilationToOrganization) {
+            $orgId = $this->model->getOrgEntity($utente)->id;
+        }
 
-        if ($this->model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO && !\Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI')) {
+        // if (!$this->model->close_date < date('Y-m-d')) {
+        //     \Yii::$app->getSession()->addFlash('danger',
+        //     AmosSondaggi::tHtml('amossondaggi', '#cannot_compile_poll_completed'));
+        //     return $this->goBack();
+        // }
+
+        if (!$this->model->isCompilable() && !\Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI')) {
             \Yii::$app->getSession()->addFlash('danger',
                 AmosSondaggi::tHtml('amossondaggi', 'Sondaggio non compilabile.'));
             return $this->goBack();
         }
+
+//        $moduleSondaggi = AmosSondaggi::instance();
+//        $onlyOneCompilation = false;
+//        if ($moduleSondaggi->enableCompilationWorkflow == true) {
+//            $onlyOneCompilation = true;
+//        }
 
         ModuleRisultatiAsset::register(\Yii::$app->getView());
 
@@ -480,6 +819,7 @@ class PubblicazioneController extends CrudController
 
         if (Yii::$app->request->isPost) {
             $data     = Yii::$app->request->post();
+            \Yii::debug($data, 'sondaggi');
             $idPagina = $data['idPagina'];
             if ($idPagina != $ultimaPagina) {
                 $idPag          = array_search($idPagina, $arrayPag);
@@ -508,35 +848,49 @@ class PubblicazioneController extends CrudController
 //                foreach ($domandeWithFilesModels as $doma
                 if ($completato) {
                     $path = "uploads/Sondaggio_compilato".$idSessione.'_'.time().".pdf";
-                    $this->generateSondaggiPdf($idSessione, $this->model->id, $path);
+                    $sessione = SondaggiRisposteSessioni::findOne($idSessione);
+                    $sessione->generateSondaggiPdf($path);
                     if ($this->model->send_pdf_via_email) {
+                        SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
+                    }
+                    if ($this->model->send_pdf_to_compiler) {
                         SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
                     }
 
                     return $this->render($thankYouPage,
-                            ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones()]);
+                            ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'sondaggio' => $this->model, 'sessione' => $sessione,  'language' => $language, 'field_extra' => $field_extra]);
                 } else if ($draft) {
-				//	pr($idSessione); die;
+                    //	pr($idSessione); die;
                     $newModel->save($idSessione, $accesso, $completato);
 
-                    $this->addFlash('success',
-                            AmosSondaggi::tHtml('amossondaggi', 'Bozza salvata con successo'));
+                    $this->addFlash('success', AmosSondaggi::tHtml('amossondaggi', 'Bozza salvata con successo'));
                     $this->redirect(['/azioni/azioni/index']);
                     //return $this->redirect(['/sondaggi/pubblicazione/ri-compila?id='.$idSessione]);
                 } else {
                     $prossimoModel = new $percorsoNew;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                            'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                 }
             } else {
                 return $this->render('/pubblicazione/compila',
                         ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
             }
         } else {
-            $inCorso = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $id])->andWhere(['user_id' => $utente]);
-            if ($inCorso->count() == 0) {
+            $inCorso = SondaggiRisposteSessioni::find()->andWhere(['sondaggi_id' => $id]);
+            \Yii::debug($orgId, 'sondaggi');
+            \Yii::debug(AmosSondaggi::instance()->compilationToOrganization, 'sondaggi');
+            if (AmosSondaggi::instance()->compilationToOrganization) {
+                $inCorso = $inCorso->andWhere(['organization_id' => $orgId]);
+            } else {
+                $inCorso = $inCorso->andWhere(['user_id' => $utente]);
+            }
+
+
+            $countInCorso = $inCorso->count();
+
+            if ($countInCorso == 0) {
                 if ($primaPagina) {
                     $paginaSondaggio = SondaggiDomandePagine::findOne($primaPagina);
                     $query           = $paginaSondaggio->getSondaggiDomandesWithFiles();
@@ -554,14 +908,23 @@ class PubblicazioneController extends CrudController
                 $sessione->end_date    = null;
                 $sessione->sondaggi_id = $id;
                 $sessione->user_id     = $utente;
+                $sessione->lang = $language;
+                $sessione->field_extra = $field_extra;
+                if (AmosSondaggi::instance()->compilationToOrganization) {
+                    $sessione->organization_id = $orgId;
+                }
                 $sessione->save();
-                $idSessione            = $sessione->id;
-                $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
-                $pagina                = new $modelloPagina;
+                $idSessione    = $sessione->id;
+                $modelloPagina = $this->percorso_model.$id."\\Pagina_".$primaPagina;
+                $pagina        = new $modelloPagina;
                 return $this->render('/pubblicazione/compila',
                         ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente, 'id' => $id,
-                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
             } else {
+                if ($countInCorso > 0 && $this->sondaggiModule->enableSingleCompilation == true && $this->sondaggiModule->enableRecompile
+                    == true) {
+                    return $this->redirect(['ri-compila', 'id' => $inCorso->one()->id, 'url' => $url, 'language' => $language, 'field_extra' => $field_extra]);
+                }
                 $nonCompletato = 0;
                 foreach ($inCorso->all() as $InCorso) {
                     if ($InCorso['completato'] == 0) {
@@ -623,7 +986,7 @@ class PubblicazioneController extends CrudController
 
                         return $this->render('/pubblicazione/compila',
                                 ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {//se non esistono risposte date al sondaggio
                         $newModel = null;
                         $percorso = ($this->percorso_model.$id."\\Pagina_".$primaPagina);
@@ -631,12 +994,12 @@ class PubblicazioneController extends CrudController
                             $newModel = new $percorso;
                             return $this->render('/pubblicazione/compila',
                                     ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $id,
-                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                         } else {
                             return $this->redirect(['/sondaggi/sondaggi/index']);
                         }
                     }
-                } else {//Se non esiste un sondaggio incompleto da completare                     
+                } else {//Se non esiste un sondaggio incompleto da completare
                     if (($inCorso->count() < $this->model->compilazioni_disponibili || $this->model->compilazioni_disponibili
                         == 0) && (($this->model->abilita_criteri_valutazione == 1 && $valutatori < $this->model->n_max_valutatori)
                         || $this->model->n_max_valutatori == 0 || $this->model->abilita_criteri_valutazione == 0)) {
@@ -645,53 +1008,73 @@ class PubblicazioneController extends CrudController
                         $sessione->begin_date  = date('Y-m-d H:i:s');
                         $sessione->end_date    = null;
                         $sessione->sondaggi_id = $id;
+                        $sessione->lang = $language;
+                        $sessione->field_extra = $field_extra;
                         $sessione->user_id     = $utente;
+                        if (AmosSondaggi::instance()->compilationToOrganization) {
+                            $sessione->$organization_id = $orgId;
+                        }
                         $sessione->save();
-                        $idSessione            = $sessione->id;
-                        $modelloPagina         = $this->percorso_model.$id."\\Pagina_".$primaPagina;
-                        $pagina                = new $modelloPagina;
+                        $idSessione    = $sessione->id;
+                        $modelloPagina = $this->percorso_model.$id."\\Pagina_".$primaPagina;
+                        $pagina        = new $modelloPagina;
                         return $this->render('/pubblicazione/compila',
                                 ['model' => $pagina, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                                'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
                     } else {
                         return $this->render($pageNonCompilabile,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones()]);
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'language' => $language, 'field_extra' => $field_extra]);
                     }
                 }
             }
         }
     }
 
-    public function actionRiCompila($id, $url = null) {
-        $draft = false;
+    public function actionRiCompila($id, $url = null, $language = null, $field_extra = null)
+    {
+        $draft              = false;
         $pageNonCompilabile = '/pubblicazione/non_compilabile';
-        $thankYouPage = '/pubblicazione/ricompilato';
+        $thankYouPage       = '/pubblicazione/ricompilato';
         $this->setUpLayout('main');
         if (!$utente) {
             $utente = Yii::$app->getUser()->getId();
         }
         $sessione = SondaggiRisposteSessioni::findOne($id);
+
+
         if (empty($sessione) || empty($sessione->user_id)) {
             \Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', 'Sondaggio inesistente.'));
             return $this->goBack();
         }
+
+        if ($this->sondaggiModule->enableCompilationWorkflow == true) {
+            $sessione->status = SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA;
+            $sessione->save(false);
+        }
+
         $this->model = Sondaggi::findOne(['id' => $sessione->sondaggi_id]);
         $idSondaggio = $this->model->id;
 
+        if ($this->model->close_date < date('Y-m-d')) {
+            \Yii::$app->getSession()->addFlash('danger',
+                AmosSondaggi::tHtml('amossondaggi', '#cannot_compile_poll_completed'));
+            return $this->goBack();
+        }
+
         if ($this->model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO && !\Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI')) {
             \Yii::$app->getSession()->addFlash('danger',
-                    AmosSondaggi::tHtml('amossondaggi', 'Sondaggio non compilabile.'));
+                AmosSondaggi::tHtml('amossondaggi', 'Sondaggio non compilabile.'));
             return $this->goBack();
         }
 
         ModuleRisultatiAsset::register(\Yii::$app->getView());
 
-        $pagine = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
-        $primaPagina = $pagine->all()[0]['id'];
-        $ultimaPagina = $pagine->all()[$pagine->count() - 1]['id'];
+        $pagine         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
+        $primaPagina    = $pagine->all()[0]['id'];
+        $ultimaPagina   = $pagine->all()[$pagine->count() - 1]['id'];
         $prossimaPagina = null;
-        $arrayPag = [];
-        $completato = false;
+        $arrayPag       = [];
+        $completato     = false;
 
         foreach ($pagine->all() as $Pag) {
             $arrayPag[] = $Pag['id'];
@@ -702,26 +1085,26 @@ class PubblicazioneController extends CrudController
 
         if ($idPagina) {
             if ($idPagina != $ultimaPagina) {
-                $idPag = array_search($idPagina, $arrayPag);
+                $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
             }
         } else {
-            $idPagina = $primaPagina;
-            $idPag = array_search($primaPagina, $arrayPag);
+            $idPagina       = $primaPagina;
+            $idPag          = array_search($primaPagina, $arrayPag);
             $prossimaPagina = (isset($arrayPag[$idPag + 1])) ? $arrayPag[$idPag + 1] : 0;
         }
 
         $risposteWithFiles = [];
         if ($primaPagina) {
-            $paginaSondaggio = SondaggiDomandePagine::findOne($primaPagina);
-            $query = $paginaSondaggio->getSondaggiDomandesWithFiles();
-            $risposteWithFiles = [];
+            $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
+            $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
+            $risposteWithFiles      = [];
             $domandeWithFilesModels = $query->all();
             foreach ((Array) $domandeWithFilesModels as $domandaSondaggio) {
-                $domandeWithFilesIds [] = $domandaSondaggio->id;
-                $risposta = new SondaggiRisposte();
+                $domandeWithFilesIds []        = $domandaSondaggio->id;
+                $risposta                      = new SondaggiRisposte();
                 $risposta->sondaggi_domande_id = $domandaSondaggio->id;
-                $risposteWithFiles [] = $risposta;
+                $risposteWithFiles []          = $risposta;
             }
         }
 
@@ -731,10 +1114,11 @@ class PubblicazioneController extends CrudController
         }
 
         if (Yii::$app->request->isPost) {
-            $data = Yii::$app->request->post();
+            $data     = Yii::$app->request->post();
+                \Yii::debug($data, 'sondaggi');
             $idPagina = $data['idPagina'];
             if ($idPagina != $ultimaPagina) {
-                $idPag = array_search($idPagina, $arrayPag);
+                $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
             } else {
                 $completato = true;
@@ -746,11 +1130,11 @@ class PubblicazioneController extends CrudController
                     $completato = false;
                 }
             }
-            $utente = $sessione->user_id;
-            $idSessione = $id;
-            $percorso = $this->percorso_model . $idSondaggio . "\\Pagina_" . $idPagina;
-            $percorsoNew = $this->percorso_model . $idSondaggio . "\\Pagina_" . $prossimaPagina;
-            $newModel = new $percorso;
+            $utente      = $sessione->user_id;
+            $idSessione  = $id;
+            $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
+            $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
+            $newModel    = new $percorso;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($id, null, $completato);
 
@@ -760,34 +1144,69 @@ class PubblicazioneController extends CrudController
 //                }
 //                foreach ($domandeWithFilesModels as $doma
                 if ($completato) {
-                    $path = "uploads/Sondaggio_compilato" . $idSessione . '_' . time() . ".pdf";
-                    $this->generateSondaggiPdf($idSessione, $this->model->id, $path);
+                    $path = "uploads/Sondaggio_compilato".$idSessione.'_'.time().".pdf";
+                    $sessione = SondaggiRisposteSessioni::findOne($idSessione);
+                    $sessione->generateSondaggiPdf($path);
                     if ($this->model->send_pdf_via_email) {
                         SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
                     }
 
                     return $this->render($thankYouPage,
-                                    ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones()]);
+                            ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(),  'sondaggio' => $this->model, 'sessione' => $sessione,  'language' => $language, 'field_extra' => $field_extra]);
                 } else if ($draft) {
                     $newModel->save($id, null, $completato);
                     $sessione->completato = 0;
-                    $sessione->end_date = null;
+                    $sessione->end_date   = null;
                     $sessione->save();
 
-                    $this->addFlash('success',
-                            AmosSondaggi::tHtml('amossondaggi', 'Bozza salvata con successo'));
+                    $this->addFlash('success', AmosSondaggi::tHtml('amossondaggi', 'Bozza salvata con successo'));
                     // $this->redirect(['/azioni/azioni/index']);
                     return $this->goBack();
                 } else {
                     $prossimoModel = new $percorsoNew;
+                    $pagina        = SondaggiDomandePagine::findOne($prossimaPagina);
+                    $tutteDomande  = $pagina->getSondaggiDomandes();
+
+                    $query                  = $pagina->getSondaggiDomandesWithFiles();
+                    $domandeWithFilesModels = $query->all();
+                    foreach ((Array) $domandeWithFilesModels as $domandaSondaggio) {
+                        $domandeWithFilesIds [] = $domandaSondaggio->id;
+                    }
+
+
+                    foreach ($tutteDomande->all() as $precompilaRisposte) {
+                        $rispostaDomandaQuery          = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => $precompilaRisposte['id']])->andWhere([
+                            'sondaggi_risposte_sessioni_id' => $id]);
+                        $rispostaDomandaWithFilesQuery = clone $rispostaDomandaQuery;
+                        $risposteWithFiles             = ArrayHelper::merge($risposteWithFiles,
+                                $rispostaDomandaWithFilesQuery->andWhere(['sondaggi_risposte.sondaggi_domande_id' => $domandeWithFilesIds])->all());
+                        $rispostaDomandaCount          = $rispostaDomandaQuery->count();
+                        if ($rispostaDomandaCount == 1) {
+                            $rispostaDomanda = $rispostaDomandaQuery->one();
+                            if ($rispostaDomanda['risposta_libera'] != null) {
+                                $idDom                 = "domanda_".$precompilaRisposte['id'];
+                                $prossimoModel->$idDom = $rispostaDomanda['risposta_libera'];
+                            } else {
+                                $idDom                 = "domanda_".$precompilaRisposte['id'];
+                                $prossimoModel->$idDom = $rispostaDomanda['sondaggi_risposte_predefinite_id'];
+                            }
+                        } else if ($rispostaDomandaCount > 1) {
+                            $arrRisposte = [];
+                            foreach ($rispostaDomandaQuery->all() as $risposteSingole) {
+                                $arrRisposte[] = $risposteSingole['sondaggi_risposte_predefinite_id'];
+                            }
+                            $idDom                 = "domanda_".$precompilaRisposte['id'];
+                            $prossimoModel->$idDom = $arrRisposte;
+                        }
+                    }
                     return $this->render('/pubblicazione/compila',
-                                    ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                            'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                            ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
+                            'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
                 }
             } else {
                 return $this->render('/pubblicazione/compila',
-                                ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                        'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
+                        'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
             }
         } else {
 
@@ -795,34 +1214,36 @@ class PubblicazioneController extends CrudController
             $risposte = $sessione->getSondaggiRispostes();
             if ($risposte->count() > 0) {
                 //se esistono risposte date al sondaggio
-                $arrDomande = [];
-                foreach ($risposte->all() as $risposta) {
-                    $arrDomande[] = $risposta['sondaggi_domande_id'];
+                if (false) {
+                    $arrDomande = [];
+                    foreach ($risposte->all() as $risposta) {
+                        $arrDomande[] = $risposta['sondaggi_domande_id'];
+                    }
+                    $domande  = SondaggiDomande::find()->andWhere(['IN', 'id', $arrDomande])->orderBy('ordinamento ASC');
+                    $idPagina = $domande->all()[$domande->count() - 1]['sondaggi_domande_pagine_id'];
                 }
-                $domande = SondaggiDomande::find()->andWhere(['IN', 'id', $arrDomande])->orderBy('ordinamento ASC');
-                $idPagina = $domande->all()[$domande->count() - 1]['sondaggi_domande_pagine_id'];
                 if ($idPagina != $ultimaPagina) {
-                    $idPag = array_search($idPagina, $arrayPag);
+                    $idPag          = array_search($idPagina, $arrayPag);
                     $prossimaPagina = $arrayPag[$idPag + 1];
                 }
-                $percorso = $this->percorso_model . $idSondaggio . "\\Pagina_" . $idPagina;
-                $newModel = new $percorso;
-                $tutteDomande = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
+                $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
+                $newModel          = new $percorso;
+                $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                 $risposteWithFiles = [];
                 foreach ($tutteDomande->all() as $precompilaRisposte) {
-                    $rispostaDomandaQuery = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => $precompilaRisposte['id']])->andWhere([
+                    $rispostaDomandaQuery          = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => $precompilaRisposte['id']])->andWhere([
                         'sondaggi_risposte_sessioni_id' => $id]);
                     $rispostaDomandaWithFilesQuery = clone $rispostaDomandaQuery;
-                    $risposteWithFiles = ArrayHelper::merge($risposteWithFiles,
-                                    $rispostaDomandaWithFilesQuery->andWhere(['sondaggi_risposte.sondaggi_domande_id' => $domandeWithFilesIds])->all());
-                    $rispostaDomandaCount = $rispostaDomandaQuery->count();
+                    $risposteWithFiles             = ArrayHelper::merge($risposteWithFiles,
+                            $rispostaDomandaWithFilesQuery->andWhere(['sondaggi_risposte.sondaggi_domande_id' => $domandeWithFilesIds])->all());
+                    $rispostaDomandaCount          = $rispostaDomandaQuery->count();
                     if ($rispostaDomandaCount == 1) {
                         $rispostaDomanda = $rispostaDomandaQuery->one();
                         if ($rispostaDomanda['risposta_libera'] != null) {
-                            $idDom = "domanda_" . $precompilaRisposte['id'];
+                            $idDom            = "domanda_".$precompilaRisposte['id'];
                             $newModel->$idDom = $rispostaDomanda['risposta_libera'];
                         } else {
-                            $idDom = "domanda_" . $precompilaRisposte['id'];
+                            $idDom            = "domanda_".$precompilaRisposte['id'];
                             $newModel->$idDom = $rispostaDomanda['sondaggi_risposte_predefinite_id'];
                         }
                     } else if ($rispostaDomandaCount > 1) {
@@ -830,24 +1251,216 @@ class PubblicazioneController extends CrudController
                         foreach ($rispostaDomandaQuery->all() as $risposteSingole) {
                             $arrRisposte[] = $risposteSingole['sondaggi_risposte_predefinite_id'];
                         }
-                        $idDom = "domanda_" . $precompilaRisposte['id'];
+                        $idDom            = "domanda_".$precompilaRisposte['id'];
                         $newModel->$idDom = $arrRisposte;
                     }
                 }
 
                 return $this->render('/pubblicazione/compila',
-                                ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $id, 'id' => $idSondaggio,
-                                'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                        ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $id, 'id' => $idSondaggio,
+                        'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
             } else {//se non esistono risposte date al sondaggio
                 $newModel = null;
-                $percorso = ($this->percorso_model . $idSondaggio . "\\Pagina_" . $primaPagina);
+                $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
                 if (class_exists($percorso)) {
                     $newModel = new $percorso;
                     return $this->render('/pubblicazione/compila',
-                                    ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
-                                    'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina]);
+                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
+                            'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
                 } else {
-                    return $this->redirect(['/sondaggi/sondaggi-domande-pagine/index', 'idSondaggio' => $idSondaggio]);
+                    return $this->redirect(['/sondaggi/pubblicazione']);
+                }
+            }
+        }
+    }
+
+    public function actionViewCompilation($id, $url = null)
+    {
+        $this->setUpLayout('main');
+        if (!$utente) {
+            $utente = Yii::$app->getUser()->getId();
+        }
+        $sessione = SondaggiRisposteSessioni::findOne($id);
+
+
+        if (empty($sessione) || empty($sessione->user_id)) {
+            \Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', 'Sondaggio inesistente.'));
+            return $this->goBack();
+        }
+
+        $this->model = Sondaggi::findOne(['id' => $sessione->sondaggi_id]);
+        $idSondaggio = $this->model->id;
+
+        ModuleRisultatiAsset::register(\Yii::$app->getView());
+
+        $pagine         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
+        $primaPagina    = $pagine->all()[0]['id'];
+        $ultimaPagina   = $pagine->all()[$pagine->count() - 1]['id'];
+        $prossimaPagina = null;
+        $arrayPag       = [];
+        $completato     = false;
+
+        foreach ($pagine->all() as $Pag) {
+            $arrayPag[] = $Pag['id'];
+        }
+
+        $domandeWithFilesIds = [];
+
+        if ($idPagina) {
+            if ($idPagina != $ultimaPagina) {
+                $idPag          = array_search($idPagina, $arrayPag);
+                $prossimaPagina = $arrayPag[$idPag + 1];
+            }
+        } else {
+            $idPagina       = $primaPagina;
+            $idPag          = array_search($primaPagina, $arrayPag);
+            $prossimaPagina = (isset($arrayPag[$idPag + 1])) ? $arrayPag[$idPag + 1] : 0;
+        }
+
+        $risposteWithFiles = [];
+        if ($primaPagina) {
+            $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
+            $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
+            $risposteWithFiles      = [];
+            $domandeWithFilesModels = $query->all();
+            foreach ((Array) $domandeWithFilesModels as $domandaSondaggio) {
+                $domandeWithFilesIds []        = $domandaSondaggio->id;
+                $risposta                      = new SondaggiRisposte();
+                $risposta->sondaggi_domande_id = $domandaSondaggio->id;
+                $risposteWithFiles []          = $risposta;
+            }
+        }
+
+        $valutatori = 0;
+        if ($this->model->abilita_criteri_valutazione == 1) {
+            $valutatori = SondaggiRisposteSessioni::find()->andWhere(['id' => $id])->count();
+        }
+
+        if (Yii::$app->request->isPost) {
+            $data     = Yii::$app->request->post();
+            $idPagina = $data['idPagina'];
+            if ($idPagina != $ultimaPagina) {
+                $idPag          = array_search($idPagina, $arrayPag);
+                $prossimaPagina = $arrayPag[$idPag + 1];
+            } else {
+                if (!empty($url))
+                    return $this->redirect([$url]);
+                else
+                    return $this->redirect(['/sondaggi']);
+            }
+
+            $utente      = $sessione->user_id;
+            $idSessione  = $id;
+            $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
+            $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
+            $newModel    = new $percorso;
+            if ($newModel->load($data) && $newModel->validate()) {
+
+                $prossimoModel = new $percorsoNew;
+                $pagina        = SondaggiDomandePagine::findOne($prossimaPagina);
+                $tutteDomande  = $pagina->getSondaggiDomandes();
+
+                $query                  = $pagina->getSondaggiDomandesWithFiles();
+                $domandeWithFilesModels = $query->all();
+                foreach ((Array) $domandeWithFilesModels as $domandaSondaggio) {
+                    $domandeWithFilesIds []        = $domandaSondaggio->id;
+                }
+
+
+                foreach ($tutteDomande->all() as $precompilaRisposte) {
+                    $rispostaDomandaQuery          = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => $precompilaRisposte['id']])->andWhere([
+                        'sondaggi_risposte_sessioni_id' => $id]);
+                    $rispostaDomandaWithFilesQuery = clone $rispostaDomandaQuery;
+                    $risposteWithFiles             = ArrayHelper::merge($risposteWithFiles,
+                            $rispostaDomandaWithFilesQuery->andWhere(['sondaggi_risposte.sondaggi_domande_id' => $domandeWithFilesIds])->all());
+                    $rispostaDomandaCount          = $rispostaDomandaQuery->count();
+                    if ($rispostaDomandaCount == 1) {
+                        $rispostaDomanda = $rispostaDomandaQuery->one();
+                        if ($rispostaDomanda['risposta_libera'] != null) {
+                            $idDom                 = "domanda_".$precompilaRisposte['id'];
+                            $prossimoModel->$idDom = $rispostaDomanda['risposta_libera'];
+                        } else {
+                            $idDom                 = "domanda_".$precompilaRisposte['id'];
+                            $prossimoModel->$idDom = $rispostaDomanda['sondaggi_risposte_predefinite_id'];
+                        }
+                    } else if ($rispostaDomandaCount > 1) {
+                        $arrRisposte = [];
+                        foreach ($rispostaDomandaQuery->all() as $risposteSingole) {
+                            $arrRisposte[] = $risposteSingole['sondaggi_risposte_predefinite_id'];
+                        }
+                        $idDom                 = "domanda_".$precompilaRisposte['id'];
+                        $prossimoModel->$idDom = $arrRisposte;
+                    }
+                }
+                return $this->render('/pubblicazione/compila',
+                        ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
+                        'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
+            } else {
+                return $this->render('/pubblicazione/compila',
+                        ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
+                        'id' => $idSondaggio, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
+            }
+        } else {
+
+
+            $risposte = $sessione->getSondaggiRispostes();
+            if ($risposte->count() > 0) {
+                //se esistono risposte date al sondaggio
+                if (false) {
+                    $arrDomande = [];
+                    foreach ($risposte->all() as $risposta) {
+                        $arrDomande[] = $risposta['sondaggi_domande_id'];
+                    }
+                    $domande  = SondaggiDomande::find()->andWhere(['IN', 'id', $arrDomande])->orderBy('ordinamento ASC');
+                    $idPagina = $domande->all()[$domande->count() - 1]['sondaggi_domande_pagine_id'];
+                }
+                if ($idPagina != $ultimaPagina) {
+                    $idPag          = array_search($idPagina, $arrayPag);
+                    $prossimaPagina = $arrayPag[$idPag + 1];
+                }
+                $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
+                $newModel          = new $percorso;
+                $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
+                $risposteWithFiles = [];
+                foreach ($tutteDomande->all() as $precompilaRisposte) {
+                    $rispostaDomandaQuery          = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => $precompilaRisposte['id']])->andWhere([
+                        'sondaggi_risposte_sessioni_id' => $id]);
+                    $rispostaDomandaWithFilesQuery = clone $rispostaDomandaQuery;
+                    $risposteWithFiles             = ArrayHelper::merge($risposteWithFiles,
+                            $rispostaDomandaWithFilesQuery->andWhere(['sondaggi_risposte.sondaggi_domande_id' => $domandeWithFilesIds])->all());
+                    $rispostaDomandaCount          = $rispostaDomandaQuery->count();
+                    if ($rispostaDomandaCount == 1) {
+                        $rispostaDomanda = $rispostaDomandaQuery->one();
+                        if ($rispostaDomanda['risposta_libera'] != null) {
+                            $idDom            = "domanda_".$precompilaRisposte['id'];
+                            $newModel->$idDom = $rispostaDomanda['risposta_libera'];
+                        } else {
+                            $idDom            = "domanda_".$precompilaRisposte['id'];
+                            $newModel->$idDom = $rispostaDomanda['sondaggi_risposte_predefinite_id'];
+                        }
+                    } else if ($rispostaDomandaCount > 1) {
+                        $arrRisposte = [];
+                        foreach ($rispostaDomandaQuery->all() as $risposteSingole) {
+                            $arrRisposte[] = $risposteSingole['sondaggi_risposte_predefinite_id'];
+                        }
+                        $idDom            = "domanda_".$precompilaRisposte['id'];
+                        $newModel->$idDom = $arrRisposte;
+                    }
+                }
+
+                return $this->render('/pubblicazione/compila',
+                        ['model' => $newModel, 'idPagina' => $idPagina, 'idSessione' => $id, 'id' => $idSondaggio,
+                        'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
+            } else {//se non esistono risposte date al sondaggio
+                $newModel = null;
+                $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
+                if (class_exists($percorso)) {
+                    $newModel = new $percorso;
+                    return $this->render('/pubblicazione/compila',
+                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
+                            'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
+                } else {
+                    return $this->redirect(['/sondaggi/pubblicazione']);
                 }
             }
         }
@@ -863,7 +1476,8 @@ class PubblicazioneController extends CrudController
         try {
             $path        = "uploads/Sondaggio_compilato".$idSessione.'_'.time().".pdf";
             $this->model = Sondaggi::findOne(['id' => $id]);
-            $this->generateSondaggiPdf($idSessione, $this->model->id, $path);
+            $sessione = SondaggiRisposteSessioni::findOne($idSessione);
+            $sessione->generateSondaggiPdf($path);
             if ($this->model->send_pdf_via_email) {
                 SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
             }
@@ -1267,106 +1881,8 @@ class PubblicazioneController extends CrudController
      */
     public function actionGeneraSondaggio($id, $sondaggioId)
     {
-        return $this->generateSondaggiPdf($id, $sondaggioId);
-    }
-
-    /**
-     * @param $id
-     * @throws \yii\web\NotFoundHttpException
-     */
-    public function generateSondaggiPdf($id, $sondaggioId, $path = null)
-    {
-        $this->model = $this->findModel($sondaggioId);
-        $xlsData     = [];
-
-        // INTESTAZIONE EXCEL
-        $xlsData[0] = ["Nome", "Cognome", "Email"];
-        $domande    = $this->model->getSondaggiDomandes()->orderBy('ordinamento ASC')->all();
-        $count      = 1;
-        foreach ($domande as $domanda) {
-            $xlsData[0][] = "D.".$count." ".$domanda->domanda;
-            $count ++;
-        }
-
-
-        // CORPO FILE EXCEL
-        $sondRisposta = SondaggiRisposteSessioni::find()
-            ->distinct()
-            ->leftJoin('user_profile', 'user_profile.user_id = sondaggi_risposte_sessioni.user_id')
-            ->innerJoinWith('user', 'user.id = user_profile.user_id')
-            ->leftJoin('sondaggi_risposte',
-                'sondaggi_risposte_sessioni.id = sondaggi_risposte.sondaggi_risposte_sessioni_id')
-            ->andWhere(['sondaggi_risposte_sessioni.sondaggi_id' => $sondaggioId])
-            ->andWhere(['sondaggi_risposte_sessioni.id' => $id])
-//            ->andWhere(['user_profile.user_id' => \Yii::$app->user->id])
-            ->one();
-
-        $row               = 1;
-        $profile           = UserProfile::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
-        $xlsData [$row][0] = $profile->nome;
-        $xlsData [$row][1] = $profile->cognome;
-        $xlsData [$row][2] = $profile->user->email;
-        $session_id        = $sondRisposta->id;
-
-        /** @var  $domanda SondaggiDomande */
-        $colum = 3;
-        foreach ($domande as $domanda) {
-            $query = $domanda->getRispostePerUtente($profile->user_id, $session_id);
-            // RISPOSTE LIBERE
-            if ($domanda->sondaggi_domande_tipologie_id == 6 || $domanda->sondaggi_domande_tipologie_id == 5) {
-//                    pr($query->one()->risposta_libera, 'D. ' . $domanda->id);
-                $risposta = $query->one();
-                if ($risposta) {
-                    $xlsData [$row][$colum] = $risposta->risposta_libera;
-                } else {
-                    $xlsData [$row][$colum] = '';
-                }
-                //ALLEGATI
-            } else if ($domanda->sondaggi_domande_tipologie_id == 13) {
-                $risposta = $query->one();
-                if ($risposta) {
-                    $xlsData [$row][$colum] = \Yii::$app->formatter->asDate($risposta->risposta_libera);
-                } else {
-                    $xlsData [$row][$colum] = '';
-                }
-            } else if ($domanda->sondaggi_domande_tipologie_id == 12) {
-                $xlsData [$row][$colum] = '';
-            } else if ($domanda->sondaggi_domande_tipologie_id == 10 || $domanda->sondaggi_domande_tipologie_id == 11) {
-                $risposta = $query->one();
-                if ($risposta) {
-                    $attribute = 'domanda_'.$domanda->id;
-                    if (!empty($risposta->$attribute)) {
-                        $attachments    = $risposta->$attribute;
-                        $listAttachUrls = [];
-                        $risposteString = "<ul>";
-                        /** @var  $attach File */
-                        foreach ($attachments as $attach) {
-                            $risposteString .= "<li><a href='".\Yii::$app->params['platform']['backendUrl'].$attach->getUrl()."'>".$attach->name."</a></li>";
-                        }
-                        $risposteString         .= '</ul>';
-                        $xlsData [$row][$colum] = $risposteString;
-//                        $xlsData [$row][$colum] = "<ul><li>".implode("</li><li>", $listAttachUrls)."</ul>";
-//                            $xlsData [$row][$colum] = implode("\n", $listAttachUrls);
-                    }
-                } else {
-                    $xlsData [$row][$colum] = '';
-                }
-            } else {
-                $risposteArray = [];
-                foreach ($query->all() as $risposta) {
-                    if ($risposta->sondaggiRispostePredefinite) {
-                        $risposteArray [] = $risposta->sondaggiRispostePredefinite->risposta;
-                    }
-                }
-//                    $xlsData [$row][$colum] = implode("\n", $risposteArray);
-
-                $xlsData [$row][$colum] = "<ul><li>".implode("</li><li>", $risposteArray)."</ul>";
-
-//                    pr(implode(',', $risposteArray), 'D. ' . $domanda->id);
-            }
-            $colum++;
-        }
-        return $this->savePdf($xlsData, $this->model, $sondRisposta, $path);
+        $sessione = SondaggiRisposteSessioni::findOne($id);
+        return $sessione->generateSondaggiPdf();
     }
 
     /**
@@ -1409,5 +1925,195 @@ class PubblicazioneController extends CrudController
         } else {
             return $pdf->output($content, "Sondaggio_compilato.pdf", Pdf::DEST_DOWNLOAD);
         }
+    }
+
+    public function beforeAction($action)
+    {
+        if (\Yii::$app->user->isGuest) {
+            $titleSection = AmosSondaggi::t('amossondaggi', 'Sondaggi');
+            $urlLinkAll   = '';
+
+            $ctaLoginRegister = Html::a(
+                    AmosSondaggi::t('amossondaggi', 'accedi o registrati alla piattaforma'),
+                    isset(\Yii::$app->params['linkConfigurations']['loginLinkCommon']) ? \Yii::$app->params['linkConfigurations']['loginLinkCommon']
+                        : \Yii::$app->params['platform']['backendUrl'].'/'.AmosAdmin::getModuleName().'/security/login',
+                    [
+                    'title' => AmosSondaggi::t(
+                        'amossondaggi', 'Clicca per accedere o registrarti alla piattaforma {platformName}',
+                        ['platformName' => \Yii::$app->name]
+                    )
+                    ]
+            );
+            $subTitleSection  = Html::tag(
+                    'p',
+                    AmosSondaggi::t(
+                        'amossondaggi', 'Per partecipare alla creazione di nuove notizie, {ctaLoginRegister}',
+                        ['ctaLoginRegister' => $ctaLoginRegister]
+                    )
+            );
+        } else {
+            $titleSection = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse');
+            if ($this->sondaggiModule->disableLinkAll == false) {
+                $labelLinkAll = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+                $urlLinkAll   = '/sondaggi/pubblicazione/all';
+                $titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
+            }
+            $subTitleSection = Html::tag('p', AmosSondaggi::t('amossondaggi', ''));
+        }
+        $hideCreate = false;
+        if (!\Yii::$app->user->can('SONDAGGI_CREATE')) {
+            $hideCreate = true;
+        }
+        $labelCreate = AmosSondaggi::t('amossondaggi', 'Nuovo');
+        $titleCreate = AmosSondaggi::t('amossondaggi', 'Crea un nuovo sondaggio');
+        $labelManage = AmosSondaggi::t('amossondaggi', 'Gestisci');
+        $titleManage = AmosSondaggi::t('amossondaggi', 'Gestisci i sondaggi');
+        if ($this->sondaggiModule->enableDashboard) {
+            $urlCreate = '/sondaggi/dashboard/create';
+        } else {
+            $urlCreate = '/sondaggi/sondaggi/create';
+        }
+        $urlManage = null;
+
+        $this->view->params = [
+            'isGuest' => \Yii::$app->user->isGuest,
+            'modelLabel' => 'sondaggi',
+            'titleSection' => $titleSection,
+            'subTitleSection' => $subTitleSection,
+            'urlLinkAll' => $urlLinkAll,
+            'labelLinkAll' => $labelLinkAll,
+            'titleLinkAll' => $titleLinkAll,
+            'labelCreate' => $labelCreate,
+            'titleCreate' => $titleCreate,
+            'labelManage' => $labelManage,
+            'titleManage' => $titleManage,
+            'urlCreate' => $urlCreate,
+            'urlManage' => $urlManage,
+            'hideCreate' => $hideCreate
+        ];
+
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        // other custom code here
+
+        return true;
+    }
+
+    /**
+     *
+     * @return array
+     */
+    public static function getManageLinks()
+    {
+        $links = [];
+
+        if (!AmosSondaggi::instance()->hideOwnInterest)
+                $links[] = [
+                'title' => AmosSondaggi::t('amossondaggi', 'Visualizza la lista dei sondaggi di tuo interesse'),
+                'label' => AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse '),
+                'url' => '/sondaggi/pubblicazione/own-interest',
+            ];
+
+        if (AmosSondaggi::instance()->compilationToOrganization) {
+            $links[] = [
+                'title' => AmosSondaggi::t('amossondaggi', '#open_polls'),
+                'label' => AmosSondaggi::t('amossondaggi', '#open_polls'),
+                'url' => '/sondaggi/pubblicazione/by-user-organization-open',
+            ];
+
+            $links[] = [
+                'title' => AmosSondaggi::t('amossondaggi', '#closed_polls'),
+                'label' => AmosSondaggi::t('amossondaggi', '#closed_polls'),
+                'url' => '/sondaggi/pubblicazione/by-user-organization-closed',
+            ];
+        }
+
+        // $links[] = [
+        //     'title' => AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi'),
+        //     'label' => AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi'),
+        //     'url' => '/sondaggi/pubblicazione/all',
+        // ];
+
+        if (\Yii::$app->user->can(\open20\amos\sondaggi\widgets\icons\WidgetIconSondaggiAdministration::class)) {
+            $links[] = [
+                'title' => AmosSondaggi::t('amossondaggi', 'Gestisci i sondaggi'),
+                'label' => AmosSondaggi::t('amossondaggi', 'Gestisci'),
+                'url' => '/sondaggi/sondaggi/manage',
+            ];
+        }
+
+        // if (\Yii::$app->user->can(\open20\amos\sondaggi\widgets\icons\WidgetIconPubblicaSondaggi::class)) {
+        //     $links[] = [
+        //         'title' => AmosSondaggi::t('amossondaggi', 'Amministra la pubblicazione dei sondaggi'),
+        //         'label' => AmosSondaggi::t('amossondaggi', 'Pubblica'),
+        //         'url' => '/sondaggi/pubblicazione/pubblicazione'
+        //     ];
+        // }
+
+        return $links;
+    }
+
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function actionLoadUsers($id)
+    {
+        $userId        = Yii::$app->getUser()->getId();
+        $organizations = \open20\amos\organizzazioni\Module::getUserOrganizations($userId);
+        $model         = Sondaggi::findOne(['id' => $id]);
+        $query         = ProfiloUserMm::find()->andWhere(['and', ['status' => ProfiloUserMm::STATUS_ACTIVE], ['!=', 'role',
+                'RESPONSABILE_ENTE']]);
+        $ref           = [];
+        foreach ($model->entiInvitati as $organization) {
+            foreach ($organizations as $org) {
+                if ($organization->to_id == $org->id) $ref[] = $org->id;
+            }
+        }
+        $query = $query->andWhere(['profilo_id' => $ref]);
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+        ]);
+
+        $currentView = $this->getAvailableView('grid');
+        return $this->renderAjax('_search_users',
+                [
+                'idSondaggio' => $model->id,
+                'userSelected' => $userForCompilation,
+                'dataProvider' => $dataProvider,
+                'currentView' => $currentView
+        ]);
+    }
+
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function actionAssignCompiler($to_id, $user_id, $sondaggio_id)
+    {
+        $existingItems = SondaggiUsersInvitationMm::find()->andWhere(['to_id' => $to_id, 'sondaggi_id' => $sondaggio_id])->all();
+        foreach ($existingItems as $item) {
+            $item->delete();
+        }
+        $newItem              = new SondaggiUsersInvitationMm();
+        $newItem->to_id       = $to_id;
+        $newItem->user_id     = $user_id;
+        $newItem->sondaggi_id = $sondaggio_id;
+        if ($newItem->save()) {
+            SondaggiUtility::sendEmailAssignedPoll($sondaggio_id, $user_id, $to_id);
+            return;
+        }
+        return yii\web\BadRequestHttpException;
+    }
+
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function actionRemoveCompiler($id)
+    {
+        $item = SondaggiUsersInvitationMm::find()->andWhere(['id' => $id])->one();
+        $item->forceDelete();
+        return;
     }
 }

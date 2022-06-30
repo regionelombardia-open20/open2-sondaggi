@@ -42,7 +42,7 @@ $this->params['breadcrumbs'][] = $this->title;
          <h2 class="p-t-5 nom-b"><?= AmosSondaggi::t('amossondaggi', 'Attenzione') ?></h2>
          <h3><?= AmosSondaggi::t('amossondaggi', 'Sondaggio già compilato o non compilabile') ?></h3>
           <?= Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), Url::previous(), [
-        'class' => 'btn btn-secondary undo-edit mr10'
+        'class' => 'btn btn-secondary undo-edit'
     ]); ?>
     <?php } ?>
 </div>

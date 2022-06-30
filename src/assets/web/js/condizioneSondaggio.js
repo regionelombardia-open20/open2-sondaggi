@@ -12,6 +12,8 @@ var Sondaggi = {
         $(this.submitSelector).hide();
         $('#sondaggidomande-inline').prop('disabled', true);
         var tipologiaSalv = $('#sondaggidomande-sondaggi_domande_tipologie_id').val();
+        if (tipologiaSalv == 1 || tipologiaSalv == 2)
+            $('#sondaggidomande-inline').prop('disabled', false);
         if (tipologiaSalv == 1 || tipologiaSalv == 4 || tipologiaSalv == 8) {
             $('#selezioni-minime-massime').show();
             $('#selezioni-minime-massime-label').show();

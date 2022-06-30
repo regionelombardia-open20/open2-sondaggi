@@ -20,16 +20,17 @@ use open20\amos\sondaggi\AmosSondaggi;
  */
 class Risposte extends \yii\base\Model
 {
+    public $byBassRuleCwh = true;
     public $data_inizio;
     public $data_fine;
-    public $tipologia = [
+    public $tipologia     = [
         0 => 'Pubblico',
         1 => 'Pubblico attivita singola',
         2 => 'Pubblico attivita multiple',
         3 => 'Riservato ruolo singolo',
         4 => 'Riservato ruoli multipli'
     ];
-    public $colori    = [
+    public $colori        = [
         2 => '#8ec44e',
         3 => '#f8b439',
         4 => '#3aa060',
@@ -83,6 +84,7 @@ class Risposte extends \yii\base\Model
     public function getDati($id, $idPagina)
     {
         set_time_limit(600);
+        $sondaggiModule = AmosSondaggi::instance();
         $sondaggio  = Sondaggi::findOne($id);
         $tipologia  = $this->getTipologia($id);
         $usaCriteri = $sondaggio->abilita_criteri_valutazione;
@@ -139,10 +141,10 @@ class Risposte extends \yii\base\Model
                     $sql = "SELECT count(distinct(IF(S.end_date IS NOT null, S.id, null))) terminato,
                             count(distinct(IF(S.end_date IS null and R.id is null, S.id, null))) non_risposto,
                             count(distinct(IF(S.user_id IS NOT null, S.id, null))) loggati,
-                            count(distinct(S.id)) accessi, 
-                            count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato 
-                            FROM sondaggi_risposte_sessioni S 
-                            LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                            count(distinct(S.id)) accessi,
+                            count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato
+                            FROM sondaggi_risposte_sessioni S
+                            LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                             WHERE S.sondaggi_id = $id
                             AND S.deleted_by is null AND R.deleted_by is null $condizione";
 
@@ -151,16 +153,18 @@ class Risposte extends \yii\base\Model
                     if (count($query)) {
                         $ritorno[] = ['Rilevazioni', 'Numero dei partecipanti'];
                         foreach ($query as $Res) {
-                            $ritorno[] = ['Accessi al sondaggio', floatval($Res['accessi'])];
+                            $ritorno[] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi'])];
                             $ritorno[] = ['Non hanno risposto ad alcuna domanda', floatval($Res['non_risposto'])];
-                            $ritorno[] = ['Non hanno terminato il sondaggio', floatval($Res['non_terminato'])];
-                            $ritorno[] = ['Hanno terminato il sondaggio', floatval($Res['terminato'])];
-                            $ritorno[] = ['Utenti loggati', floatval($Res['loggati'])];
+                            $ritorno[] = [AmosSondaggi::t('amossondaggi', '#did_not_complete_poll'), floatval($Res['non_terminato'])];
+                            $ritorno[] = [AmosSondaggi::t('amossondaggi', '#did_complete_poll'), floatval($Res['terminato'])];
+                            if(!$sondaggiModule->statisticDisableLoggedUsers) {
+                                $ritorno[] = ['Utenti loggati', floatval($Res['loggati'])];
+                            }
                         }
                     }
                 } else if ($idPagina == 0) {
-                    $domande = $this->getDomandeNonStatistiche($id);
-                    $query   = null;
+                    $domande   = $this->getDomandeNonStatistiche($id);
+                    $query     = null;
                     $allModels = [];
                     if ($domande->count()) {
                         foreach ($domande->all() as $Domanda) {
@@ -176,7 +180,7 @@ class Risposte extends \yii\base\Model
 
                             $command = Yii::$app->db->createCommand($sql);
                             $query   = $command->queryAll();
-                            foreach ($query as $v){
+                            foreach ($query as $v) {
                                 $allModels[] = $v;
                             }
                         }
@@ -211,9 +215,9 @@ class Risposte extends \yii\base\Model
                                     WHERE P.sondaggi_domande_id = $Criterio->id AND R.deleted_by is null AND P.deleted_by is null
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null AND S.id is not null $condizione
                                     GROUP BY R.id ORDER BY P.ordinamento";
-                                
-                                $command       = Yii::$app->db->createCommand($sql);
-                                $query         = $command->queryAll();
+
+                                $command = Yii::$app->db->createCommand($sql);
+                                $query   = $command->queryAll();
 
                                 if (count($query)) {
                                     $numero = 0;
@@ -267,12 +271,53 @@ class Risposte extends \yii\base\Model
                         } else {
                             $ritorno['standard'][] = null;
                         }
-                    } else {            
+                    } else {
                         $domande = $this->getDomandeStatistiche($id, $idPagina, false);
                         if ($domande->count()) {
                             foreach ($domande->all() as $Domanda) {
+                                if ($Domanda->is_parent == 1) {
 
-                                $sql = "SELECT distinct(P.risposta) risposta, count(distinct(R.id)) numero
+                                    $childs = $Domanda->childs;
+                                    $idx    = 0;
+
+                                    foreach ($childs as $ch) {
+                                        $sql = "SELECT distinct(P.risposta) risposta, count(distinct(R.id)) numero
+                                    FROM sondaggi_risposte_predefinite P
+                                    LEFT JOIN sondaggi_risposte R ON P.id = R.sondaggi_risposte_predefinite_id AND (R.sondaggi_domande_id = {$ch->id} OR R.sondaggi_domande_id IS NULL)
+                                    LEFT JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
+                                    WHERE P.sondaggi_domande_id = {$Domanda->id} AND R.deleted_by is null AND P.deleted_by is null
+                                    AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null $condizione
+                                    GROUP BY risposta ORDER BY P.ordinamento";
+
+                                        $command = Yii::$app->db->createCommand($sql);
+                                        $query   = $command->queryAll();
+                                        if (count($query)) {
+
+                                            $risx = [];
+                                            $int  = [];
+                                            if ($idx == 0) {
+                                                $int[] = AmosSondaggi::t('amossondaggi', 'Domande');
+                                                foreach ($query as $Res) {
+                                                    $int[] = $Res['risposta'];
+                                                }
+
+                                                $ritorno[$Domanda->id][] = $int;
+
+                                                $idx++;
+                                            }
+
+                                            foreach ($query as $Res) {
+                                                $risx[] = floatval($Res['numero']);
+                                            }
+                                            array_unshift($risx, $ch->domanda);
+                                            $ritorno[$Domanda->id][] = $risx;
+                                        } else {
+                                            $ritorno[$Domanda->id][] = null;
+                                        }
+                                    }
+                                } else {
+
+                                    $sql = "SELECT distinct(P.risposta) risposta, count(distinct(R.id)) numero
                                     FROM sondaggi_risposte_predefinite P
                                     LEFT JOIN sondaggi_risposte R ON P.id = R.sondaggi_risposte_predefinite_id
                                     LEFT JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
@@ -280,15 +325,16 @@ class Risposte extends \yii\base\Model
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null $condizione
                                     GROUP BY risposta ORDER BY P.ordinamento";
 
-                                $command = Yii::$app->db->createCommand($sql);
-                                $query   = $command->queryAll();
-                                if (count($query)) {
-                                    $ritorno[$Domanda->id][] = ['Risposte', 'Numero occorrenze'];
-                                    foreach ($query as $Res) {
-                                        $ritorno[$Domanda->id][] = [$Res['risposta'], floatval($Res['numero'])];
+                                    $command = Yii::$app->db->createCommand($sql);
+                                    $query   = $command->queryAll();
+                                    if (count($query)) {
+                                        $ritorno[$Domanda->id][] = ['Risposte', 'Numero occorrenze'];
+                                        foreach ($query as $Res) {
+                                            $ritorno[$Domanda->id][] = [$Res['risposta'], floatval($Res['numero'])];
+                                        }
+                                    } else {
+                                        $ritorno[$Domanda->id] = null;
                                     }
-                                } else {
-                                    $ritorno[$Domanda->id] = null;
                                 }
                             }
                         } else {
@@ -323,12 +369,12 @@ class Risposte extends \yii\base\Model
                     $sql = "SELECT count(distinct(IF(S.end_date IS NOT null, S.id, null))) terminato,
                                 count(distinct(IF(S.end_date IS null and R.id is null, S.id, null))) non_risposto,
                                 count(distinct(IF(S.user_id IS NOT null, S.id, null))) loggati,
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 WHERE S.sondaggi_id = $id
-                                AND S.deleted_by is null AND R.deleted_by is null 
+                                AND S.deleted_by is null AND R.deleted_by is null
                                 AND S.entita_id IN ($attivita) $condizione";
 
                     $command = Yii::$app->db->createCommand($sql);
@@ -338,12 +384,12 @@ class Risposte extends \yii\base\Model
                         $testoArea                            = \open20\amos\tag\models\Tag::findOne(['id' => $Area['tipologie_entita']])->nome;
                         $ritorno[$Area['tipologie_entita']][] = ['Rilevazioni', 'Area formativa: '.$testoArea, ['role' => 'style']];
                         foreach ($query as $Res) {
-                            $ritorno[$Area['tipologie_entita']][] = ['Accessi al sondaggio', floatval($Res['accessi']), $this->colori[$Area['tipologie_entita']]];
+                            $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi']), $this->colori[$Area['tipologie_entita']]];
                             $ritorno[$Area['tipologie_entita']][] = ['Non hanno risposto ad alcuna domanda', floatval($Res['non_risposto']),
                                 $this->colori[$Area['tipologie_entita']]];
-                            $ritorno[$Area['tipologie_entita']][] = ['Non hanno terminato il sondaggio', floatval($Res['non_terminato']),
+                            $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#did_not_complete_poll'), floatval($Res['non_terminato']),
                                 $this->colori[$Area['tipologie_entita']]];
-                            $ritorno[$Area['tipologie_entita']][] = ['Hanno terminato il sondaggio', floatval($Res['terminato']),
+                            $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#did_complete_poll'), floatval($Res['terminato']),
                                 $this->colori[$Area['tipologie_entita']]];
                             $ritorno[$Area['tipologie_entita']][] = ['Utenti loggati', floatval($Res['loggati']), $this->colori[$Area['tipologie_entita']]];
                         }
@@ -428,10 +474,10 @@ class Risposte extends \yii\base\Model
                         $sql = "SELECT count(distinct(IF(S.end_date IS NOT null, S.id, null))) terminato,
                                 count(distinct(IF(S.end_date IS null and R.id is null, S.id, null))) non_risposto,
                                 count(distinct(IF(S.user_id IS NOT null, S.id, null))) loggati,
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 WHERE S.sondaggi_id = $id
                                 AND S.deleted_by is null AND R.deleted_by is null
                                 AND S.entita_id IN ($attivita) $condizione";
@@ -443,13 +489,13 @@ class Risposte extends \yii\base\Model
                             $testoArea                            = \backend\modules\tag\models\Tag::findOne(['id' => $Area['tipologie_entita']])->nome;
                             $ritorno[$Area['tipologie_entita']][] = ['Rilevazioni', 'Area formativa: '.$testoArea, ['role' => 'style']];
                             foreach ($query as $Res) {
-                                $ritorno[$Area['tipologie_entita']][] = ['Accessi al sondaggio', floatval($Res['accessi']),
+                                $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi']),
                                     $this->colori[$Area['tipologie_entita']]];
                                 $ritorno[$Area['tipologie_entita']][] = ['Non hanno risposto ad alcuna domanda', floatval($Res['non_risposto']),
                                     $this->colori[$Area['tipologie_entita']]];
-                                $ritorno[$Area['tipologie_entita']][] = ['Non hanno terminato il sondaggio', floatval($Res['non_terminato']),
+                                $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#did_not_complete_poll'), floatval($Res['non_terminato']),
                                     $this->colori[$Area['tipologie_entita']]];
-                                $ritorno[$Area['tipologie_entita']][] = ['Hanno terminato il sondaggio', floatval($Res['terminato']),
+                                $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#did_complete_poll'), floatval($Res['terminato']),
                                     $this->colori[$Area['tipologie_entita']]];
                                 $ritorno[$Area['tipologie_entita']][] = ['Utenti loggati', floatval($Res['loggati']), $this->colori[$Area['tipologie_entita']]];
                             }
@@ -547,10 +593,10 @@ class Risposte extends \yii\base\Model
 
                         $sql = "SELECT count(distinct(IF(S.end_date IS NOT null, S.id, null))) terminato,
                                 count(distinct(IF(S.end_date IS null and R.id is null, S.id, null))) non_risposto,
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 INNER JOIN user_profile U ON U.user_id = S.user_id
                                 WHERE S.sondaggi_id = $id
                                 AND S.deleted_by is null AND R.deleted_by is null AND U.deleted_by is null AND S.user_id IS NOT null
@@ -568,23 +614,23 @@ class Risposte extends \yii\base\Model
                             }
                             $ritorno[$Ruolo['ruolo']][] = ['Rilevazioni', 'Ruolo: '.$testoRuolo];
                             foreach ($query as $Res) {
-                                $ritorno[$Ruolo['ruolo']][] = ['Accessi al sondaggio', floatval($Res['accessi'])];
+                                $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi'])];
                                 $ritorno[$Ruolo['ruolo']][] = ['Non hanno risposto ad alcuna domanda', floatval($Res['non_risposto'])];
-                                $ritorno[$Ruolo['ruolo']][] = ['Non hanno terminato il sondaggio', floatval($Res['non_terminato'])];
-                                $ritorno[$Ruolo['ruolo']][] = ['Hanno terminato il sondaggio', floatval($Res['terminato'])];
+                                $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#did_not_complete_poll'), floatval($Res['non_terminato'])];
+                                $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#did_complete_poll'), floatval($Res['terminato'])];
                             }
                         }
                         if (\Yii::$app->controller->module->enableGeoChart) {
-                            $sql = "SELECT IF(U.domicilio_provincia_id is not null, PR.nome, null) provincia,                                                             
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) iniziato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                            $sql = "SELECT IF(U.domicilio_provincia_id is not null, PR.nome, null) provincia,
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) iniziato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 INNER JOIN user_profile U ON U.user_id = S.user_id
                                 LEFT JOIN istat_province PR on U.domicilio_provincia_id = PR.id
                                 WHERE S.sondaggi_id = $id
                                 AND S.deleted_by is null AND R.deleted_by is null AND U.deleted_by is null AND S.user_id IS NOT null"
-                                .((strlen($utenti)) ? " AND S.user_id IN ($utenti)" : "")." $condizione                                
+                                .((strlen($utenti)) ? " AND S.user_id IN ($utenti)" : "")." $condizione
                                 GROUP BY U.domicilio_provincia_id";
 
                             $command = Yii::$app->db->createCommand($sql);
@@ -598,7 +644,7 @@ class Risposte extends \yii\base\Model
                                     $testoRuolo = 'Iscritto';
                                 }
 
-                                $ritorno['provincia'][] = ['Provincia', 'Accessi al sondaggio', 'Hanno risposto almeno ad una domanda'];
+                                $ritorno['provincia'][] = ['Provincia', AmosSondaggi::t('amossondaggi', '#poll_access'), 'Hanno risposto almeno ad una domanda'];
                                 foreach ($query as $Res) {
                                     $ritorno['provincia'][] = [$Res['provincia'], floatval($Res['accessi']), floatval($Res['iniziato'])];
                                 }
@@ -613,10 +659,10 @@ class Risposte extends \yii\base\Model
                                 "IF(S.end_date is not null, 'terminato', IF(R.id is not null and S.end_date is null, 'iniziato', IF(S.id is not null, 'visualizzato', 'nessun accesso'))) stato,
                                     IF(S.end_date is not null, S.end_date, null) end_date,
                                     IF(S.begin_date is not null, S.begin_date, null) begin_date
-                                    FROM user_profile U   
+                                    FROM user_profile U
                                     INNER JOIN user USR ON USR.id = U.user_id
                                     LEFT JOIN sondaggi_risposte_sessioni S ON U.user_id = S.user_id
-                                    LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id                                                    
+                                    LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                     WHERE (S.sondaggi_id = $id OR S.sondaggi_id is null)
                                     AND S.deleted_by is null AND R.deleted_by is null AND U.deleted_by is null AND U.user_id IS NOT null"
                                 .((strlen($allIdUserStr)) ? " AND U.user_id IN ($allIdUserStr)" : "")." $condizione
@@ -663,8 +709,8 @@ class Risposte extends \yii\base\Model
                             $sql = "SELECT P.titolo pagina, P.descrizione descrizione, D.domanda domanda, R.risposta_libera risposta
                                     FROM sondaggi_risposte R
                                     INNER JOIN sondaggi_domande as D on D.id = R.sondaggi_domande_id
-                                    INNER JOIN sondaggi_domande_pagine as P on P.id = D.sondaggi_domande_pagine_id                                   
-                                    INNER JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id                                    
+                                    INNER JOIN sondaggi_domande_pagine as P on P.id = D.sondaggi_domande_pagine_id
+                                    INNER JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
                                     WHERE D.id = $Domanda->id AND R.deleted_by is null AND P.deleted_by is null $condizione
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null
                                     GROUP BY risposta ORDER BY P.ordinamento";
@@ -687,8 +733,8 @@ class Risposte extends \yii\base\Model
                                     FROM sondaggi_risposte_predefinite P
                                     LEFT JOIN sondaggi_risposte R ON P.id = R.sondaggi_risposte_predefinite_id
                                     LEFT JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
-                                    LEFT JOIN user_profile U ON S.user_id = U.user_id 
-                                    LEFT JOIN auth_assignment A ON U.user_id = A.user_id 
+                                    LEFT JOIN user_profile U ON S.user_id = U.user_id
+                                    LEFT JOIN auth_assignment A ON U.user_id = A.user_id
                                     WHERE P.sondaggi_domande_id = $Domanda->id AND (S.user_id IN ($utenti) OR S.user_id is null) $condizione
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null AND U.deleted_by is null
                                     GROUP BY risposta ORDER BY P.ordinamento";
@@ -742,10 +788,10 @@ class Risposte extends \yii\base\Model
                         if (strlen($utenti)) {
                             $sql = "SELECT count(distinct(IF(S.end_date IS NOT null, S.id, null))) terminato,
                                 count(distinct(IF(S.end_date IS null and R.id is null, S.id, null))) non_risposto,
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) non_terminato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 INNER JOIN user_profile U ON U.user_id = S.user_id
                                 WHERE S.sondaggi_id = $id
                                 AND S.deleted_by is null AND R.deleted_by is null AND U.deleted_by is null AND S.user_id IS NOT null
@@ -763,21 +809,21 @@ class Risposte extends \yii\base\Model
                                 }
                                 $ritorno[$Ruolo['ruolo']][] = ['Rilevazioni', 'Ruolo: '.$testoRuolo];
                                 foreach ($query as $Res) {
-                                    $ritorno[$Ruolo['ruolo']][] = ['Accessi al sondaggio', floatval($Res['accessi'])];
+                                    $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi'])];
                                     $ritorno[$Ruolo['ruolo']][] = ['Non hanno risposto ad alcuna domanda', floatval($Res['non_risposto'])];
-                                    $ritorno[$Ruolo['ruolo']][] = ['Non hanno terminato il sondaggio', floatval($Res['non_terminato'])];
-                                    $ritorno[$Ruolo['ruolo']][] = ['Hanno terminato il sondaggio', floatval($Res['terminato'])];
+                                    $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#did_not_complete_poll'), floatval($Res['non_terminato'])];
+                                    $ritorno[$Ruolo['ruolo']][] = [AmosSondaggi::t('amossondaggi', '#did_complete_poll'), floatval($Res['terminato'])];
                                 }
                             }
                         }
 
                         if (\Yii::$app->controller->module->enableGeoChart) {
 
-                            $sql = "SELECT IF(U.domicilio_provincia_id is not null, PR.nome, null) provincia,                                                             
-                                count(distinct(S.id)) accessi, 
-                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) iniziato 
-                                FROM sondaggi_risposte_sessioni S 
-                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id 
+                            $sql = "SELECT IF(U.domicilio_provincia_id is not null, PR.nome, null) provincia,
+                                count(distinct(S.id)) accessi,
+                                count(distinct(IF(R.id is not null and S.end_date is null, S.id, null))) iniziato
+                                FROM sondaggi_risposte_sessioni S
+                                LEFT JOIN sondaggi_risposte R ON S.id = R.sondaggi_risposte_sessioni_id
                                 INNER JOIN user_profile U ON U.user_id = S.user_id
                                 LEFT JOIN istat_province PR on U.domicilio_provincia_id = PR.id
                                 WHERE S.sondaggi_id = $id
@@ -796,7 +842,7 @@ class Risposte extends \yii\base\Model
                                     $testoRuolo = 'Iscritto';
                                 }
 
-                                $ritorno['provincia'.$indice][] = ['Provincia', 'Accessi al sondaggio', 'Hanno risposto almeno ad una domanda'];
+                                $ritorno['provincia'.$indice][] = ['Provincia', AmosSondaggi::t('amossondaggi', '#poll_access'), 'Hanno risposto almeno ad una domanda'];
                                 foreach ($query as $Res) {
                                     $ritorno['provincia'.$indice][] = [$Res['provincia'], floatval($Res['accessi']), floatval($Res['iniziato'])];
                                 }
@@ -813,8 +859,8 @@ class Risposte extends \yii\base\Model
                             $sql = "SELECT P.titolo pagina, P.descrizione descrizione, D.domanda domanda, R.risposta_libera risposta
                                     FROM sondaggi_risposte R
                                     INNER JOIN sondaggi_domande as D on D.id = R.sondaggi_domande_id
-                                    INNER JOIN sondaggi_domande_pagine as P on P.id = D.sondaggi_domande_pagine_id                                   
-                                    INNER JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id                                    
+                                    INNER JOIN sondaggi_domande_pagine as P on P.id = D.sondaggi_domande_pagine_id
+                                    INNER JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
                                     WHERE D.id = $Domanda->id AND R.deleted_by is null AND P.deleted_by is null $condizione
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null
                                     GROUP BY risposta ORDER BY P.ordinamento";
@@ -908,7 +954,7 @@ class Risposte extends \yii\base\Model
         if ($usaCriteri == true) {
             $sondaggiDomande->andWhere(['domanda_per_criteri' => 1]);
         } else {
-            $sondaggiDomande->andWhere(['domanda_per_criteri' => 0]);
+            $sondaggiDomande->andWhere(['domanda_per_criteri' => 0])->andWhere(['parent_id' => null]);
         }
         $sondaggiDomande->orderBy('ordinamento ASC');
 //pr($sondaggiDomande->createCommand()->rawSql);die;

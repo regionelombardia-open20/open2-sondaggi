@@ -10,6 +10,8 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiContentModel extends \app\models\base\SondaggiContentModel {
 
+    public $byBassRuleCwh = true;
+
     public function representingColumn() {
         return [
 //inserire il campo o i campi rappresentativi del modulo

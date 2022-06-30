@@ -11,6 +11,8 @@ use yii\helpers\ArrayHelper;
 class SondaggiDomandeRule extends \open20\amos\sondaggi\models\base\SondaggiDomandeRule
 {
 
+    public $byBassRuleCwh = true;
+
     public function representingColumn()
     {
         return [

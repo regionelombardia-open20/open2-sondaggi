@@ -2,7 +2,7 @@ $(document).ready(function () {
     $.fn.setHtmlMessages = function(){
         var notCompilableHtml = $('#sondaggi-text_not_compilable_html').val();
         var endHtml = $('#sondaggi-text_end_html').val();
-        console.log(notCompilableHtml + 'sss');
+//        console.log(notCompilableHtml + 'sss');
         if(notCompilableHtml == 1){ console.log('bho');
             $('#text_not_compilable-id-html').attr('disabled', false);
             $('#sondaggi-text_not_compilable').attr('disabled', true);

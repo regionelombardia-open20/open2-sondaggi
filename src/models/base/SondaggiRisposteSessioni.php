@@ -26,6 +26,7 @@ use open20\amos\sondaggi\AmosSondaggi;
  * @property string $session_tmp
  * @property integer $completato
  * @property integer $user_id
+ * @property integer $organization_id
  * @property integer $sondaggi_id
  * @property integer $entita_id
  * @property integer $sondaggi_accessi_servizi_id
@@ -57,9 +58,9 @@ class SondaggiRisposteSessioni extends \open20\amos\core\record\Record {
         return [
             [['begin_date', 'end_date', 'created_at', 'updated_at', 'deleted_at'], 'safe'],
             [['session_tmp'], 'string'],
-            [['completato', 'user_id', 'sondaggi_id', 'entita_id', 'created_by', 'updated_by', 'deleted_by', 'version'], 'integer'],
+            [['completato', 'user_id', 'organization_id', 'sondaggi_id', 'entita_id', 'created_by', 'updated_by', 'deleted_by', 'version'], 'integer'],
             [['sondaggi_id'], 'required'],
-            [['session_id', 'unique_id'], 'string', 'max' => 255]
+            [['session_id', 'unique_id', 'field_extra', 'lang'], 'string', 'max' => 255]
         ];
     }
 
@@ -75,6 +76,8 @@ class SondaggiRisposteSessioni extends \open20\amos\core\record\Record {
             'end_date' => AmosSondaggi::t('amossondaggi', 'Fine compilazione'),
             'session_tmp' => AmosSondaggi::t('amossondaggi', 'Tmp Sessione'),
             'completato' => AmosSondaggi::t('amossondaggi', 'Completato'),
+            'field_extra' => AmosSondaggi::t('amossondaggi', 'Campo extra'),
+            'lang' => AmosSondaggi::t('amossondaggi', 'Lingua'),
             'user_id' => AmosSondaggi::t('amossondaggi', 'Utente'),
             'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Sondaggio'),
             'entita_id' => AmosSondaggi::t('amossondaggi', 'Attività'),
@@ -108,7 +111,16 @@ class SondaggiRisposteSessioni extends \open20\amos\core\record\Record {
     public function getUser() {
         return $this->hasOne(User::className(), ['id' => 'user_id']);
     }
-    
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getOrganization() {
+        if (\open20\amos\sondaggi\AmosSondaggi::instance()->compilationToOrganization)
+            return $this->hasOne(\open20\amos\organizzazioni\models\Profilo::className(), ['id' => 'organization_id']);
+        return null;
+    }
+
     /**
      * @return \yii\db\ActiveQuery
      */

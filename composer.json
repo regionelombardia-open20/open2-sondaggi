@@ -21,10 +21,12 @@
         "open20/amos-email-manager": "^1.1.19",
         "open20/amos-upload": "*",
         "kartik-v/yii2-detail-view": "*",
-        "kartik-v/yii2-widget-fileinput": "*"
+        "kartik-v/yii2-dropdown-x": "*",
+        "kartik-v/yii2-widget-fileinput": "*",
+        "xj/yii2-tagit-widget" : "*"
     },
     "autoload": {
-        "psr-4": { 
+        "psr-4": {
             "open20\\amos\\sondaggi\\": "src"
         }
     }

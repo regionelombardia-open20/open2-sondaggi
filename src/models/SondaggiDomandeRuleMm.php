@@ -10,6 +10,7 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiDomandeRuleMm extends \open20\amos\sondaggi\models\base\SondaggiDomandeRuleMm
 {
+    public $byBassRuleCwh = true;
 
     public function representingColumn()
     {

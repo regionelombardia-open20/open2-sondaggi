@@ -10,6 +10,7 @@
 
 namespace open20\amos\sondaggi\controllers;
 
+use open20\amos\admin\AmosAdmin;
 use open20\amos\admin\models\UserProfile;
 use open20\amos\core\controllers\CrudController;
 use open20\amos\core\helpers\Html;
@@ -80,7 +81,7 @@ class ConsoleController extends \yii\console\Controller
                 $xlsData[0][]                  = "D.".$count." ".$domanda->domanda;
                 $colRispAllegati[$domanda->id] = $totCount;
                 $totCount++;
-            } else if (in_array($domanda->sondaggi_domande_tipologie_id, [5, 6, 13, 12])) {
+            } else if (in_array($domanda->sondaggi_domande_tipologie_id, [5, 6, 13, 12, 14])) {
                 $xlsData[0][]                = "D.".$count." ".$domanda->domanda;
                 $colRispLibere[$domanda->id] = $totCount;
                 $totCount++;
@@ -114,7 +115,11 @@ class ConsoleController extends \yii\console\Controller
         foreach ($sondaggiRisposte as $sondRisposta) {
             $profile = null;
             if (!empty($sondRisposta->user_id)) {
-                $profile = UserProfile::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
+                /** @var AmosAdmin $adminModule */
+                $adminModule = AmosAdmin::instance();
+                /** @var UserProfile $userProfileModel */
+                $userProfileModel = $adminModule->createModel('UserProfile');
+                $profile = $userProfileModel::find()->andWhere(['user_id' => $sondRisposta->user_id])->one();
             }
             if (empty($profile)) {
                 $xlsData [$row][0] = ($model->abilita_criteri_valutazione == 1 ? AmosSondaggi::t('amossondaggi',
@@ -172,6 +177,13 @@ class ConsoleController extends \yii\console\Controller
                             }
                             $xlsData[$row][$colRispAllegati[$domanda->id]] = implode("\n", $listAttachUrls);
                         }
+                    } else {
+
+                    }
+                } else if ($domanda->sondaggi_domande_tipologie_id == 14) {
+                    $risposta = $query->one();
+                    if ($risposta) {
+                        $xlsData[$row][$colRispLibere[$domanda->id]] = $risposta->sondaggiRispostePredefinite->risposta;
                     } else {
 
                     }

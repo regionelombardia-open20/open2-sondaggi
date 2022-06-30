@@ -154,7 +154,7 @@ echo $this->render('_modal_import_risposte', ['model' => $model, 'sondaggi_doman
 ModalUtility::createConfirmModal([
     'id' => 'modalDeleteAll',
     'modalDescriptionText' => AmosSondaggi::t('amossondaggi', '#delete-all-risposte-predefinite-modal-message'),
-    'confirmBtnLink' => '/sondaggi/sondaggi-risposte-predefinite/delete-all?idDomanda=' . $model->sondaggi_domande_id,
+    'confirmBtnLink' => '/sondaggi/dashboard-risposte-predefinite/delete-all?idDomanda=' . $model->sondaggi_domande_id,
     'cancelBtnLabel' => AmosSondaggi::t('amoscore', 'No'),
     'confirmBtnLabel' => AmosSondaggi::t('amoscore', 'Yes'),
     'confirmBtnOptions' => [

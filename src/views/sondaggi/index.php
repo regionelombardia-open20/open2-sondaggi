@@ -22,7 +22,10 @@ use yii\web\View;
  */
 
 
-
+$isCommunityManager = false;
+if (!empty(\Yii::$app->getModule('community'))) {
+    $isCommunityManager = \open20\amos\community\utilities\CommunityUtil::isLoggedCommunityManager();
+}
 $js2 = <<<JS
 
 
@@ -84,7 +87,7 @@ $this->registerJs($js2, View::POS_READY);
 
 ?>
 <div class="sondaggi-index">
-    <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
+    <?php echo $this->render('_search', ['model' => $searchModel]);  ?>
 
     <p>
         <?php /* echo         Html::a(AmosSondaggi::t('amossondaggi', 'Nuovo {modelClass}', [
@@ -118,11 +121,21 @@ $this->registerJs($js2, View::POS_READY);
                 ],
                 'titolo:ntext',
                 'descrizione:ntext',
+                [
+                    'attribute' => 'sondaggio_type',
+                    'value' => function($model){
+                       return \open20\amos\sondaggi\models\base\SondaggiTypes::getLabels()[$model->sondaggio_type];
+                    },
+                    'label' => AmosSondaggi::t('amossondaggi', "Tipologia")
+
+                ],
                 'partecipazioni' => [
                     'label' => AmosSondaggi::t('amossondaggi', 'Partecipanti'),
                     'value' => function ($model) {
+                       if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI'))
                         /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                        return ($model->getNumeroPartecipazioni()) ? $model->getNumeroPartecipazioni() : 'Nessuno';
+                           return ($model->getNumeroPartecipazioni()) ? $model->getNumeroPartecipazioni() : 'Nessuno';
+                        return '';
                     }
                 ],
                 'status' => [
@@ -133,7 +146,7 @@ $this->registerJs($js2, View::POS_READY);
                     }
                 ],
                 'pubblico' => [
-                    'label' => AmosSondaggi::t('amossondaggi', 'Tipologia'),
+                    'label' => AmosSondaggi::t('amossondaggi', 'Visibilità'),
                     'value' => function ($model) {
                         /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                         if (!is_array($model->getSondaggiPubblicaziones()->one()['ruolo'])) {
@@ -149,16 +162,28 @@ $this->registerJs($js2, View::POS_READY);
                     }
                 ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
-//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']], 
-//            'created_by', 
-//            'updated_by', 
-//            'deleted_by', 
-//            'version', 
+//            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
+//            'created_by',
+//            'updated_by',
+//            'deleted_by',
+//            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
-                    'template' => '{update} {clone} {pagine} {domande} {delete} {risultati}',
+                    'template' => '{update} {clone} {pagine} {domande} {download} {risultati} {delete}',
                     'buttons' => [
+                        'download' => function ($url, $model) use ($isCommunityManager) {
+                            $url = \yii\helpers\Url::current();
+                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || $isCommunityManager) {
+                                return Html::a(AmosIcons::show('download', [
+                                    'data' => [
+                                        'id' => $model->id,]
+                                ]), "#", [
+                                    'title' => AmosSondaggi::t('amossondaggi', 'Download Excel'),
+                                    'class' => 'btn btn-tool-secondary btn-sondaggi-download'
+                                ]);
+                            }
+                        },
                         'anteprima' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();
@@ -180,7 +205,7 @@ $this->registerJs($js2, View::POS_READY);
                             $url = \yii\helpers\Url::current();
                             $partecipazioni = $model->getNumeroPartecipazioni();
                             if (\Yii::$app->getUser()->can('SONDAGGI_READ', ['model' => $model]) && $partecipazioni) {
-                                return Html::a(AmosIcons::show('bar-chart', 'dash'), Yii::$app->urlManager->createUrl([
+                                return Html::a(AmosIcons::show('chart'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/sondaggi/risultati',
                                     'id' => $model->id,
                                 ]), [
@@ -217,7 +242,7 @@ $this->registerJs($js2, View::POS_READY);
                                     'url' => $url,
                                 ]), [
                                     'title' => AmosSondaggi::t('amossondaggi', 'Clona sondaggi'),
-                                    'data-confirm' => AmosSondaggi::t('amossondaggi','Sei sicuro di voler duplicare  il sondaggio?'),
+                                    'data-confirm' => AmosSondaggi::t('amossondaggi', 'Sei sicuro di voler duplicare  il sondaggio?'),
                                     'class' => 'btn btn-tool-secondary'
                                 ]);
                             } else {
@@ -227,18 +252,21 @@ $this->registerJs($js2, View::POS_READY);
                         'pagine' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDEPAGINE_READ', ['model' => $model])) {
-                                return Html::a(AmosIcons::show('book'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/sondaggi-domande-pagine/index',
-                                    'idSondaggio' => $model->id,
-                                    'url' => $url,
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', 'Gestisci pagine'),
-                                    'class' => 'btn btn-tool-secondary'
-                                ]);
-                            } else {
-                                return '';
+                            if ($model->sondaggio_type != \open20\amos\sondaggi\models\base\SondaggiTypes::SONDAGGI_TYPE_LIVE) {
+                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDEPAGINE_READ', ['model' => $model])) {
+                                    return Html::a(AmosIcons::show('book'), Yii::$app->urlManager->createUrl([
+                                        '/' . $this->context->module->id . '/sondaggi-domande-pagine/index',
+                                        'idSondaggio' => $model->id,
+                                        'url' => $url,
+                                    ]), [
+                                        'title' => AmosSondaggi::t('amossondaggi', 'Gestisci pagine'),
+                                        'class' => 'btn btn-tool-secondary'
+                                    ]);
+                                } else {
+                                    return '';
+                                }
                             }
+                            return '';
                         },
                         'domande' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
@@ -252,7 +280,7 @@ $this->registerJs($js2, View::POS_READY);
                                         'url' => $url,
                                     ]), [
                                         'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi pagina - Nessuna pagina ancora presente'),
-                                        'class' => 'btn btn-tool-secondary btn-danger'
+                                        'class' => 'btn btn-tool-secondary btn-warning'
                                     ]);
                                 } else {
                                     return '';
@@ -293,9 +321,9 @@ $this->registerJs($js2, View::POS_READY);
         'listView' => [
             'itemView' => '_item'
         ],
-        /*  'iconView' => [
-          'itemView' => '_icon'
-          ],
+        'iconView' => [
+            'itemView' => '_icon'
+        ],/*
           'mapView' => [
           'itemView' => '_map',
           'markerConfig' => [

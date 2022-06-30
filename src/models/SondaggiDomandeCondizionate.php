@@ -18,6 +18,7 @@ namespace open20\amos\sondaggi\models;
  */
 class SondaggiDomandeCondizionate extends \open20\amos\sondaggi\models\base\SondaggiDomandeCondizionate
 {
+    public $byBassRuleCwh = true;
     /**
      * @inheritdoc
      */
