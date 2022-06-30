@@ -50,7 +50,7 @@ class SondaggiRispostePredefinite extends \open20\amos\core\record\Record
         return [
             [['risposta'], 'safe'],
             [['sondaggi_domande_id'], 'required'],
-            [['sondaggi_domande_id', 'ordinamento', 'created_by', 'updated_by', 'deleted_by', 'version'], 'integer'],
+            [['sondaggi_domande_id', 'ordinamento', 'created_by', 'updated_by', 'deleted_by', 'version', 'modello_id'], 'integer'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe']
         ];
     }
@@ -64,6 +64,7 @@ class SondaggiRispostePredefinite extends \open20\amos\core\record\Record
             'id' => AmosSondaggi::t('amossondaggi', 'ID'),
             'risposta' => AmosSondaggi::t('amossondaggi', 'Risposta predefinita'),
             'sondaggi_domande_id' => AmosSondaggi::t('amossondaggi', 'Domanda'),
+            'modello_id' => AmosSondaggi::t('amossondaggi', 'Id modello'),
             'ordinamento' => AmosSondaggi::t('amossondaggi', 'Ordinamento'),
             'created_at' => AmosSondaggi::t('amossondaggi', 'Creato il'),
             'updated_at' => AmosSondaggi::t('amossondaggi', 'Aggiornato il'),

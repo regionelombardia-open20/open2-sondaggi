@@ -370,6 +370,7 @@ class SondaggiController extends CrudController
                         $validateOnSave      = false;
                     }
                     if ($this->model->save($validateOnSave)) {
+                        $this->model->getOtherAttributes(Yii::$app->request->post());
                         $pagine->sondaggi_id = $this->model->id;
                         Yii::$app->getSession()->addFlash('success',
                             AmosSondaggi::tHtml('amossondaggi', "Sondaggio creato correttamente."));

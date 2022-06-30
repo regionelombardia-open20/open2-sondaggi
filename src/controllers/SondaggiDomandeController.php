@@ -165,6 +165,9 @@ class SondaggiDomandeController extends CrudController
                     $condizione->save();
                 }
             }
+            if ($this->model->modello_risposte_id) {
+                 $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
+            }
             if ($url) {
                 $this->redirect($url);
             } else {
@@ -226,6 +229,10 @@ class SondaggiDomandeController extends CrudController
                     $condizione->sondaggi_domande_id              = $this->model->id;
                     $condizione->save();
                 }
+            }
+
+            if ($this->model->modello_risposte_id) {
+                 $num = \open20\amos\sondaggi\models\SondaggiRispostePredefinite::importFromModello($this->model->modello_risposte_id, $this->model->id);
             }
             if ($url) {
                 return $this->redirect($url);

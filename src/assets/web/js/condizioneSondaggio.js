@@ -16,11 +16,14 @@ var Sondaggi = {
             $('#selezioni-minime-massime').show();
             $('#selezioni-minime-massime-label').show();
             $('#selezione-classe-validatrice').hide();
+            $('#selezione-modello').hide();
         } else {
-            if (tipologiaSalv == 9) {
+            if (tipologiaSalv == 9 || tipologiaSalv == 14) {
                 $('#selezione-classe-validatrice').show();
+                $('#selezione-modello').show();
             } else {
                 $('#selezione-classe-validatrice').hide();
+                $('#selezione-modello').hide();
             }
             $('#selezioni-minime-massime').hide();
             $('#selezioni-minime-massime-label').hide();
@@ -30,6 +33,7 @@ var Sondaggi = {
             var risp = $('#sondaggidomande-sondaggi_domande_tipologie_id').val();
             if (risp == 5 || risp == 6) {
                 $('#selezione-classe-validatrice').hide();
+                $('#selezione-modello').hide();
                 $(this.submitSelector).prop('disabled', false);
                 $('#sondaggidomande-inline').prop('disabled', true);
                 $(this.submitSelector).show();
@@ -37,6 +41,7 @@ var Sondaggi = {
                 $('#selezioni-minime-massime-label').hide();
             } else if (risp == 3 || risp == 4) {
                 $('#selezione-classe-validatrice').hide();
+                $('#selezione-modello').hide();
                 $('#sondaggidomande-inline').prop('disabled', true);
                 $(this.submitSelector).prop('disabled', true);
                 $(this.submitSelector).hide();
@@ -52,12 +57,14 @@ var Sondaggi = {
                 $(this.submitSelector).prop('disabled', true);
                 $(this.submitSelector).hide();
                 $('#selezione-classe-validatrice').hide();
+                $('#selezione-modello').hide();
                 if (risp == 1) {
                     $('#selezioni-minime-massime').show();
                     $('#selezioni-minime-massime-label').show();
                 } else {
-                    if (risp == 9) {
+                    if (risp == 9 || risp == 14) {
                         $('#selezione-classe-validatrice').show();
+                        $('#selezione-modello').show();
                     }
                     $('#selezioni-minime-massime').hide();
                     $('#selezioni-minime-massime-label').hide();

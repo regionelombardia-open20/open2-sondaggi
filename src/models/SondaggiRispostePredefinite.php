@@ -155,4 +155,49 @@ class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\Sond
         }
         return $count > 0;
     }
+    
+    /**
+     * 
+     * @param type $idModello
+     * @param type $idDomanda
+     * @return type
+     */
+    public static function importFromModello($idModello, $idDomanda) {
+        $count = 0;
+
+        if ($idDomanda) {
+            $domanda = SondaggiDomande::findOne(['id' => $idDomanda]);
+            if (!is_null($domanda)) {
+                $rispostePredefinite = $domanda->sondaggiRispostePredefinites;
+                $allOk = true;
+                foreach ($rispostePredefinite as $rispostaPredefinita) {
+                    $rispostaPredefinita->delete();
+                }
+
+                $modello = SondaggiModelliPredefiniti::find()
+                                ->andWhere(['=', SondaggiModelliPredefiniti::tableName() . ".`id`", $idModello])->one();
+                $tmpModel = \Yii::createObject([
+                            'class' => $modello->classname,
+                ]);
+
+                $risposteByModel = $tmpModel::find()->all();
+                $i = 1;
+                foreach ($risposteByModel as $risposta) {
+                    $rispostaPredefinita = new SondaggiRispostePredefinite();
+                    $rispostaPredefinita->risposta = $risposta->nome;
+                    $rispostaPredefinita->sondaggi_domande_id = $idDomanda;
+                    $rispostaPredefinita->modello_id = $risposta->id;
+                    $rispostaPredefinita->ordinamento = $i;
+                    $ok = $rispostaPredefinita->save();
+                    if ($ok) {
+                        $count ++;
+                        $i++;
+                    }
+                }
+
+                return $count > 0;
+            }
+        }
+    }
+
 }

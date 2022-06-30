@@ -115,7 +115,6 @@ return [
     'Leggi tutto' => 'Leggi tutto',
     'Le selezioni massime non possono essere minori delle selezioni minime, se non si vogliono limiti massimi impostare il valore a 0' => 'Le selezioni massime non possono essere minori delle selezioni minime, se non si vogliono limiti massimi impostare il valore a 0',
     'Lista' => 'Lista',
-    '#may_not_be_less_than_today' => "non può essere inferiore alla data attuale",
     'Messaggi' => 'Messaggi',
     'Messaggio di fine sondaggio in HTML' => 'Messaggio di fine sondaggio in HTML',
     'Messaggio di fine sondaggio' => 'Messaggio di fine sondaggio',
@@ -152,10 +151,6 @@ return [
     'Permette di pubblicare i sondaggi' => 'Permette di pubblicare i sondaggi',
     'Posiziona la domanda' => 'Posiziona la domanda',
     'Pubblica sondaggi' => 'Pubblica sondaggi',
-    'Publication Date Begin' => 'Data e ora di inizio pubblicazione',
-    'Publication Date End' => 'Data e ora di fine pubblicazione',
-    '#publication_date_begin_hint' => "Se non impostate, coincideranno con la data e l'ora di inizio del sondaggio",
-    '#publication_date_end_hint' => "Se non impostate, il sondaggio sarà sempre visibile",
     '#published_on' => 'Pubblicato il',
     '#recipients' => 'Destinatari',
     'Report sui partecipanti al sondaggio' => 'Report sui partecipanti al sondaggio',
@@ -182,7 +177,6 @@ return [
     'Selezioni massime' => 'Selezioni massime',
     'Selezioni minime e/o massime se impostate a "0" (vuol dire senza limiti) non avranno nessuno effetto.' => 'Selezioni minime e/o massime se impostate a "0" (vuol dire senza limiti) non avranno nessuno effetto.',
     'Selezioni minime' => 'Selezioni minime',
-    '#settings_optional' => 'Avanzate',
     'SI' => 'SI',
     'Sondaggio aggiornato correttamente.' => 'Sondaggio aggiornato correttamente.',
     'Sondaggio cancellato correttamente.' => 'Sondaggio cancellato correttamente.',
@@ -238,4 +232,12 @@ return [
     'Crea nuovo' => 'Crea nuovo',
     'Sondaggio compilabile in frontend' => 'Sondaggio compilabile in frontend',
     'Grazie per aver compilato il questionario.' => 'Grazie per aver compilato il questionario.',
+
+    '#thankyoumessage' => 'Grazie per aver compilato il questionario.',
+    '#CONGRATULAZIONI' => 'CONGRATULAZIONI',
+    '#sondaggioterminato' => 'Sondaggio terminato',
+    
+
+    '#menu_front_sondaggi' => 'Sondaggi'
+
 ];

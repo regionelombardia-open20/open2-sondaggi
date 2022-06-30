@@ -31,6 +31,7 @@ use open20\amos\sondaggi\AmosSondaggi;
  * @property integer $min_int_multipla
  * @property integer $max_int_multipla
  * @property string $nome_classe_validazione
+ * @property string $modello_risposte_id
  * @property integer $sondaggi_domande_pagine_id
  * @property integer $sondaggi_domande_tipologie_id
  * @property integer $abilita_ordinamento_risposte
@@ -75,7 +76,7 @@ class SondaggiDomande extends \open20\amos\core\record\Record
             [['domanda_condizionata', 'obbligatoria', 'inline', 'sondaggi_id', 'ordinamento', 'min_int_multipla', 'max_int_multipla',
                 'sondaggi_domande_pagine_id', 'sondaggi_domande_tipologie_id', 'created_by', 'updated_by', 'deleted_by',
                 'version', 'sondaggi_map_id', 'domanda_condizionata_testo_libero', 'domanda_per_criteri', 'punteggio_max',
-                'abilita_ordinamento_risposte'], 'integer'],
+                'abilita_ordinamento_risposte', 'modello_risposte_id'], 'integer'],
             [['domanda', 'tooltip', 'introduzione', 'introduzione_condizionata'], 'string'],
             [['nome_classe_validazione'], 'string', 'max' => 255],
             [['domanda', 'sondaggi_id', 'sondaggi_domande_pagine_id', 'sondaggi_domande_tipologie_id'], 'required'],
@@ -107,6 +108,7 @@ class SondaggiDomande extends \open20\amos\core\record\Record
             'min_int_multipla' => AmosSondaggi::t('amossondaggi', 'Selezioni minime'),
             'max_int_multipla' => AmosSondaggi::t('amossondaggi', 'Selezioni massime'),
             'nome_classe_validazione' => AmosSondaggi::t('amossondaggi', 'Nome della classe Validatrice'),
+            'modello_risposte_id' => AmosSondaggi::t('amossondaggi', 'Modello'),     
             'sondaggi_domande_pagine_id' => AmosSondaggi::t('amossondaggi', 'Pagina'),
             'sondaggi_domande_tipologie_id' => AmosSondaggi::t('amossondaggi', 'Tipo risposta'),
             'abilita_ordinamento_risposte' => AmosSondaggi::t('amossondaggi', 'Abilita ordinamento delle risposte'),
@@ -198,6 +200,14 @@ class SondaggiDomande extends \open20\amos\core\record\Record
     public function getMapField()
     {
         return $this->hasOne(\open20\amos\sondaggi\models\SondaggiMap::className(), ['id' => 'sondaggi_map_id']);
+    }
+    
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getModello()
+    {
+        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiModelliPredefiniti::className(), ['id' => 'modello_risposte_id']);
     }
 
     /**

@@ -87,7 +87,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
                             $url = \yii\helpers\Url::current();
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIRISPOSTEPREDEFINITE_READ', ['model' => $model])) {
-                                if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8])) {
+                                if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8, 14])) {
                                     if ($model->getSondaggiRispostePredefinites()->count()) {
                                         if ($model->min_int_multipla > 0) {
                                             $numRisp = $model->min_int_multipla;

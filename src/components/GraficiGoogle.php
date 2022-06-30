@@ -33,7 +33,7 @@ class GraficiGoogle extends Widget {
     /**
      * @var string $packages the type of packages, default is corechart
      */
-    public $packages = 'corechart';  // such as 'orgchart' and so on.
+    public $packages = 'corechart, gauge';  // such as 'orgchart' and so on.
     public $loadVersion = "1"; //such as 1 or 1.1  Calendar chart use 1.1.  Add at Sep 16
 
     /**

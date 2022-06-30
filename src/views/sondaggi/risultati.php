@@ -539,9 +539,9 @@ $this->registerJs('
                                           4 => ['color' => '#53cfc4'],
                                           ], */
                                         'height' => 500,
-                                        'legend' => [
+//                                        'legend' => [
                                         // 'position' => 'none',
-                                        ],
+//                                        ],
                                         'vAxis' => [
                                             'title' => AmosSondaggi::t('amossondaggi', 'Numero occorrenze'),
                                             'gridlines' => [

@@ -13,9 +13,10 @@
     },
     "require": {
         "php": ">=5.4.0",
+        "ext-json": "*",
         "open20/amos-admin":"^2.2.0",
         "open20/amos-attachments":"^1.1.11",
-        "open20/amos-core":"^1.19.1",
+        "open20/amos-core":"^1.19.0",
         "open20/amos-dashboard":"^1.9",
         "open20/amos-email-manager": "^1.1.19",
         "open20/amos-upload": "*",

@@ -111,7 +111,6 @@ return [
     'Leggi tutto' => 'Read all',
     'Le selezioni massime non possono essere minori delle selezioni minime, se non si vogliono limiti massimi impostare il valore a 0' => 'The maximum selections can not be less than the minimum selections, if you do not want maximum limits set the value to 0',
     'Lista' => 'List',
-    '#may_not_be_less_than_today' => "may not be less than today's date",
     'Messaggi' => 'Messages',
     'Messaggio di fine sondaggio in HTML' => 'End survey message in HTML',
     'Messaggio di fine sondaggio' => 'End survey message',
@@ -126,7 +125,6 @@ return [
     '&nbsp;&nbsp;<strong>>></strong>&nbsp;&nbsp;' => '&nbsp;&nbsp;<strong>>></strong>&nbsp;&nbsp;',
     'Nessun risultato trovato' => 'No results found',
     'Nome della classe Validatrice' => 'Validator class name',
-    'Non è possibile inviare le notifiche se non si compilano tutti campi relativi alla notifica in "Gestione sondaggi" e se non si imposta la mail da cui inviare le notifiche.' => 'It is not possible to send notifications if you do not fill in all fields relating to the notification in "Survey Management" and if you do not set the email from which to send notifications.',
     'NO' => 'NO',
     'Non sono presenti sondaggi pubblici compilabili' => 'There are no public compilable surveys',
     'Notifica la presenza di un nuovo sondaggio' => 'Notify the presence of a new survey',
@@ -143,15 +141,10 @@ return [
     'Pagine del sondaggio' => 'Survey pages',
     'Partecipa' => 'Participate',
     'Partecipante' => 'Partecipant',
-    'Pei Accessi Servizi Facilitazione ID' => 'Pei Accessi Servizi Facilitazione ID',
     'Permette di compilare e completare i sondaggi' => 'It allows you to complete surveys',
     'Permette di pubblicare i sondaggi' => 'It allows to publish the surveys',
     'Posiziona la domanda' => 'Place the question',
     'Pubblica sondaggi' => 'Upload surveys',
-    'Publication Date Begin' => 'Publication begin date and time',
-    'Publication Date End' => 'Publication end date and time',
-    '#publication_date_begin_hint' => 'If not set, they will coincide with the start date and time of the survey',
-    '#publication_date_end_hint' => 'If not set, the survey will always be visible',
     '#published_on' => 'Published on',
     '#recipients' => 'Recipients',
     'Report sui partecipanti al sondaggio' => 'Report on survey participants',
@@ -177,7 +170,6 @@ return [
     'Seleziona sondaggio ...' => 'Choose survey...',
     'Selezioni massime' => 'Maximum selections',
     'Selezioni minime' => 'Minimum selections',
-    '#settings_optional' => 'Advanced',
     'SI' => 'YES',
     'Sondaggio aggiornato correttamente.' => 'Survey updated',
     'Sondaggio cancellato correttamente.' => 'Survey deleted',
@@ -233,4 +225,11 @@ return [
     'Sondaggio compilabile in frontend' => 'Compilable survey in frontend',
     'campi obbligatori' => 'required fields',
     'Grazie per aver compilato il questionario.' => 'Thank you for completing the questionnaire.',
+
+    '#thankyoumessage' => 'Thank you for completing the questionnaire.',
+    '#CONGRATULAZIONI' => 'CONGRATULATIONS',
+    '#sondaggioterminato' => 'Survey closed',
+
+    '#menu_front_sondaggi' => 'Surveys'
+
 ];

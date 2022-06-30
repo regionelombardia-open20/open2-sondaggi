@@ -25,7 +25,7 @@ class ModuleSondaggiAsset extends AssetBundle
     {
         $moduleL = \Yii::$app->getModule('layout');
         if(!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS){
-            $this->css = ['less/sondaggi-fullsize.less'];
+            $this->css = ['less/sondaggi-fullsize.less','less/sondaggi-be-come-fe.less'];
         }
         if(!empty($moduleL))
         { $this->depends [] = 'open20\amos\layout\assets\BaseAsset'; }

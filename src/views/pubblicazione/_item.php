@@ -25,8 +25,7 @@ use open20\amos\sondaggi\AmosSondaggi;
     <div class="post-horizonatal">
         <?= ItemAndCardHeaderWidget::widget([
             'model' => $model,
-            'publicationDateField' => 'publication_date_begin',
-            'publicationDateAsDateTime' => true,
+            'publicationDateField' => 'created_at',
         ]); ?>
         <div class="col-sm-7 col-xs-12 nop">
             <div class="post-content col-xs-12 nop">

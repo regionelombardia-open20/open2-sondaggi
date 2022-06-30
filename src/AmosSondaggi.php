@@ -11,6 +11,7 @@
 
 namespace open20\amos\sondaggi;
 
+use open20\amos\core\interfaces\CmsModuleInterface;
 use open20\amos\core\module\AmosModule;
 use open20\amos\core\module\ModuleInterface;
 use open20\amos\sondaggi\widgets\icons\WidgetIconAmministraSondaggi;
@@ -25,7 +26,7 @@ use yii\helpers\ArrayHelper;
  * Class AmosSondaggi
  * @package open20\amos\sondaggi
  */
-class AmosSondaggi extends AmosModule implements ModuleInterface
+class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInterface
 {
     public static $CONFIG_FOLDER = 'config';
     public $controllerNamespace = 'open20\amos\sondaggi\controllers';
@@ -145,6 +146,44 @@ class AmosSondaggi extends AmosModule implements ModuleInterface
      */
     protected function getDefaultModels()
     {
-        return [];
+        return [
+            'Sondaggi' => __NAMESPACE__ . '\\' . 'models\Sondaggi',
+            'SondaggiSearch' => __NAMESPACE__ . '\\' . 'models\search\SondaggiSearch',
+        ];
+    }
+
+
+    /**
+     *
+     * @return string
+     */
+    public static function getModelClassName()
+    {
+        return AmosSondaggi::instance()->model('Sondaggi');
+    }
+
+    /**
+     *
+     * @return string
+     */
+    public static function getModelSearchClassName()
+    {
+        return AmosSondaggi::instance()->model('SondaggiSearch');
+    }
+
+    /**
+     *
+     * @return string
+     */
+    public function getFrontEndMenu($dept = 1)
+    {
+        $menu = "";
+        $app  = \Yii::$app;
+        if ((is_null($app->user) || $app->user->id == $app->params['platformConfigurations']['guestUserId'])) {
+            //$menu .= $this->addFrontEndMenu(AmosSondaggi::t('amossondaggi','Gestione sondaggi'), AmosSondaggi::toUrlModule('/sondaggi'));
+        }else{
+            $menu .= $this->addFrontEndMenu(AmosSondaggi::t('amossondaggi','#menu_front_sondaggi'), AmosSondaggi::toUrlModule('/sondaggi'));
+        }
+        return $menu;
     }
 }

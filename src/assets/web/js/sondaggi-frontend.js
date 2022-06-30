@@ -6,7 +6,7 @@ $(document).ready(function () {
     //allineo i bottoni a quelli del frontend
     $("button.btn.btn-navigation-primary").addClass("btn-default");
 
-    //chiodato cambio layout del sondaggio pagina in base a id
-    // $(".pagid-23").addClass("fullsize-forced-js");
+    //activate tooltip
+    $('[data-toggle="tooltip"]').tooltip();
 
 });

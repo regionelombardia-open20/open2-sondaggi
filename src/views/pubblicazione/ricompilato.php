@@ -19,8 +19,7 @@ use yii\helpers\Url;
  * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  * @var \yii\db\ActiveQuery $pubblicazioni
  */
-$this->title                   = ($pubblicazioni->one()->sondaggi->visualizza_solo_titolo == 1 ?  $pubblicazioni->one()->sondaggi->titolo : AmosSondaggi::t('amossondaggi',
-        'Sondaggio terminato'));
+$this->title                   = AmosSondaggi::t('amossondaggi', '#sondaggioterminato');
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="sondaggi-index text-center sondaggi-success">
@@ -41,7 +40,6 @@ $this->params['breadcrumbs'][] = $this->title;
             'class' => 'am-4 success m-t-15'
         ])
         ?>
-        <h2 class="p-t-5 nom-b"><?= AmosSondaggi::t('amossondaggi', 'CONGRATULAZIONI') ?></h2>
     <?php } ?>
 
     <?php
@@ -58,12 +56,12 @@ $this->params['breadcrumbs'][] = $this->title;
     } else {
         ?>
         <h3><?=
-            AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il questionario.').($pubblicazioni->one()->sondaggi->send_pdf_via_email
+            AmosSondaggi::tHtml('amossondaggi', '#thankyoumessage').($pubblicazioni->one()->sondaggi->send_pdf_via_email
             == 1 ? 'Ti abbiamo inviato un’email di riepilogo con tutte le informazioni.' : '')
             ?></h3>
     <?php } ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url) ? $url : Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), !empty($url)?$url:Url::previous(),
         [
         'class' => 'btn btn-secondary undo-edit mr10'
     ]);

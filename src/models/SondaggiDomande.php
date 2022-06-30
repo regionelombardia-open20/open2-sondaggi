@@ -58,7 +58,12 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
                         return $model->sondaggi_domande_tipologie_id == 9;
                     }, 'whenClient' => "function (attribute, value) {"
                     ."return $('#sondaggidomande-sondaggi_domande_tipologie_id').val() == 9;"
-                    ."}"], //da aggiornare nel caso di modifiche alla tipologia custom
+                    ."}"],//da aggiornare nel caso di modifiche alla tipologia custom
+                ['modello_risposte_id', 'required', 'when' => function ($model) {
+                        return $model->sondaggi_domande_tipologie_id == 14;
+                    }, 'whenClient' => "function (attribute, value) {"
+                    ."return $('#sondaggidomande-sondaggi_domande_tipologie_id').val() == 14;"
+                    ."}"],
         ]);
     }
 

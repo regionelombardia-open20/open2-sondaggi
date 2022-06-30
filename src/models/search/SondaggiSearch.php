@@ -11,19 +11,24 @@
 
 namespace open20\amos\sondaggi\models\search;
 
+use open20\amos\core\interfaces\CmsModelInterface;
+use open20\amos\notificationmanager\AmosNotify;
 use open20\amos\notificationmanager\base\NotifyWidget;
 use open20\amos\notificationmanager\base\NotifyWidgetDoNothing;
 use open20\amos\notificationmanager\models\NotificationChannels;
 use open20\amos\sondaggi\models\Sondaggi;
+use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\db\ActiveQuery;
 use yii\di\Container;
+use yii\di\NotInstantiableException;
 
 /**
  * SondaggiSearch represents the model behind the search form about `open20\amos\sondaggi\models\Sondaggi`.
  */
-class SondaggiSearch extends Sondaggi
+class SondaggiSearch extends Sondaggi implements CmsModelInterface
 {
     /**
      * @var Container $container
@@ -43,8 +48,8 @@ class SondaggiSearch extends Sondaggi
 
     /**
      * @return object
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function getNotifier()
     {
@@ -61,15 +66,15 @@ class SondaggiSearch extends Sondaggi
 
     /**
      * @param ActiveQuery $query
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     private function notificationOff($query)
     {
         $notify = $this->getNotifier();
         if ($notify) {
-            /** @var \open20\amos\notificationmanager\AmosNotify $notify */
-            $notify->notificationOff(\Yii::$app->getUser()->id, Sondaggi::className(), $query, NotificationChannels::CHANNEL_READ);
+            /** @var AmosNotify $notify */
+            $notify->notificationOff(Yii::$app->getUser()->id, Sondaggi::className(), $query, NotificationChannels::CHANNEL_READ);
         }
     }
 
@@ -191,8 +196,8 @@ class SondaggiSearch extends Sondaggi
 //            }
 //        }        
 //        $query->andWhere(['NOT IN', 'id', $sondaggiAccessi]);
-        $utente = \Yii::$app->getUser();
-        $ruoli_utente = \Yii::$app->authManager->getRolesByUser($utente->getId());
+        $utente = Yii::$app->getUser();
+        $ruoli_utente = Yii::$app->authManager->getRolesByUser($utente->getId());
 
         //ruolo pubblico sempre visibile
         $Ruoli = ['PUBBLICO'];
@@ -273,5 +278,59 @@ class SondaggiSearch extends Sondaggi
      */
     public function searchAll($params, $limit = null) {
         return $this->search($params, "all", $limit);
+    }
+
+    public function cmsIsVisible($id): boolean
+    {
+        $retValue = true;
+        return $retValue;
+    }
+
+    public function cmsSearch($params, $limit): \open20\amos\core\interfaces\ActiveDataProvider
+    {
+        $params = array_merge($params, Yii::$app->request->get());
+        $this->load($params);
+        $query  = $this->baseSearch ($params);
+        $this->applySearchFilters($query);
+
+        $dataProvider = new ActiveDataProvider([
+            'query' => $query,
+            'sort' => [
+                'defaultOrder' => [
+                    'titolo' => SORT_DESC,
+                ],
+            ],
+        ]);
+        if ($params["withPagination"]) {
+            $dataProvider->setPagination(['pageSize' => $limit]);
+            $query->limit(null);
+        } else {
+            $query->limit($limit);
+        }
+        if (!empty($params["conditionSearch"])) {
+            $commands = explode(";", $params["conditionSearch"]);
+            foreach ($commands as $command) {
+                $query->andWhere(eval("return ".$command.";"));
+            }
+        }
+        return $dataProvider;
+    }
+
+    public function cmsSearchFields(): array
+    {
+        $searchFields = [];
+
+        array_push($searchFields, new CmsField("titolo", "TEXT"));
+        array_push($searchFields, new CmsField("descrizione", "TEXT"));
+
+        return $searchFields;
+    }
+
+    public function cmsViewFields(): array
+    {
+        return [
+            new CmsField('titolo', 'TEXT', 'amossondaggi', $this->attributeLabels()['titolo']),
+            new CmsField('descrizione', 'TEXT', 'amossondaggi', $this->attributeLabels()['descrizione']),
+        ];
     }
 }

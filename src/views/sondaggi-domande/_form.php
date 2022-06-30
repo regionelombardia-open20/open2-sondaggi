@@ -211,6 +211,22 @@ $this->registerJs($js2, yii\web\View::POS_READY);
             <?= $form->field($model, 'nome_classe_validazione')->textInput(); ?>
         </div>
     </div>
+    
+    <div class="row" id="selezione-modello">
+        <div class="col-lg-12 col-sm-12">
+            <?=
+            $form->field($model, 'modello_risposte_id')->widget(Select2::classname(),
+                [
+                'data' => ArrayHelper::map(\open20\amos\sondaggi\models\SondaggiModelliPredefiniti::find()->orderBy('classname')->asArray()->all(),
+                    'id', 'classname'),
+                'options' => [
+                    'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona ...'),
+                    'id' => 'modello-id',
+                ],
+            ]);
+            ?>
+        </div>
+    </div>
     <div class="row" id="selezioni-minime-massime-label">
         <div class="col-lg-12 col-sm-12">
             <?php
