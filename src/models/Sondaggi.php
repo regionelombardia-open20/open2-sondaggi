@@ -1229,4 +1229,13 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
             }
         }
     }
+
+    /**
+     * @return bool
+     */
+    public function sendNotification()
+    {
+        return AmosSondaggi::instance()->sondaggiModelSendNotification;
+    }
+
 }

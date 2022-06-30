@@ -708,59 +708,63 @@ class DashboardController extends CrudController
             //DOMANDE
             $domande = $pagina->sondaggiDomandes;
             foreach ($domande as $domanda) {
-                $data                                   = [];
-                $newDomanda                             = new SondaggiDomande();
-                $data['SondaggiDomande']                = $domanda->attributes;
-                $newDomanda->load($data);
-                $newDomanda->id                         = null;
-                $newDomanda->sondaggi_id                = $sondaggio->id;
-                $newDomanda->domanda_condizionata       = $domanda->domanda_condizionata;
-                $newDomanda->sondaggi_domande_pagine_id = $newPagina->id;
-                $newDomanda->created_by                 = $created_by;
-                $newDomanda->updated_by                 = $created_by;
-                $okDom                                  = $newDomanda->save();
+                if (empty($domanda->parent_id)) {
+                    $data                                   = [];
+                    $newDomanda                             = new SondaggiDomande();
+                    $data['SondaggiDomande']                = $domanda->attributes;
+                    $newDomanda->load($data);
+                    $newDomanda->id                         = null;
+                    $newDomanda->sondaggi_id                = $sondaggio->id;
+                    $newDomanda->domanda_condizionata       = $domanda->domanda_condizionata;
+                    $newDomanda->sondaggi_domande_pagine_id = $newPagina->id;
+                    $newDomanda->created_by                 = $created_by;
+                    $newDomanda->updated_by                 = $created_by;
+                    $okDom                                  = $newDomanda->save();
 
-                foreach ($domanda->getFiles() as $file) {
-                    FileModule::instance()->attachFile($file->path, $newDomanda, 'file', false);
-                }
-
-                if ($okDom) {
-                    if ($domanda->domanda_condizionata == 1) {
-                        $rispCond                    = $domanda->sondaggiRispostePredefinitesCondizionate;
-                        $newDomCond[$newDomanda->id] = ['ordinamento' => $rispCond->ordinamento, 'risposta' => $rispCond->risposta,
-                            'pagina' => $newPagina->id];
+                    foreach ($domanda->getFiles() as $file) {
+                        FileModule::instance()->attachFile($file->path, $newDomanda, 'file', false);
                     }
-                }
 
-                // RISPOSTE PREDEFINITE
-                $risposte = $domanda->sondaggiRispostePredefinites;
-                if (!empty($risposte)) {
-                    foreach ($risposte as $risposta) {
-                        $data                                = [];
-                        $newRisposta                         = new SondaggiRispostePredefinite();
-                        $data['SondaggiRispostePredefinite'] = $risposta->attributes;
-                        $newRisposta->load($data);
-                        $newRisposta->id                     = null;
-                        $newRisposta->sondaggi_domande_id    = $newDomanda->id;
-                        $newRisposta->created_by             = $created_by;
-                        $newRisposta->updated_by             = $created_by;
-                        $newRisposta->save();
-                    }
-                }
+                    if ($okDom) {
+                        if ($domanda->domanda_condizionata == 1) {
+                            $rispCond                    = $domanda->sondaggiRispostePredefinitesCondizionate;
+                            $newDomCond[$newDomanda->id] = ['ordinamento' => $rispCond->ordinamento, 'risposta' => $rispCond->risposta,
+                                'pagina' => $newPagina->id];
+                        }
 
-                // SOTTO-DOMANDE
-                $sub_questions = $domanda->getChildren()->all();
-                if ($domanda->is_parent && !empty($sub_questions)) {
-                    foreach ($sub_questions as $child) {
-                        $data                                  = [];
-                        $newSubDomanda                         = new SondaggiDomande();
-                        $data['SondaggiDomande']               = $child->attributes;
-                        $newSubDomanda->load($data);
-                        $newSubDomanda->id                     = null;
-                        $newSubDomanda->parent_id              = $newDomanda->id;
-                        $newSubDomanda->created_by             = $created_by;
-                        $newSubDomanda->updated_by             = $created_by;
-                        $newSubDomanda->save();
+                        // RISPOSTE PREDEFINITE
+                        $risposte = $domanda->sondaggiRispostePredefinites;
+                        if (!empty($risposte)) {
+                            foreach ($risposte as $risposta) {
+                                $data                                = [];
+                                $newRisposta                         = new SondaggiRispostePredefinite();
+                                $data['SondaggiRispostePredefinite'] = $risposta->attributes;
+                                $newRisposta->load($data);
+                                $newRisposta->id                     = null;
+                                $newRisposta->sondaggi_domande_id    = $newDomanda->id;
+                                $newRisposta->created_by             = $created_by;
+                                $newRisposta->updated_by             = $created_by;
+                                $newRisposta->save();
+                            }
+                        }
+
+                        // SOTTO-DOMANDE
+                        $sub_questions = $domanda->getChildren()->all();
+                        if ($domanda->is_parent && !empty($sub_questions)) {
+                            foreach ($sub_questions as $child) {
+                                $data                                  = [];
+                                $newSubDomanda                         = new SondaggiDomande();
+                                $data['SondaggiDomande']               = $child->attributes;
+                                $newSubDomanda->load($data);
+                                $newSubDomanda->id                     = null;
+                                $newSubDomanda->parent_id              = $newDomanda->id;
+                                $newSubDomanda->sondaggi_id            = $newDomanda->sondaggi_id;
+                                $newSubDomanda->sondaggi_domande_pagine_id = $newPagina->id;
+                                $newSubDomanda->created_by             = $created_by;
+                                $newSubDomanda->updated_by             = $created_by;
+                                $newSubDomanda->save();
+                            }
+                        }
                     }
                 }
             }
@@ -783,22 +787,6 @@ class DashboardController extends CrudController
                     $newDomandaCondiz->updated_by                       = $created_by;
                     $newDomandaCondiz->save();
                 }
-            }
-
-            // INVITI
-            $invitations = $model->invitations;
-            foreach ($invitations as $invitation) {
-                $data                        = [];
-                $newInvitation               = new SondaggiInvitations();
-                $data['SondaggiInvitations'] = $invitation->attributes;
-                $newInvitation->load($data);
-                $newInvitation->id                      = null;
-                $newInvitation->sondaggi_id             = $sondaggio->id;
-                $newInvitation->count                   = $invitation->count;
-                $newInvitation->invited                 = false;
-                $newInvitation->created_by              = $created_by;
-                $newInvitation->updated_by              = $created_by;
-                $okInv                                  = $newInvitation->save();
             }
         }
         if ($ok) {

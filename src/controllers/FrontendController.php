@@ -202,9 +202,11 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
+            \Yii::debug($data, 'sondaggi');
             if ($newModel->load($data) && $newModel->validate()) {
+                \Yii::debug($newModel->validate(), 'sondaggi');
                 $newModel->save($idSessione, $accesso, $completato);
-
                 if ($this->model->frontend == 1) {
                     $this->model->setFrontendCookie($idSessione);
                 }
@@ -321,6 +323,7 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -490,6 +493,7 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
@@ -587,6 +591,7 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {

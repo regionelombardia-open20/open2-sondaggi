@@ -277,9 +277,19 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $enableForceLanguageByGet = false;
 
     /**
+     * @var bool $sondaggiModelSendNotification
+     */
+    public $sondaggiModelSendNotification = true;
+
+    /**
      * @var string $sondaggioDataConfirmMessage
      */
     public $sondaggioDataConfirmMessage = '';
+
+    /**
+     * @var bool $additionalButtonsInAnswerCreation
+     */
+    public $additionalButtonsInAnswerCreation = true;
 
     /**
      * @inheritdoc

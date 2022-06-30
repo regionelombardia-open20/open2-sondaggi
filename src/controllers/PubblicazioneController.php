@@ -593,6 +593,9 @@ class PubblicazioneController extends CrudController
         $dir_models = $this->alias_path.DS.$this->base_dir.DS."models".DS."q".$id;
         $dir_views  = $this->alias_path.DS.$this->base_dir.DS."views".DS."q".$id;
 
+        $session = \Yii::$app->session;
+        $session->open();
+
         if (!is_dir($dir_models)) {
             mkdir($dir_models, 0777, true);
         }
@@ -641,6 +644,8 @@ class PubblicazioneController extends CrudController
             if ($idPagina != $ultimaPagina) {
                 $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
+            } else {
+                $completato = true;
             }
         } else {
             $idPagina       = $primaPagina;
@@ -650,6 +655,7 @@ class PubblicazioneController extends CrudController
 
         $risposteWithFiles = [];
         if ($primaPagina) {
+            if (isset($session['answer_data'])) unset($session['answer_data']);
             $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
             $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
             $risposteWithFiles      = [];
@@ -665,12 +671,13 @@ class PubblicazioneController extends CrudController
         if (Yii::$app->request->isPost) {
             $data     = Yii::$app->request->post();
             $idPagina = $data['idPagina'];
-            \Yii::debug($data, 'sondaggi');
             if ($idPagina != $ultimaPagina) {
                 $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
             }
             else {
+                $completato = true;
+                if (isset($session['answer_data'])) unset($session['answer_data']);
                 if (!empty($url))
                     return $this->redirect([$url]);
                 else
@@ -682,16 +689,18 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->read = true;
             if ($newModel->load($data) && $newModel->validate()) {
+                $newModel->save($idSessione, $accesso, $completato, true);
                 $prossimoModel = new $percorsoNew;
                 return $this->render('/pubblicazione/compila',
                     ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url, 'useSession' => true]);
 
             } else {
                 return $this->render('/pubblicazione/compila',
                     ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url, 'useSession' => true]);
             }
         } else {
             if ($primaPagina) {
@@ -746,11 +755,11 @@ class PubblicazioneController extends CrudController
             $utente = Yii::$app->getUser()->getId();
         }
         $this->model = Sondaggi::findOne(['id' => $id]);
-    
+
         if ($read && !empty($this->model->sondaggiRisposteSessionisByEntity[0])) {
             return $this->redirect(['pubblicazione/view-compilation', 'id' => $this->model->sondaggiRisposteSessionisByEntity[0]->id, 'url' => $url]);
         }
-        
+
         $orgId       = null;
         if (AmosSondaggi::instance()->compilationToOrganization) {
             $orgId = $this->model->getOrgEntity($utente)->id;
@@ -838,6 +847,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
@@ -956,6 +966,7 @@ class PubblicazioneController extends CrudController
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -992,6 +1003,7 @@ class PubblicazioneController extends CrudController
                         $percorso = ($this->percorso_model.$id."\\Pagina_".$primaPagina);
                         if (class_exists($percorso)) {
                             $newModel = new $percorso;
+                            $newModel->session_id = $sessione->id;
                             return $this->render('/pubblicazione/compila',
                                     ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $id,
                                     'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
@@ -1135,6 +1147,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($id, null, $completato);
 
@@ -1228,6 +1241,7 @@ class PubblicazioneController extends CrudController
                 }
                 $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
                 $newModel          = new $percorso;
+                $newModel->session_id = $sessione->id;
                 $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                 $risposteWithFiles = [];
                 foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -1264,6 +1278,7 @@ class PubblicazioneController extends CrudController
                 $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
                 if (class_exists($percorso)) {
                     $newModel = new $percorso;
+                    $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
@@ -1354,6 +1369,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
 
                 $prossimoModel = new $percorsoNew;
@@ -1420,6 +1436,7 @@ class PubblicazioneController extends CrudController
                 }
                 $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
                 $newModel          = new $percorso;
+                $newModel->session_id = $sessione->id;
                 $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                 $risposteWithFiles = [];
                 foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -1456,6 +1473,7 @@ class PubblicazioneController extends CrudController
                 $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
                 if (class_exists($percorso)) {
                     $newModel = new $percorso;
+                    $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);

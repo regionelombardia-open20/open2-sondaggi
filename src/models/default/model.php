@@ -31,6 +31,9 @@ use open20\amos\attachments\models\File;
 class <?= $className ?> extends <?= '\\' . ltrim($generator->baseClass, '\\') . "\n" ?>
 {
 
+public $session_id;
+public $read = false;
+
 <?php foreach ($attributi as $attributo): ?>
     <?= $attributo . ";\n" ?>
 <?php endforeach; ?>
@@ -66,7 +69,6 @@ return [
 * @param integer $completato 0 | 1 di default a 0 se non specificato e indica se la pagina che si sta salvando è l'ultima o meno
 */
 public function save($sessione, $accesso = NULL, $completato = false, $read = false) {
-if ($read) return;
 <?php foreach ($salvataggio as $Save): ?>
     <?= "\n" . $Save . "\n" ?>
 <?php endforeach; ?>

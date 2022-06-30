@@ -18,6 +18,7 @@ use open20\amos\sondaggi\models\base\SondaggiTypes;
 use open20\amos\sondaggi\models\search\SondaggiDomandeSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomande;
+use open20\amos\sondaggi\models\SondaggiDomandeCondizionate;
 use open20\amos\sondaggi\models\SondaggiRispostePredefinite;
 use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\amos\attachments\FileModule;
@@ -449,6 +450,7 @@ class DashboardDomandeController extends CrudController
         $data['SondaggiDomande']                = $domanda->attributes;
         $newDomanda->load($data);
         $newDomanda->id                         = null;
+        $newDomanda->code                       = null;
         $newDomanda->sondaggi_id                = $domanda->sondaggi_id;
         $newDomanda->domanda_condizionata       = $domanda->domanda_condizionata;
         $newDomanda->sondaggi_domande_pagine_id = $domanda->sondaggi_domande_pagine_id;
@@ -492,7 +494,10 @@ class DashboardDomandeController extends CrudController
                     $data['SondaggiDomande']               = $child->attributes;
                     $newSubDomanda->load($data);
                     $newSubDomanda->id                     = null;
+                    $newSubDomanda->code                   = null;
+                    $newDomanda->domanda                    = $domanda->domanda . AmosSondaggi::t('amossondaggi', '#clone_append');
                     $newSubDomanda->parent_id              = $newDomanda->id;
+                    $newSubDomanda->sondaggi_id            = $newDomanda->sondaggi_id;
                     $newSubDomanda->created_by             = $created_by;
                     $newSubDomanda->updated_by             = $created_by;
                     $newSubDomanda->save();
