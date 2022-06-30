@@ -11,7 +11,10 @@
 namespace open20\amos\sondaggi\models;
 
 use open20\amos\attachments\behaviors\FileBehavior;
+use open20\amos\attachments\models\File;
 use open20\amos\community\utilities\CommunityUtil;
+use open20\amos\core\helpers\Html;
+use open20\amos\core\interfaces\NewsletterInterface;
 use open20\amos\notificationmanager\behaviors\NotifyBehavior;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\i18n\grammar\SondaggiGrammar;
@@ -33,7 +36,7 @@ use open20\amos\sondaggi\models\SondaggiMap;
  *
  * @package open20\amos\sondaggi\models
  */
-class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi
+class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements NewsletterInterface
 {
     // Workflow ID
     const WORKFLOW                   = 'SondaggiWorkflow';
@@ -108,6 +111,7 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi
 //      'tagValues' => '',
 //      'regola_pubblicazione' => 'Pubblicata per',
 //      'destinatari' => 'Per i condominii',
+                'file' => AmosSondaggi::t('amossondaggi', 'Immagine'),
                 'text_end_html' => AmosSondaggi::t('amossondaggi', 'Messaggio di fine sondaggio in HTML'),
                 'text_not_compilable_html' => AmosSondaggi::t('amossondaggi',
                     'Messaggio di sondaggio non compilabile in HTML'),
@@ -429,7 +433,11 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi
      */
     public function getDescription($truncate)
     {
-        return $this->descrizione;
+        $ret = $this->descrizione;
+        if ($truncate) {
+            $ret = $this->__shortText($this->descrizione, 200);
+        }
+        return $ret;
     }
 
     /**
@@ -519,8 +527,160 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi
     /**
      * @inheritdoc
      */
+    public function getWorkflowBaseStatusLabel()
+    {
+        return AmosSondaggi::t('amossondaggi', parent::getWorkflowBaseStatusLabel());
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getWorkflowStatusLabel()
     {
         return AmosSondaggi::t('amossondaggi', parent::getWorkflowStatusLabel());
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getModelImage()
+    {
+        return $this->getFile()->one();
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getModelImageUrl($size = 'original', $protected = true, $url = '/img/img_default.jpg', $absolute = false, $canCache = false)
+    {
+        /** @var File $surveyImage */
+        $surveyImage = $this->getModelImage();
+        if (!is_null($surveyImage)) {
+            if ($protected) {
+                $url = $surveyImage->getUrl($size, $absolute, $canCache);
+            } else {
+                $url = $surveyImage->getWebUrl($size, $absolute, $canCache);
+            }
+        }
+        return $url;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getModelImageUrlForSummaries()
+    {
+        return $this->getModelImageUrl('square_large', true, '/img/img_default.jpg', true, true);
+    }
+
+    /**
+     * @return string
+     */
+    public function newsletterOrderByField()
+    {
+        return 'created_at';
+    }
+
+    /**
+     * @return string
+     */
+    public function newsletterPublishedStatus()
+    {
+        return self::WORKFLOW_STATUS_VALIDATO;
+    }
+
+    /**
+     * @param string $searchParam
+     * @param ActiveQuery $query
+     * @return ActiveQuery
+     */
+    public function newsletterSearchFilter($searchParam, $query)
+    {
+        if ($searchParam) {
+            $query->andFilterWhere(['like', self::tableName() . '.titolo', $searchParam]);
+        }
+        return $query;
+    }
+
+    /**
+     * @return string
+     */
+    public function newsletterContentTitle()
+    {
+        return $this->titolo;
+    }
+
+    /**
+     * @return string
+     */
+    public function newsletterContentTitleField()
+    {
+        return 'titolo';
+    }
+    
+    /**
+     * @return string
+     */
+    public function newsletterContentStatusField()
+    {
+        return 'status';
+    }
+
+    /**
+     * @return array
+     */
+    public function newsletterContentGridViewColumns()
+    {
+        return [
+            [
+                'label' => $this->getAttributeLabel('file'),
+                'format' => 'html',
+                'value' => function ($model) {
+                    /** @var Sondaggi $model */
+                    $url = '/img/img_default.jpg';
+                    if ($model->file) {
+                        $url = $model->file->getUrl('original');
+                    }
+                    $contentImage = Html::img($url, ['class' => 'gridview-image', 'alt' => AmosSondaggi::t('amossondaggi', 'Immagine del sondaggio')]);
+                    return $contentImage;
+                }
+            ],
+            'titolo:ntext',
+            'status' => [
+                'attribute' => 'status',
+                'value' => function ($model) {
+                    /** @var Sondaggi $model */
+                    return $model->getWorkflowBaseStatusLabel();
+                }
+            ],
+            [
+                'attribute' => 'created_at',
+                'format' => 'datetime',
+                'label' => AmosSondaggi::t('amossondaggi', '#published_on')
+            ]
+        ];
+    }
+    
+    /**
+     * @return array
+     */
+    public function newsletterSelectContentsGridViewColumns()
+    {
+        return [
+            [
+                'label' => $this->getAttributeLabel('file'),
+                'format' => 'html',
+                'value' => function ($model) {
+                    /** @var Sondaggi $model */
+                    $url = '/img/img_default.jpg';
+                    if ($model->file) {
+                        $url = $model->file->getUrl('original');
+                    }
+                    $contentImage = Html::img($url, ['class' => 'gridview-image', 'alt' => AmosSondaggi::t('amossondaggi', 'Immagine del sondaggio')]);
+                    return $contentImage;
+                }
+            ],
+            'titolo:ntext'
+        ];
     }
 }

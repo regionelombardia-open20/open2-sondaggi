@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -14,10 +13,8 @@ namespace open20\amos\sondaggi\widgets\icons;
 use open20\amos\core\widget\WidgetIcon;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\widget\WidgetAbstract;
-
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\models\search\SondaggiSearch;
-
 use Yii;
 use yii\helpers\ArrayHelper;
 
@@ -55,22 +52,11 @@ class WidgetIconSondaggi extends WidgetIcon
             ArrayHelper::merge(
                 $this->getClassSpan(),
                 [
-                    'bk-backgroundIcon',
-                    'color-primary'
+                'bk-backgroundIcon',
+                'color-primary'
                 ]
             )
         );
-
-//        if ($this->disableBulletCounters == false) {
-//            $search = new SondaggiSearch();
-//            $this->setBulletCount(
-//                $this->makeBulletCounter(
-//                    Yii::$app->getUser()->getId(),
-//                    AmosSondaggi::className(),
-//                    $search->searchSondaggiNonPartecipato([])
-//                )
-//            );
-//        }
     }
 
     /**
@@ -81,9 +67,7 @@ class WidgetIconSondaggi extends WidgetIcon
     public function getOptions()
     {
         return ArrayHelper::merge(
-            parent::getOptions(),
-            ['children' => []]
+                parent::getOptions(), ['children' => []]
         );
     }
-
 }

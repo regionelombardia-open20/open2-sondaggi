@@ -1,14 +1,5 @@
 <?php
 
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\views\DataProviderView;
 use open20\amos\sondaggi\AmosSondaggi;

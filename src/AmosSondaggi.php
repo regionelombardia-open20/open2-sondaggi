@@ -80,6 +80,20 @@ class AmosSondaggi extends AmosModule implements ModuleInterface
      * @var bool|false $hideWidgetGraphicsActions
      */
     public $hideWidgetGraphicsActions = false;
+    
+    /**
+     * @var array $viewPathEmailSummary
+     */
+    public $viewPathEmailSummary = [
+        'open20\amos\sondaggi\models\Sondaggi' => '@vendor/open20/amos-sondaggi/src/views/email/notify_summary'
+    ];
+    
+    /**
+     * @var array $viewPathEmailSummaryNetwork
+     */
+    public $viewPathEmailSummaryNetwork = [
+        'open20\amos\sondaggi\models\Sondaggi' => '@vendor/open20/amos-sondaggi/src/views/email/notify_summary_network'
+    ];
 
     /**
      * @inheritdoc

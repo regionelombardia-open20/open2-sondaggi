@@ -123,7 +123,7 @@ class FrontendController extends Controller
 //        }
         $this->model        = Sondaggi::findOne(['id' => $id]);
 
-        if ($this->model->frontend !== 1) {
+        if ($this->model->frontend !== 1 || $this->model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO) {
             return $this->goHome();
         }
         if (!empty(trim($this->model->thank_you_page))) {

@@ -52,6 +52,16 @@ class SondaggiController extends CrudController
      * @var string $layout
      */
     public $layout = 'main';
+    
+    /**
+     * @var \open20\amos\cwh\AmosCwh $moduleCwh
+     */
+    public $moduleCwh;
+    
+    /**
+     * @var array $scope
+     */
+    public $scope;
 
     /**
      * @inheritdoc
@@ -62,6 +72,13 @@ class SondaggiController extends CrudController
 
         $this->setModelObj(new Sondaggi());
         $this->setModelSearch(new SondaggiSearch());
+    
+        $this->scope = null;
+        $this->moduleCwh = Yii::$app->getModule('cwh');
+    
+        if (!empty($this->moduleCwh)) {
+            $this->scope = $this->moduleCwh->getCwhScope();
+        }
 
         $this->setAvailableViews([
             'list' => [
@@ -365,6 +382,8 @@ class SondaggiController extends CrudController
                     return $this->render('create',
                             [
                             'model' => $this->model,
+                            'moduleCwh' => $this->moduleCwh,
+                            'scope' => $this->scope,
                             'url' => $url,
                             'public' => "false"
                     ]);
@@ -373,6 +392,8 @@ class SondaggiController extends CrudController
                 return $this->render('create',
                         [
                         'model' => $this->model,
+                        'moduleCwh' => $this->moduleCwh,
+                        'scope' => $this->scope,
                         'url' => $url
                 ]);
             }
@@ -540,6 +561,8 @@ class SondaggiController extends CrudController
                 return $this->render('create',
                         [
                         'model' => $this->model,
+                        'moduleCwh' => $this->moduleCwh,
+                        'scope' => $this->scope,
                         'url' => null
                 ]);
             }
@@ -547,6 +570,8 @@ class SondaggiController extends CrudController
         return $this->render('create',
                 [
                 'model' => $this->model,
+                'moduleCwh' => $this->moduleCwh,
+                'scope' => $this->scope,
                 'url' => null
         ]);
     }
@@ -579,6 +604,8 @@ class SondaggiController extends CrudController
 
         return $this->render('update', [
                 'model' => $this->model,
+            'moduleCwh' => $this->moduleCwh,
+            'scope' => $this->scope,
         ]);
     }
 

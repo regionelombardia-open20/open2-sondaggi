@@ -1,14 +1,5 @@
 <?php
 
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-
 use open20\amos\core\migration\AmosMigration;
 use open20\amos\sondaggi\models\Sondaggi;
 use yii\rbac\Permission;
@@ -17,7 +8,6 @@ class m161209_102125_sondaggi_role_widget extends AmosMigration {
 
     /**
      * Use this instead of function up().
-     * @see \Yii\db\Migration::safeUp() for more info.
      */
     public function safeUp() {
         return $this->addAuthorizations();
@@ -25,7 +15,6 @@ class m161209_102125_sondaggi_role_widget extends AmosMigration {
 
     /**
      * Use this instead of function down().
-     * @see \Yii\db\Migration::safeDown() for more info.
      */
     public function safeDown() {
         return $this->removeAuthorizations();

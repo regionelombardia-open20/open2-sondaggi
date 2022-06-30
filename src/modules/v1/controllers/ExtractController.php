@@ -1,14 +1,5 @@
 <?php
 
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-
 namespace open20\amos\sondaggi\modules\v1\controllers;
 
 use open20\amos\sondaggi\modules\v1\models\TaskSondaggi;

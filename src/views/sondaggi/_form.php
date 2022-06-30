@@ -21,12 +21,13 @@ use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\workflow\widgets\WorkflowTransitionButtonsWidget;
 use open20\amos\workflow\widgets\WorkflowTransitionStateDescriptorWidget;
 use yii\web\View;
-use yii\helpers\ArrayHelper;
 
 /**
  * @var yii\web\View $this
  * @var open20\amos\sondaggi\models\Sondaggi $model
  * @var yii\widgets\ActiveForm $form
+ * @var \open20\amos\cwh\AmosCwh $moduleCwh
+ * @var array $scope
  */
 ModuleSondaggiPublicAsset::register($this);
 
@@ -476,11 +477,34 @@ WorkflowTransitionStateDescriptorWidget::widget([
         ];
     }
     ?>
+    
+    <?php if (!empty($moduleCwh)): ?>
+        <?php $this->beginBlock('survey_recipients'); ?>
+        <div class="row">
+            <div class="col-xs-12 receiver-section">
+                <?= \open20\amos\cwh\widgets\DestinatariPlusTagWidget::widget([
+                    'model' => $model,
+                    'moduleCwh' => $moduleCwh,
+                    'scope' => $scope
+                ]); ?>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+        <?php $this->endBlock(); ?>
+        <?php
+        $itemsTab[] = [
+            'label' => AmosSondaggi::tHtml('amossondaggi', '#recipients'),
+            'content' => $this->blocks['survey_recipients'],
+        ];
+        ?>
+    <?php endif; ?>
 
     <?=
     Tabs::widget([
         'encodeLabels' => false,
-        'items' => $itemsTab
+        'items' => $itemsTab,
+        'hideCwhTab' => true,
+        'hideTagsTab' => true,
     ]);
     ?>
 

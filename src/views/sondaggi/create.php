@@ -14,6 +14,8 @@ use open20\amos\sondaggi\AmosSondaggi;
 /**
  * @var yii\web\View $this
  * @var open20\amos\sondaggi\models\Sondaggi $model
+ * @var \open20\amos\cwh\AmosCwh $moduleCwh
+ * @var array $scope
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', 'Inserisci sondaggio');
@@ -26,6 +28,8 @@ $this->params['breadcrumbs'][] = $this->title;
         'model' => $model,
         'url' => (isset($url)) ? $url : NULL,
         'public' => isset($public) ? $public : NULL,
+        'moduleCwh' => $moduleCwh,
+        'scope' => $scope
     ])
     ?>
 </div>

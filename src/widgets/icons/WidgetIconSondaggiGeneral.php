@@ -1,24 +1,14 @@
 <?php
 
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-
 namespace open20\amos\sondaggi\widgets\icons;
 
 use open20\amos\core\widget\WidgetIcon;
 use open20\amos\core\widget\WidgetAbstract;
 use open20\amos\core\icons\AmosIcons;
-
 use open20\amos\sondaggi\AmosSondaggi;
-
 use Yii;
 use yii\helpers\ArrayHelper;
+use open20\amos\utility\models\BulletCounters;
 
 /**
  * Class WidgetIconAmministraSondaggi
@@ -57,10 +47,16 @@ class WidgetIconSondaggiGeneral extends WidgetIcon
 
         $this->setClassSpan(
             ArrayHelper::merge(
-                $this->getClassSpan(),
-                $paramsClassSpan
+                $this->getClassSpan(), $paramsClassSpan
             )
         );
-    }
 
+        // Read and reset counter from bullet_counters table, bacthed calculated!
+        if ($this->disableBulletCounters == false) {
+            $widgetAll = \Yii::createObject(['class' => WidgetIconCompilaSondaggiAll::className(), 'saveMicrotime' => false]);
+            $this->setBulletCount(
+                $widgetAll->getBulletCount()
+            );
+        }
+    }
 }

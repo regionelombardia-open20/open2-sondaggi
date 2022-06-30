@@ -1,14 +1,9 @@
 <?php
-
 /**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-/**
+ * Created by PhpStorm.
+ * User: michele.lafrancesca
+ * Date: 29/05/2019
+ * Time: 16:24
  */
 
 namespace open20\amos\sondaggi\utility;

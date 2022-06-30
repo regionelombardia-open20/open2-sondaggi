@@ -1,14 +1,5 @@
 <?php
 
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
-
 class m161209_084650_permissions_sondaggi_domande extends \yii\db\Migration
 {
 

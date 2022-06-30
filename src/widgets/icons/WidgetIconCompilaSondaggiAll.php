@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -16,6 +15,8 @@ use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\ArrayHelper;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\widget\WidgetAbstract;
+use open20\amos\utility\models\BulletCounters;
+use Yii;
 
 /**
  * Class WidgetIconCompilaSondaggiAll
@@ -51,11 +52,21 @@ class WidgetIconCompilaSondaggiAll extends WidgetIcon
             ArrayHelper::merge(
                 $this->getClassSpan(),
                 [
-                    'bk-backgroundIcon',
-                    'color-primary'
+                'bk-backgroundIcon',
+                'color-primary'
                 ]
             )
         );
-    }
 
+        // Read and reset counter from bullet_counters table, bacthed calculated!
+        if ($this->disableBulletCounters == false) {
+            $this->setBulletCount(
+                BulletCounters::getAmosWidgetIconCounter(
+                    Yii::$app->getUser()->getId(), AmosSondaggi::getModuleName(), $this->getNamespace(),
+                    $this->resetBulletCount(), null, WidgetIconCompilaSondaggiOwnInterest::className(),
+                    $this->saveMicrotime
+                )
+            );
+        }
+    }
 }

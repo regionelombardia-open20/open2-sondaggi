@@ -16,6 +16,8 @@ use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\ArrayHelper;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\widget\WidgetAbstract;
+use open20\amos\utility\models\BulletCounters;
+use Yii;
 
 /**
  * Class WidgetIconCompilaSondaggiOwnInterest
@@ -56,6 +58,16 @@ class WidgetIconCompilaSondaggiOwnInterest extends WidgetIcon
                 ]
             )
         );
+
+         // Read and reset counter from bullet_counters table, bacthed calculated!
+        if ($this->disableBulletCounters == false) {
+            $this->setBulletCount(
+                BulletCounters::getAmosWidgetIconCounter(
+                    Yii::$app->getUser()->getId(), AmosSondaggi::getModuleName(), $this->getNamespace(),
+                    $this->resetBulletCount(), WidgetIconCompilaSondaggiAll::className()
+                )
+            );
+        }
     }
 
 }

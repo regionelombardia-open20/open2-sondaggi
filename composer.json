@@ -4,7 +4,7 @@
     "keywords": ["amos", "yii2", "sondaggi"],
     "homepage": "http://www.open20.it/",
     "type": "component",
-    "license": "BSD-3-Clause",
+    "proscription": "BSD-3-Clause",
     "support": {
         "issues": "http://www.example.com/",
         "forum": "http://www.example.com/forum/",
@@ -13,17 +13,17 @@
     },
     "require": {
         "php": ">=5.4.0",
-        "open20/amos-admin":">=1.8",
-        "open20/amos-core":"^1.9.57",
-        "open20/amos-dashboard":"^1.8",
+        "open20/amos-admin":"^2.2.0",
         "open20/amos-attachments":"^1.1.11",
-        "open20/amos-email-manager": "^1.1",
+        "open20/amos-core":"^1.19.0",
+        "open20/amos-dashboard":"^1.9",
+        "open20/amos-email-manager": "^1.1.19",
         "open20/amos-upload": "*",
         "kartik-v/yii2-detail-view": "*",
         "kartik-v/yii2-widget-fileinput": "*"
     },
     "autoload": {
-        "psr-4": {
+        "psr-4": { 
             "open20\\amos\\sondaggi\\": "src"
         }
     }

@@ -1,13 +1,4 @@
 <?php
-
-/**
- * Aria S.p.A.
- * OPEN 2.0
- *
- *
- * @package    Open20Package
- * @category   CategoryName
- */
 /** @var  $sondaggio \open20\amos\sondaggi\models\Sondaggi */
 
 $header = $data[0];

@@ -418,8 +418,14 @@ class PubblicazioneController extends CrudController
             $utente = Yii::$app->getUser()->getId();
         }
         $this->model = Sondaggi::findOne(['id' => $id]);
-        ModuleRisultatiAsset::register(\Yii::$app->getView());
 
+        if ($this->model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO && !\Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI')) {
+            \Yii::$app->getSession()->addFlash('danger',
+                AmosSondaggi::tHtml('amossondaggi', 'Sondaggio non compilabile.'));
+            return $this->goBack();
+        }
+        
+        ModuleRisultatiAsset::register(\Yii::$app->getView());
 
         $pagineQuery         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
         $pagine              = $pagineQuery->all();
