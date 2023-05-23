@@ -311,7 +311,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
             ]);
         }
         $userId = Yii::$app->getUser()->getId();
-        $organizations = \open20\amos\organizzazioni\Module::getUserOrganizations($userId);
+        $organizations = \open20\amos\organizzazioni\Module::instance()->getUserOrganizations($userId);
         $referOrganizations = array_filter($organizations, function ($org) use ($userId) {
             return in_array($userId, $org->refereesUserIds);
         });
@@ -328,7 +328,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
         if ($compilazioniStatus && $compilazioniStatus != '0') {
             $dataProvider->query->joinWith('sondaggiRisposteSessionis');
             if (AmosSondaggi::instance()->compilationToOrganization) {
-                $orgResult = \open20\amos\organizzazioni\Module::getUserOrganizations($userId);
+                $orgResult = \open20\amos\organizzazioni\Module::instance()->getUserOrganizations($userId);
                 $org = $orgResult[0]->id;
                 $query = $dataProvider->query->andWhere([
                     SondaggiRisposteSessioni::tableName() . '.organization_id' => $org

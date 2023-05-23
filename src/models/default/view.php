@@ -56,7 +56,10 @@ $libero = FALSE;
 <?php
 echo "\n?>\n";
 ?>
-<script src="//code.jquery.com/jquery-1.12.4.min.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.6.3.min.js"
+  integrity="sha256-pvPw+upLPUjgMXY0G+8O0xUf+/Im1MZjXxxgOcBQBXU="
+  crossorigin="anonymous"></script>
 <div>
     <?php
     $sondaggioLive = ($sondaggio->sondaggio_type == \open20\amos\sondaggi\models\base\SondaggiTypes::getLiveType());
@@ -344,10 +347,12 @@ echo "\n?>\n";
             // find elements
             var sortCheck = $(".sortable-response");
 
-            //Rendo draggabile le risposte
-            sortCheck.sortable({
-                handle: ".dragger",
-            });
+            if(sortCheck.length > 0){
+                //Rendo draggabile le risposte
+                sortCheck.sortable({
+                    handle: ".dragger",
+                });
+            }
 
             jQuery('.mover').click(function(e) {
                 var arrow = jQuery(this);

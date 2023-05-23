@@ -397,7 +397,7 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
      * @param int $session_id
      * @return \yii\db\ActiveQuery
      */
-    public function getRispostePerUtente($user_id = null, $session_id)
+    public function getRispostePerUtente($user_id = null, $session_id = null)
     {
 		if($this->is_parent){
 			$query = $this->getSondaggiRisposteChilds()

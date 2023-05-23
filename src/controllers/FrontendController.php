@@ -240,7 +240,7 @@ class FrontendController extends Controller
                         return $this->redirect($thankYouPage);
                     } else {
                         return $this->render($thankYouPage,
-                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model, 'sessione' => $sessione,  'language' => $language, 'field_extra' => $field_extra]);
+                                ['url' => $url, 'pubblicazioni' => $this->model->getSondaggiPubblicaziones(), 'forzato' => $this->model->forza_lingua, 'sondaggio' => $this->model, 'sessione' => $idSessione,  'language' => $language, 'field_extra' => $field_extra]);
                     }
                 } else {
                     $prossimoModel = new $percorsoNew;

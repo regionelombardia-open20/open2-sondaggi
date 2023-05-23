@@ -454,7 +454,7 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     {
         if (!empty($user_id)) {
             // Finding all current user - organization combinations (should be only one) to check whether the poll was compiled already
-            $orgResult = \open20\amos\organizzazioni\Module::getUserOrganizations($user_id);
+            $orgResult = \open20\amos\organizzazioni\Module::instance()->getUserOrganizations($user_id);
             $userOrgs  = [];
             foreach ($orgResult as $org) {
                 $userOrgs[] = $org->id;

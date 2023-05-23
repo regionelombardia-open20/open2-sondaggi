@@ -51,9 +51,9 @@ class SondaggiDomandeRule extends \open20\amos\sondaggi\models\base\SondaggiDoma
         ]);
     }
 
-    public static function getEditFields()
+    public function getEditFields()
     {
-        $labels = self::attributeLabels();
+        $labels = $this->attributeLabels();
 
         return [
             [

@@ -17,7 +17,8 @@ class ModuleRisultatiFrontendAsset extends AssetBundle
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset',
-        'kartik\depdrop\DepDropExtAsset'
+        'kartik\depdrop\DepDropExtAsset',
+        'open20\design\assets\BootstrapItaliaDesignAsset'
     ];
 
 }

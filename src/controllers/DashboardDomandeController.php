@@ -187,7 +187,7 @@ class DashboardDomandeController extends CrudController
     public function actionView($id)
     {
         $this->model = $this->findModel($id);
-        $this->setMenuSidebar(Sondaggi::findOne($idSondaggio), $this->model->id);
+        $this->setMenuSidebar(Sondaggi::findOne($this->model->sondaggi_id), $this->model->id);
 
         if ($this->model->load(Yii::$app->request->post()) && $this->model->save()) {
             return $this->redirect(['view', 'id' => $this->model->id]);
@@ -428,7 +428,7 @@ class DashboardDomandeController extends CrudController
         \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model, $idQuestion);
     }
 
-    public function actionClone($id) {
+    public function actionClone($id, $url = null) {
         $created_by = \Yii::$app->user->id;
         $newDomCond                    = [];
         $data                          = [];
@@ -448,7 +448,6 @@ class DashboardDomandeController extends CrudController
         }
 
         //DOMANDE
-        $data                                   = [];
         $newDomanda                             = new SondaggiDomande();
         $data['SondaggiDomande']                = $domanda->attributes;
         $newDomanda->load($data);

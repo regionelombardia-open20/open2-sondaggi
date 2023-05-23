@@ -270,7 +270,7 @@ class SondaggiController extends CrudController
                 'model' => $this->modelSearch,
                 'dataProvider' => $this->getDataProvider(),
                 'currentView' => $this->getCurrentView(),
-                'title' => $title
+                'title' => $this->view->params['titleSection'],
         ]);
     }
 
@@ -1324,7 +1324,7 @@ class SondaggiController extends CrudController
                         $rispostaPredefinita                      = new SondaggiRispostePredefinite();
                         $rispostaPredefinita->sondaggi_domande_id = $idDomanda;
                         $rispostaPredefinita->risposta            = $rispostaPredefinitaName;
-                        $rispostaPredefinita->code                = $rispostaPredefinitaCodice;
+                        $rispostaPredefinita->code                = null;
                         $rispostaPredefinita->ordinamento         = $i;
                         $ok                                       = $rispostaPredefinita->save();
                         if ($ok) {

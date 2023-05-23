@@ -38,7 +38,7 @@ class ExtractController extends Controller
      * @param string $output filled with the command output
      * @return int termination status of the process that was run
      */
-    public function run($cmd)
+    public function run($cmd, $params = [])
     {
         //$status = exec($this->buildCommand($cmd));
         $status = pclose(popen($this->buildCommand($cmd), "r"));

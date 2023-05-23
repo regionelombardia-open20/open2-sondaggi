@@ -72,17 +72,17 @@ class WidgetIconAmministraSondaggi extends WidgetIcon
     {
         $widgets = [];
 
-        $WidgetIconSondaggi = new icons\WidgetIconSondaggi();
+        $WidgetIconSondaggi = new WidgetIconSondaggi();
         if ($WidgetIconSondaggi->isVisible()) {
             $widgets[] = $WidgetIconSondaggi->getOptions();
         }
 
-        $WidgetIconCompilaSondaggi = new icons\WidgetIconCompilaSondaggi();
+        $WidgetIconCompilaSondaggi = new WidgetIconCompilaSondaggi();
         if ($WidgetIconCompilaSondaggi->isVisible()) {
             $widgets[] = $WidgetIconCompilaSondaggi->getOptions();
         }
 
-        $WidgetIconPubblicaSondaggi = new icons\WidgetIconPubblicaSondaggi();
+        $WidgetIconPubblicaSondaggi = new WidgetIconPubblicaSondaggi();
         if ($WidgetIconPubblicaSondaggi->isVisible()) {
             $widgets[] = $WidgetIconPubblicaSondaggi->getOptions();
         }

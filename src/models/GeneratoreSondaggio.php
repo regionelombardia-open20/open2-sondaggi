@@ -96,7 +96,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 		$this->ns      = $ns;
 		$pagina        = SondaggiDomandePagine::findOne( [ 'id' => $id ] );
 		$nPagine       = SondaggiDomandePagine::find()->andWhere( [ 'sondaggi_id' => $pagina->sondaggi_id ] )->count();
-		$allPagine     = SondaggiDomandePagine::find()->andWhere( [ 'sondaggi_id' => $pagina->sondaggi_id ] )->orderBy( 'id' )->asArray()->all();
+		$allPagine     = SondaggiDomandePagine::find()->andWhere( [ 'sondaggi_id' => $pagina->sondaggi_id ] )->orderBy( 'ordinamento' )->asArray()->all();
 		$nObbligatorie = SondaggiDomande::find()->andWhere( [ 'sondaggi_domande_pagine_id' => $id ] )->andWhere( [ 'obbligatoria' => 1 ] )->andWhere(['is_parent' => 0])->count();
 		$arrPagine     = [];
 		foreach ( $allPagine as $k => $v ) {

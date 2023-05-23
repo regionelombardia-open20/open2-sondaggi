@@ -46,8 +46,8 @@ class SondaggiModelliPredefiniti extends \open20\amos\sondaggi\models\base\Sonda
         ]);
     }
 
-    public static function getEditFields() {
-        $labels = self::attributeLabels();
+    public function getEditFields() {
+        $labels = $this->attributeLabels();
 
         return [
             [

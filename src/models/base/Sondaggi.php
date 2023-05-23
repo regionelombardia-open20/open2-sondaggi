@@ -182,7 +182,8 @@ abstract class Sondaggi extends ContentModel
      */
     public function getSondaggiTemi()
     {
-        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiTemi::className(), ['id' => 'sondaggi_temi_id']);
+        return null;
+//        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiTemi::className(), ['id' => 'sondaggi_temi_id']);
     }
 
     /**

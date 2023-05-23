@@ -50,9 +50,9 @@ class SondaggiDomandeRuleMm extends \open20\amos\sondaggi\models\base\SondaggiDo
         ]);
     }
 
-    public static function getEditFields()
+    public function getEditFields()
     {
-        $labels = self::attributeLabels();
+        $labels = $this->attributeLabels();
 
         return [
             [

@@ -82,11 +82,11 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
         return $data;
     }
 
-    public static function getPollTags($query) {
+    public static function getPollTags() {
         return Tag::find();
     }
 
-    public static function getPollGroups($query) {
+    public static function getPollGroups() {
         return ProfiloGroups::find();
     }
 

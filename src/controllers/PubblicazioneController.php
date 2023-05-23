@@ -43,6 +43,7 @@ use open20\amos\core\widget\WidgetAbstract;
 use open20\amos\admin\AmosAdmin;
 use open20\amos\organizzazioni\models\ProfiloUserMm;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
+use kartik\mpdf\Pdf;
 
 /**
  * Class PubblicazioneController
@@ -600,7 +601,7 @@ class PubblicazioneController extends CrudController
      * @return string
      */
     public function actionPreview($id, $idPagina = null, $utente = null, $idSessione = null, $accesso = null,
-                                  $url = null)
+                                  $url = null, $language = null, $field_extra = null)
     {
         $dir_models = $this->alias_path.DS.$this->base_dir.DS."models".DS."q".$id;
         $dir_views  = $this->alias_path.DS.$this->base_dir.DS."views".DS."q".$id;
@@ -726,7 +727,6 @@ class PubblicazioneController extends CrudController
                 }
             }
 
-            $idSondaggio           = $id;
             $sessione              = new SondaggiRisposteSessioni();
             $sessione->begin_date  = date('Y-m-d H:i:s');
             $sessione->end_date    = null;
@@ -737,7 +737,7 @@ class PubblicazioneController extends CrudController
             if (AmosSondaggi::instance()->compilationToOrganization) {
                 $sessione->organization_id = $orgId;
             }
-            $idSessione    = $sessione->id;
+            $idSessione    = null;
             $modelloPagina = $this->percorso_model.$id."\\Pagina_".$primaPagina;
             $pagina        = new $modelloPagina;
             return $this->render('/pubblicazione/compila',
@@ -1076,7 +1076,7 @@ class PubblicazioneController extends CrudController
         }
     }
 
-    public function actionRiCompila($id, $url = null, $language = null, $field_extra = null)
+    public function actionRiCompila($id, $url = null, $language = null, $field_extra = null, $utente = null)
     {
         $draft              = false;
         $pageNonCompilabile = '/pubblicazione/non_compilabile';
@@ -1118,7 +1118,7 @@ class PubblicazioneController extends CrudController
         $pagine         = $this->model->getSondaggiDomandePagines()->orderBy('ordinamento, id ASC');
         $primaPagina    = $pagine->all()[0]['id'];
         $ultimaPagina   = $pagine->all()[$pagine->count() - 1]['id'];
-        $prossimaPagina = null;
+        
         $arrayPag       = [];
         $completato     = false;
 
@@ -1129,16 +1129,16 @@ class PubblicazioneController extends CrudController
 
         $domandeWithFilesIds = [];
 
-        if ($idPagina) {
-            if ($idPagina != $ultimaPagina) {
-                $idPag          = array_search($idPagina, $arrayPag);
-                $prossimaPagina = $arrayPag[$idPag + 1];
-            }
-        } else {
+//        if ($idPagina) {
+//            if ($idPagina != $ultimaPagina) {
+//                $idPag          = array_search($idPagina, $arrayPag);
+//                $prossimaPagina = $arrayPag[$idPag + 1];
+//            }
+//        } else {
             $idPagina       = $primaPagina;
             $idPag          = array_search($primaPagina, $arrayPag);
             $prossimaPagina = (isset($arrayPag[$idPag + 1])) ? $arrayPag[$idPag + 1] : 0;
-        }
+//        }
 
         $risposteWithFiles = [];
         if ($primaPagina) {
@@ -1315,7 +1315,7 @@ class PubblicazioneController extends CrudController
                     $newModel = new $percorso;
                     $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
-                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
+                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => null, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
                 } else {
                     return $this->redirect(['/sondaggi/pubblicazione']);
@@ -1510,7 +1510,7 @@ class PubblicazioneController extends CrudController
                     $newModel = new $percorso;
                     $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
-                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
+                            ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => null, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
                 } else {
                     return $this->redirect(['/sondaggi/pubblicazione']);
@@ -2126,7 +2126,7 @@ class PubblicazioneController extends CrudController
     public function actionLoadUsers($id)
     {
         $userId        = Yii::$app->getUser()->getId();
-        $organizations = \open20\amos\organizzazioni\Module::getUserOrganizations($userId);
+        $organizations = \open20\amos\organizzazioni\Module::instance()->getUserOrganizations($userId);
         $model         = Sondaggi::findOne(['id' => $id]);
         $query         = ProfiloUserMm::find()->andWhere(['and', ['status' => ProfiloUserMm::STATUS_ACTIVE], ['!=', 'role',
                 'RESPONSABILE_ENTE']]);
@@ -2136,7 +2136,7 @@ class PubblicazioneController extends CrudController
                 if ($organization->to_id == $org->id) $ref[] = $org->id;
             }
         }
-        $query = $query->andWhere(['profilo_id' => $ref]);
+        $query->andWhere(['profilo_id' => $ref]);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -2146,7 +2146,7 @@ class PubblicazioneController extends CrudController
         return $this->renderAjax('_search_users',
                 [
                 'idSondaggio' => $model->id,
-                'userSelected' => $userForCompilation,
+                'userSelected' => null,
                 'dataProvider' => $dataProvider,
                 'currentView' => $currentView
         ]);

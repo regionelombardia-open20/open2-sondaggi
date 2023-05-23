@@ -36,8 +36,6 @@ return [
     'Attivo' => 'Attivo',
     '#BOZZA_DAVALIDARE_buttonLabel' => 'Rifiuta pubblicazione',
     '#BOZZA_DAVALIDARE_description' => 'richiedi un intervento al redattore',
-    '#BOZZA_description' => 'potrai richiedere la pubblicazione in seguito',
-    '#BOZZA_label' => 'Puoi ancora modificare il sondaggio e inviare la richiesta di pubblicazione',
     '#BOZZA_VALIDATO_buttonLabel' => 'Togli dalla pubblicazione',
     '#BOZZA_VALIDATO_description' => 'riporta il sondaggio in "bozza" e richiedi un intervento al redattore',
     'Cancella' => 'Cancella',

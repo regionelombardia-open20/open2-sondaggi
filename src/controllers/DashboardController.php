@@ -61,6 +61,8 @@ use open20\amos\upload\models\FilemanagerMediafile;
 use open20\amos\attachments\FileModule;
 use Yii;
 use open20\amos\organizzazioni\models\Profilo;
+use open20\amos\sondaggi\models\base\SondaggiTypes;
+use yii\log\Logger;
 
 class DashboardController extends CrudController
 {
@@ -861,7 +863,7 @@ class DashboardController extends CrudController
         $sondaggio = $this->findModel($id);
         $this->setMenuSidebar($sondaggio);
         Url::remember();
-        $this->setUrl($url);
+//        $this->setUrl($url);
         $this->setModelSearch(new \open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch());
         $this->setAvailableViews([
             'grid' => [
@@ -928,7 +930,7 @@ class DashboardController extends CrudController
     /**
      * @param $model
      */
-    public function setMenuSidebar($model, $page)
+    public function setMenuSidebar($model, $page = null)
     {
         \Yii::$app->getView()->params['showSidebarForm'] = true;
         \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model, null, $page);
@@ -1164,7 +1166,7 @@ class DashboardController extends CrudController
             $this->scope = $this->moduleCwh->getCwhScope();
         }
         Url::remember();
-        $this->setUrl($url);
+//        $this->setUrl($url);
         $this->setModelSearch(new \open20\amos\sondaggi\models\search\SondaggiComunicationSearch());
         $this->setDataProvider($this->getModelSearch()->search(Yii::$app->request->getQueryParams()));
 

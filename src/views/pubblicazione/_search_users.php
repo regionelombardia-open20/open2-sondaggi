@@ -151,4 +151,3 @@ $this->registerJs($js);
             ],
         ]
     ]);
-    ?>

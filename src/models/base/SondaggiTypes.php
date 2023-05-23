@@ -37,7 +37,7 @@ class SondaggiTypes extends \yii\base\BaseObject
      *
      * @return string
      */
-    public function getStandardType()
+    public static function getStandardType()
     {
         return self::SONDAGGI_TYPE_STANDARD;
     }
@@ -46,7 +46,7 @@ class SondaggiTypes extends \yii\base\BaseObject
      *
      * @return string
      */
-    public function getLiveType()
+    public static function getLiveType()
     {
         return self::SONDAGGI_TYPE_LIVE;
     }
