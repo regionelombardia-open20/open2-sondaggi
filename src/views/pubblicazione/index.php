@@ -39,7 +39,7 @@ $this->registerJs($js);
  */
 ?>
 <div class="sondaggi-index">
-    <?php echo $this->render('_search', ['model' => $model]); ?>
+    <?php // echo $this->render('_search', ['model' => $model]); ?>
 
     <p>
         <?php /* echo         Html::a(AmosSondaggi::t('amossondaggi', 'Nuovo {modelClass}', [

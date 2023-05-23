@@ -137,46 +137,87 @@ class GeneratoreSondaggio extends \yii\base\Model {
 			$tipoCondizionataArr = [];
 			$tipo                = SondaggiDomandeTipologie::findOne( $Domanda['sondaggi_domande_tipologie_id'] )->html_type;
 			$condizionata        = $Domanda->domanda_condizionata;
-			$is_parent           = $Domanda->is_parent;
+			$parent              = $Domanda->is_parent;
 
-			if ( !$condizionata && (($Domanda['obbligatoria'] && !$is_parent ) || ($Domanda->parent->obbligatoria)) ) {
+			if (!$condizionata && !$Domanda->parent->domanda_condizionata && (($Domanda['obbligatoria'] && !$parent ) || ($Domanda->parent->obbligatoria))) {
 				$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'required']";
-			} else if ( $Domanda['obbligatoria'] && $Domanda['domanda_condizionata'] ) {
+			} else if ( ($Domanda['obbligatoria'] || $Domanda->parent->obbligatoria) && !$parent && ($Domanda['domanda_condizionata'] || $Domanda->parent->domanda_condizionata) ) {
+				if ($Domanda['domanda_condizionata'])
+					$condizioni = SondaggiDomandeCondizionate::find()->andWhere( [ 'sondaggi_domande_id' => $Domanda['id'] ] )->all();
+				else
+					$condizioni = SondaggiDomandeCondizionate::find()->andWhere( [ 'sondaggi_domande_id' => $Domanda->parent->id ] )->all();
 
-				$condizioni = SondaggiDomandeCondizionate::find()->andWhere( [ 'sondaggi_domande_id' => $Domanda['id'] ] )->all();
+				$rule = "['domanda_" . $Domanda->id . "', 'required', 'when' => function(\$model) {\n";
+				$int_rules = [];
 
 				foreach ( $condizioni as $cond1 ) {
 					$rispostaCondizione   = SondaggiRispostePredefinite::find()->andWhere( [ 'id' => $cond1->sondaggi_risposte_predefinite_id ] )->one();
 					$idRispostaCondizione = $rispostaCondizione->id;
 					$domandaCondizionata  = $rispostaCondizione->sondaggi_domande_id;
 					$DomandaCond          = SondaggiDomande::findOne( [ 'id' => $domandaCondizionata ] );
-					$type                 = SondaggiDomandeTipologie::findOne( [ 'id' => $DomandaCond->sondaggi_domande_tipologie_id ] )->html_type;
-					if ( ! in_array( $idRispostaCondizione, $tipoCondizionataArr[ $type ][ $domandaCondizionata ] ) ) {
-						$tipoCondizionataArr[ $type ][ $domandaCondizionata ][] = $idRispostaCondizione;
+
+					if ($rispostaCondizione->sondaggiDomande->sondaggi_domande_pagine_id == $Domanda->sondaggi_domande_pagine_id)
+						$int_rules[] = "(in_array($idRispostaCondizione, (property_exists(\$model, 'domanda_$domandaCondizionata')? (is_array(\$model->domanda_$domandaCondizionata)? \$model->domanda_$domandaCondizionata : [\$model->domanda_$domandaCondizionata]) : [])))";
+					else {
+						$rule .= "if (!empty(\$model->session_id)) {\n"
+										."\$sessione = SondaggiRisposteSessioni::findOne(\$model->session_id);\n"
+										."\$risposteDate_".$idRispostaCondizione." = count(SondaggiRisposte::findOne( [\n"
+										."'sondaggi_risposte_sessioni_id'    => \$sessione->id,\n"
+										."'sondaggi_domande_id'              => ".$domandaCondizionata.",\n"
+										."'sondaggi_risposte_predefinite_id' => $idRispostaCondizione\n"
+										."] ));\n"
+										."} else if (\$model->read) {\n"
+										."\$session = \\Yii::\$app->session; \$session->open(); \$answerData = \$session['answer_data'];\n"
+										."if (isset(\$answerData[$domandaCondizionata])) {\n"
+										."\$risposteDate_".$idRispostaCondizione." = (in_array($idRispostaCondizione, (is_array(\$answerData[$domandaCondizionata])? \$answerData[$domandaCondizionata] : [\$answerData[$domandaCondizionata]])));\n"
+										."}\n"
+										."}\n";
+						$int_rules[] = "(\$risposteDate_".$idRispostaCondizione.")";
 					}
+
+					// Old code; to check if there's anything useful involving question type
+					// $type                 = SondaggiDomandeTipologie::findOne( [ 'id' => $DomandaCond->sondaggi_domande_tipologie_id ] )->html_type;
+					// if ( ! in_array( $idRispostaCondizione, $tipoCondizionataArr[ $type ][ $domandaCondizionata ] ) ) {
+					// 	$tipoCondizionataArr[ $type ][ $domandaCondizionata ][] = $idRispostaCondizione;
+					// }
 				}
 
-				if ( $pagina->id == $Domanda->sondaggi_domande_pagine_id ) {
-					$rules[] = "['domanda_" . $Domanda->id . "', 'required', 'when' => function(\$model) {\n"
-					           . $this->getWhenCondition( $tipoCondizionataArr )
-					           . "}, 'whenClient' => 'function (attribute, value) {
-                            return $(attribute.container).is(\":visible\");
-                            }'"
-					           . "]\n";
-				} else {
-					$sessione     = SondaggiRisposteSessioni::findOne( [
-						'sondaggi_id' => $Domanda['sondaggi_id'],
-						'user_id'     => $userProfile
-					] );
-					$risposteDate = SondaggiRisposte::findOne( [
-						'sondaggi_risposte_sessioni_id'    => $sessione->id,
-						'sondaggi_domande_id'              => $condizione->sondaggi_domande_id,
-						'sondaggi_risposte_predefinite_id' => $idRispostaCondizione
-					] );
-					if ( count( $risposteDate ) == 1 ) {
-						$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'required']";
-					}
+				if (!empty($int_rules)) {
+					$rule .= "return " . implode( ' || ', $int_rules ) . ";\n";
 				}
+				else
+					$rule .= "return false;\n";
+
+				$rule .= "}, 'whenClient' => 'function (attribute, value) {
+				                     return $(attribute.container).is(\":visible\");
+				                     }'"
+				 	           . "]\n";
+
+				$rules[] = $rule;
+
+				// if ( ($Domanda['domanda_condizionata'] && $pagina->id == $Domanda->sondaggi_domande_pagine_id) ||
+			  // 		($Domanda->parent->domanda_condizionata && $pagina->id == $Domanda->parent->sondaggi_domande_pagine_id)
+			  // ) {
+				// 	$rules[] = "['domanda_" . $Domanda->id . "', 'required', 'when' => function(\$model) {\n"
+				// 	           . $this->getWhenCondition( $tipoCondizionataArr )
+				// 	           . "}, 'whenClient' => 'function (attribute, value) {
+        //                     return $(attribute.container).is(\":visible\");
+        //                     }'"
+				// 	           . "]\n";
+				// } else {
+				// 	$sessione     = SondaggiRisposteSessioni::findOne( [
+				// 		'sondaggi_id' => $Domanda['sondaggi_id'],
+				// 		'user_id'     => $userProfile
+				// 	] );
+				// 	$risposteDate = SondaggiRisposte::findOne( [
+				// 		'sondaggi_risposte_sessioni_id'    => $sessione->id,
+				// 		'sondaggi_domande_id'              => $condizione->sondaggi_domande_id,
+				// 		'sondaggi_risposte_predefinite_id' => $idRispostaCondizione
+				// 	] );
+				// 	if ( count( $risposteDate ) == 1 ) {
+				// 		$rules[] = "[['domanda_" . $Domanda['id'] . "'], 'required']";
+				// 	}
+				// }
 			}
 			$domCondizione   = $Domanda->getSondaggiRispostePredefinitesCondizionate()->one();
 			$padreCondizione = null;
@@ -520,11 +561,11 @@ class GeneratoreSondaggio extends \yii\base\Model {
 			// Generazione form per domande multiple. Viene generata una tabella in base alla tipologia di risposta scelta
 			if ($Domanda->is_parent) {
 				$content = "<?php \$reflect = new \\ReflectionClass(\$model);?>";
-				$content .= (! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-				 . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+				$content .= "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+				 . (! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 				 . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 				 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
-				 . "<div>".$Domanda->domanda."</div>";
+				 . "<div class='control-label'>".$Domanda->domanda."</div>";
 				$content .= '<div class="table_switch table-responsive"><table class="table"><tr><th></th>';
 				if ($tipo == 'radio') {
 					$cols = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->orderBy('ordinamento ASC')->all();
@@ -588,8 +629,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				// Generazione form per domande singole
 				switch ( $tipo ) {
 					case 'checkbox':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 												. "<?php \n"
@@ -620,8 +661,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						break;*/
 					case 'radio':
 
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" $extraAttributes data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" $extraAttributes data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
@@ -633,8 +674,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						break;
 					case 'select':
 						//$campi[] = "echo \$form->field(\$model, 'domanda_$idD')->dropDownList(ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'), ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...')]);";
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
@@ -654,8 +695,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "</div>\n";
 						break;
 					case 'descrizione':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<div class=\"testo-introduttivo testo-sezione\"><?= stripslashes(\$model->attributeLabels()['domanda_$idD']) . '$tooltipHtml' ?></div>\n"
@@ -663,8 +704,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "</div>\n";
 						break;
 					case 'select-multiple':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>"
 								: '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
@@ -685,8 +726,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "</div>\n";
 						break;
 					case 'string':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
@@ -696,8 +737,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "</div>\n";
 						break;
 					case 'text':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
@@ -707,8 +748,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "</div>\n";
 						break;
 					case 'file':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>
@@ -743,8 +784,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 	                    ";
 						break;
 					case 'file-multiple':
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"col-xs-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						$campi[] = "<div class=\"col-xs-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>
@@ -776,16 +817,17 @@ class GeneratoreSondaggio extends \yii\base\Model {
 	                    ";
 						break;
 					case 'date'://da implementare
-						$campi[] = ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
-						           . "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
+											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
 											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
+                                                 . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>"
 						           . "<?php echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(DateControl::classname(), [ \n
 	                          'options' => [ \n
 	                                'id' => 'date_control_rispDomanda_$idD', \n
 	                                'layout' => '{input} {picker} ' . (empty(\$model->domanda_$idD)? '' : '{remove}')], \n
 	                                    'data' => ['question' => $idD] \n
-	                        ]); ?> \n"
+	                        ])->label(false); ?> \n"
 						           . "<script>"
 						           . "$( document ).ready(function() {"
 						           . "if($('#date_control_rispDomanda_$idD').val() == ''){
@@ -906,12 +948,28 @@ class GeneratoreSondaggio extends \yii\base\Model {
 					               . "if(!isset(\$utente)){\n"
 					               . "\$utente = Yii::\$app->getUser()->getId();\n"
 					               . "}\n"
+												 . "\$showConditional = 0;\n"
+												 . "if (\$useSession) {\n"
+												 . "\$session = \\Yii::\$app->session; \$session->open(); \$answerData = \$session['answer_data'];\n"
+												 . "\$count = [];\n"
+												 . "foreach([" . implode(',', $idDomConds) . "] as \$question) {\n"
+												 . "if (isset(\$answerData[\$question])) {\n"
+												 . "foreach(\$answerData[\$question] as \$answer) {\n"
+												 . "if (in_array(\$answer['sondaggi_risposte_predefinite_id'], [" . implode(',', $idRisConds) . "])) \$count[\$question][] = true; break;\n"
+												 . "}\n"
+												 . "}\n"
+												 . "}\n"
+												 . "if (count(\$count) >= " . count($idDomConds) . ") \$showConditional = count(\$count) > 0;\n"
+												 . "} else {\n"
 					               . "\$sessione = SondaggiRisposteSessioni::findOne(['id' => \$idSessione]);\n"
 					               . "\$risposteDate = SondaggiRisposte::find()->"
 					               . "andWhere(['sondaggi_risposte_sessioni_id' => \$idSessione])"
 					               . "->andWhere(['in', 'sondaggi_domande_id', [" . implode( ',', $idDomConds ) . "]])"
 					               . "->andWhere(['in', 'sondaggi_risposte_predefinite_id', [" . implode( ',', $idRisConds ) . "]]);\n"
-					               . "if(\$risposteDate->count() > 0){\n"
+												 . "\$showConditional = \$risposteDate->count() > 0;\n"
+												 . "}\n"
+												 . "\Yii::debug(\$showConditional, 'sondaggi');"
+					               . "if(\$showConditional){\n"
 					               . "?>\n"
 					               . "$(document).ready(function () {"
 					               . "$('#div-domanda_$idD').show();"
@@ -1000,7 +1058,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
         if (!empty($min) && !empty($max)) {
             $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => $min, 'max' => $max]";
         } else if (!empty($min) && empty($max)) {
-            $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => $min]";
+            $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => $min, 'max' => 1000]";
         } else if (empty($min) && !empty($max)) {
             $minMaxRule = "[['".$domanda."'], 'open20\\amos\\sondaggi\\validators\\Cardinality', 'min' => 0, 'max' => $max]";
         }
@@ -1049,6 +1107,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 		$Pagina      = SondaggiDomandePagine::findOne( [ 'id' => $pagina ] );
 		$domande     = $Pagina->getSondaggiDomandes();
 		$salvataggio = [];
+		$salvataggio[] = "if (\$read) {\$session = \\Yii::\$app->session; \$session->open(); \$answerData = isset(\$session['answer_data']) ? \$session['answer_data'] : [];}";
 		foreach ( $domande->all() as $Domanda ) {
 			$tipo            = SondaggiDomandeTipologie::findOne( [ 'id' => $Domanda['sondaggi_domande_tipologie_id'] ] )->html_type;
 			$condizionata    = $Domanda->domanda_condizionata;
@@ -1075,6 +1134,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 					case 'select':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 													 . "foreach (\$this->domanda_{$Domanda['id']} as \$key => \$Risposta) {\n"
+													 . "if (!\$read) {\n"
 													 . "\$risposta = new SondaggiRisposte();\n"
 													 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 													 . "\$risposta->column = \$key;\n"
@@ -1085,6 +1145,9 @@ class GeneratoreSondaggio extends \yii\base\Model {
 													 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 													 . "}\n"
 													 . "\$risposta->save();\n"
+													 . "} else {\n"
+													 . "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+													 . "}\n"
 													 . "}\n"
 													 . "}\n";
 							break;
@@ -1092,6 +1155,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						case 'text':
 							$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 														 . "foreach (\$this->domanda_{$Domanda['id']} as \$key => \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 														 . "\$risposta = new SondaggiRisposte();\n"
 														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 														 . "\$risposta->column = \$key;\n"
@@ -1102,12 +1166,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 														 . "}\n"
 														 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['risposta_libera' => \$Risposta];\n"
+															. "}\n"
 														 . "}\n"
 														 . "}\n";
 							 break;
 					case 'radio':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 														 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 														 . "\$risposta = new SondaggiRisposte();\n"
 														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 														 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1117,6 +1185,9 @@ class GeneratoreSondaggio extends \yii\base\Model {
 														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 														 . "}\n"
 														 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+															. "}\n"
 														 . "}\n"
 														 . "}\n";
 						break;
@@ -1126,6 +1197,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 					case 'checkbox':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1135,12 +1207,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'radio':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1150,12 +1226,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'select':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1165,12 +1245,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'select-multiple':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1180,12 +1264,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['sondaggi_risposte_predefinite_id' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'string':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1195,12 +1283,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['risposta_libera' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'text':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1210,12 +1302,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['risposta_libera' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'date':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = new SondaggiRisposte();\n"
 						                 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
 						                 . "\$risposta->sondaggi_risposte_sessioni_id = \$sessione;\n"
@@ -1225,12 +1321,16 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 						                 . "}\n"
 						                 . "\$risposta->save();\n"
+														 . "} else {\n"
+															. "\$answerData[".$Domanda['id']."][] = ['risposta_libera' => \$Risposta];\n"
+															. "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'file':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
 						                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
 														 . "\$risposta->sondaggi_domande_id = {$Domanda['id']};\n"
@@ -1239,12 +1339,14 @@ class GeneratoreSondaggio extends \yii\base\Model {
 														 . "\$risposta->sondaggi_accessi_servizi_id = \$accesso;\n"
 														 . "}\n"
 														 . "\$risposta->save();\n"
+														 . "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
 					case 'file-multiple':
 						$salvataggio[] = "if (is_array(\$this->domanda_{$Domanda['id']})) {\n"
 						                 . "foreach (\$this->domanda_{$Domanda['id']} as \$Risposta) {\n"
+														 . "if (!\$read) {\n"
 						                 . "\$risposta = SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$Domanda['id']}, 'sondaggi_risposte_sessioni_id' => \$sessione])->one();\n"
 						                 . "if(empty(\$risposta)){\$risposta = new SondaggiRisposte();}\n"
 						                 . "\$files = UploadedFile::getInstancesByName(\"domanda_{$Domanda['id']}\");\n"
@@ -1266,6 +1368,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$attachfile->save(false);\n"
 						                 . "} \n"
 						                 . "\n"
+														 . "}\n"
 						                 . "}\n"
 						                 . "}\n";
 						break;
@@ -1278,7 +1381,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				}
 			}
 		}
-		$salvataggio[] = "if(\$completato){\n"
+		$salvataggio[] = "if (\$read) {if (\$completato) unset(\$session['answer_data']); else \$session['answer_data'] = \$answerData;}";
+		$salvataggio[] = "if(\$completato && !\$read){\n"
 		                 . "\$Sessione = SondaggiRisposteSessioni::findOne(['id' => \$sessione]);\n"
 		                 . "\$Sessione->completato = 1;\n"
 		                 . "\$Sessione->end_date = date('Y-m-d H:i:s');\n"

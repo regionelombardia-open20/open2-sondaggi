@@ -19,35 +19,39 @@ use open20\amos\sondaggi\models\Sondaggi;
         'method' => 'get',
         'class' => 'row'
     ]); ?>
-    <div class="row">
-
-
-        <div class="col-sm-4"><?php echo $form->field($model, 'titolo') ?></div>
-        <div class="col-sm-4"><?php echo $form->field($model, 'descrizione') ?></div>
-
-        <div class="col-sm-4"><?php
-            echo $form->field($model, 'status')
-                ->dropdownList([
-                    null => AmosSondaggi::t('amossondaggi', '#all'),
-                    Sondaggi::WORKFLOW_STATUS_BOZZA => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_BOZZA),
-                    Sondaggi::WORKFLOW_STATUS_VALIDATO => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_VALIDATO),
-                ]);
-            ?>
-        </div>
+    
+    <div class="col-xs-12">
+        <p class="h3"><?= AmosSondaggi::tHtml('amossondaggi', 'Search by') ?></p>
     </div>
-    <div class="row">
-        <div class="col-sm-6"><?php echo $form->field($model, 'date_from')->widget(\kartik\datecontrol\DateControl::className(), [
-                'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
-            ]) ?></div>
-        <div class="col-sm-6"><?php echo $form->field($model, 'date_to')->widget(\kartik\datecontrol\DateControl::className(), [
-                'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
-            ]) ?></div>
-    <?php if (AmosSondaggi::instance()->differentiateClosed) { ?>
+    
+    <div class="col-xs-12 col-sm-4"><?php echo $form->field($model, 'titolo') ?></div>
+    <div class="col-xs-12 col-sm-4"><?php echo $form->field($model, 'descrizione') ?></div>
+
+    <div class="col-xs-12 col-sm-4"><?php
+        echo $form->field($model, 'status')
+            ->dropdownList([
+                null => AmosSondaggi::t('amossondaggi', '#all'),
+                Sondaggi::WORKFLOW_STATUS_BOZZA => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_BOZZA),
+                Sondaggi::WORKFLOW_STATUS_VALIDATO => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_VALIDATO),
+            ]);
+        ?>
+    </div>
+   
+    <div class="col-xs-12 col-sm-6"><?php echo $form->field($model, 'date_from')->widget(\kartik\datecontrol\DateControl::className(), [
+            'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
+        ]) ?>
+    </div>
+    
+    <div class="col-xs-12 col-sm-6"><?php echo $form->field($model, 'date_to')->widget(\kartik\datecontrol\DateControl::className(), [
+            'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
+        ]) ?>
+    </div>
+    <?php if (AmosSondaggi::instance()->differentiateClosed): ?>
         <div class="col-sm-6">
             <?= $form->field($model, 'closed')->checkbox(); ?>
         </div>
-    <?php } ?>
-    </div>
+    <?php endif; ?>
+  
     <?php // echo $form->field($model, 'sondaggi_id') ?>
 
     <?php // echo $form->field($model, 'ordinamento') ?>
@@ -68,11 +72,14 @@ use open20\amos\sondaggi\models\Sondaggi;
 
     <?php // echo $form->field($model, 'version') ?>
 
-    <div>
+    <div class="col-xs-12">
+        <div class="pull-right">
+        <?= Html::a(AmosSondaggi::tHtml('amossondaggi', 'Reset'), [''], ['class' => 'btn btn-secondary']) ?>    
         <?= Html::submitButton(AmosSondaggi::tHtml('amossondaggi', 'Cerca'), ['class' => 'btn btn-navigation-primary']) ?>
-        <?= Html::a(AmosSondaggi::tHtml('amossondaggi', 'Reset'), [''], ['class' => 'btn btn-secondary']) ?>
+        </div>
     </div>
-
+    
+    <div class="clearfix"></div>
     <?php ActiveForm::end(); ?>
 
 </div>

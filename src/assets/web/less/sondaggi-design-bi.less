@@ -400,6 +400,20 @@ IMPORT AMOS-LAYOUT VARIABLES
             margin-top: 25px;
         }
 
+        div[class*='col-'] > div[class*='col-'] {
+            padding: 0 !important;
+        }
+
+        .row.flex-column {
+            margin: 0;
+        }
+
+        @media screen and (max-width: 767px) {
+            .table-responsive > .table > tbody > tr > th[scope=row] {
+                padding-top: 15px;
+            }
+        }
+
         .sondaggi-content_domanda{
             padding-bottom: 25px;
             margin-bottom: 20px;

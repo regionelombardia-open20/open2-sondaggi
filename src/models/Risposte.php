@@ -486,7 +486,7 @@ class Risposte extends \yii\base\Model
                         $query   = $command->queryAll();
 
                         if (count($query)) {
-                            $testoArea                            = \backend\modules\tag\models\Tag::findOne(['id' => $Area['tipologie_entita']])->nome;
+                            $testoArea                            = \frontend\modules\tag\models\Tag::findOne(['id' => $Area['tipologie_entita']])->nome;
                             $ritorno[$Area['tipologie_entita']][] = ['Rilevazioni', 'Area formativa: '.$testoArea, ['role' => 'style']];
                             foreach ($query as $Res) {
                                 $ritorno[$Area['tipologie_entita']][] = [AmosSondaggi::t('amossondaggi', '#poll_access'), floatval($Res['accessi']),

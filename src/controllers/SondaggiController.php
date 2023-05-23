@@ -23,6 +23,7 @@ use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomande;
 use open20\amos\sondaggi\models\SondaggiDomandeCondizionate;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\sondaggi\models\SondaggiRisposte;
 use open20\amos\sondaggi\models\SondaggiRispostePredefinite;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
 use open20\amos\sondaggi\utility\SondaggiUtility;
@@ -148,6 +149,13 @@ class SondaggiController extends CrudController
                         [
                             'allow' => true,
                             'actions' => [
+                                'clone',                                
+                            ],
+                            'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_UPDATE']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
                                 'manage'
                             ],
                             'roles' => ['SONDAGGI_MANAGE']
@@ -218,7 +226,7 @@ class SondaggiController extends CrudController
     public function actionIndex($layout = null)
     {
         if ($this->sondaggiModule->enableDashboard == true) {
-            return $this->redirect(['pubblicazione/own-interest']);
+            return $this->redirect(['pubblicazione/all']);
         }
         Url::remember();
         $this->setListViewsParams();
@@ -240,12 +248,12 @@ class SondaggiController extends CrudController
     {
         $this->setUpLayout('list');
         $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Gestisci questionari');
-        if (!$this->sondaggiModule->hideOwnInterest) {
+        if (!$this->sondaggiModule->hideAllPolls) {
 
-            $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'I miei questionari');
-            $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/sondaggi/index');
+            $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+            $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/all');
             $this->view->params['titleLinkAll'] = AmosSondaggi::t(
-                    'amossondaggi', 'Visualizza la lista dei sondaggi di mio interesse'
+                    'amossondaggi', 'Visualizza la lista di tutti i sondaggi'
             );
         } else {
              $this->view->params['urlLinkAll'] = '';
@@ -810,6 +818,9 @@ class SondaggiController extends CrudController
      */
     public function actionExtractSondaggi($id, $type, $url)
     {
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+
         $this->model = $this->findModel($id);
         $xlsData     = [];
         $basePath    = \Yii::getAlias('@vendor/../common/uploads/temp');
@@ -899,6 +910,9 @@ class SondaggiController extends CrudController
             $count ++;
         }
 
+
+
+
 // CORPO FILE EXCEL
         $sondaggiRisposte = SondaggiRisposteSessioni::find()
             ->distinct()
@@ -911,6 +925,17 @@ class SondaggiController extends CrudController
             ->all();
 
         $row = 1;
+
+        $srpArray = SondaggiRispostePredefinite::find()->asArray()->all();
+        $sondRispPredefAll = [];
+        foreach ($srpArray as $element) {
+            $sondRispPredefAll[$element['id']] = $element;
+        }
+
+//        VarDumper::dump(count($sondaggiRisposte), 3, true); echo('<hr>');
+//        $cont = 0;
+//        $mt = microtime(true);
+//        VarDumper::dump($mt, 3, true); echo('<hr>');
 
         foreach ($sondaggiRisposte as $sondRisposta) {
             $profile = null;
@@ -968,14 +993,12 @@ class SondaggiController extends CrudController
             foreach ($domande as $domanda) {
 
                 $query = $domanda->getRispostePerUtente((empty($profile) ? null : $profile->user_id), $session_id);
-
 // RISPOSTE LIBERE
-                if ($domanda->sondaggi_domande_tipologie_id == 6 || $domanda->sondaggi_domande_tipologie_id == 5 || $domanda->sondaggi_domande_tipologie_id
-                    == 13) {
+                if ($domanda->sondaggi_domande_tipologie_id == 6 || $domanda->sondaggi_domande_tipologie_id == 5 || $domanda->sondaggi_domande_tipologie_id == 13) {
 
-                    $risposta = $query->one();
+                    $risposta = $query->asArray()->one();
                     if ($risposta) {
-                        $xlsData[$row][$colRispLibere[$domanda->id] + $offset] = $risposta->risposta_libera;
+                        $xlsData[$row][$colRispLibere[$domanda->id] + $offset] = $risposta['risposta_libera'];
                     } else {
 
                     }
@@ -1006,23 +1029,25 @@ class SondaggiController extends CrudController
                     }
                 } else {
                     $risposteArray = [];
+                    /** @var SondaggiRisposte $risposta */
+                    foreach ($query->asArray()->all() as $risposta) {
+                        $srp = $sondRispPredefAll[$risposta['sondaggi_risposte_predefinite_id']];
 
-                    foreach ($query->all() as $risposta) {
-                        if ($risposta->sondaggiRispostePredefinite) {
+                        if (!empty($srp)) {
                             if ($domanda->is_parent) {
-                                if (empty($risposta->sondaggiRispostePredefinite->code)) {
+                                if (empty($srp['code'])) {
 
-                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id][$risposta->sondaggi_domande_id]
-                                        + $offset] = $risposta->sondaggiRispostePredefinite->risposta;
+                                    $xlsData[$row][$colRisp[$srp['id']][$risposta['sondaggi_domande_id']]
+                                        + $offset] = $srp['risposta'];
                                 } else {
-                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id][$risposta->sondaggi_domande_id]
-                                        + $offset] = $risposta->sondaggiRispostePredefinite->code;
+                                    $xlsData[$row][$colRisp[$srp['id']][$risposta['sondaggi_domande_id']]
+                                        + $offset] = $srp['code'];
                                 }
                             } else {
-                                if (empty($risposta->sondaggiRispostePredefinite->code)) {
-                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id] + $offset] = $risposta->sondaggiRispostePredefinite->risposta;
+                                if (empty($srp['code'])) {
+                                    $xlsData[$row][$colRisp[$srp['id']] + $offset] = $srp['risposta'];
                                 } else {
-                                    $xlsData[$row][$colRisp[$risposta->sondaggiRispostePredefinite->id] + $offset] = $risposta->sondaggiRispostePredefinite->code;
+                                    $xlsData[$row][$colRisp[$srp['id']] + $offset] = $srp['code'];
                                 }
                             }
                         }
@@ -1031,6 +1056,16 @@ class SondaggiController extends CrudController
             }
             $row++;
             gc_collect_cycles();
+
+//            if ($cont >= 1000) {
+//
+//                $mtNew = microtime(true);
+//                VarDumper::dump($mtNew, 3, true); echo('<hr>');
+//                VarDumper::dump(($mtNew - $mt), 3, true); echo('<hr>');
+//                die('stoop');
+//            }
+//            $cont++;
+
         }
 
         $zip_filepath = $basePath.'/Risposte_sondaggio_'.$id.'.zip';

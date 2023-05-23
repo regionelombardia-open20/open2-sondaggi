@@ -34,7 +34,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 
         echo Html::tag(
             'div', $form->field($model, 'compilazioni_disponibili')->textInput(['disabled' => true]),
-            ['class' => 'container-not-live']
+            ['class' => 'col-sm-12']
         );
         ?>
     </div>

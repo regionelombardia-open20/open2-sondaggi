@@ -52,12 +52,12 @@ class NotifierController extends Controller
 
     public function actionSendClosed() {
         try {
-            Console::stdout('Start sending closing e-mails ' . $type . PHP_EOL);
+            Console::stdout('Start sending closing e-mails ' . PHP_EOL);
             $sondaggi = $this->listSondaggiClosed();
             foreach ($sondaggi as $sondaggio) {
                 $this->sendEmailPollClosed($sondaggio);
             }
-            Console::stdout('All e-mails sent correctly.' . $type . PHP_EOL);
+            Console::stdout('All e-mails sent correctly.' . PHP_EOL);
         } catch (\Exception $ex) {
             Yii::getLogger()->log($ex->getTraceAsString(), Logger::LEVEL_ERROR);
         }
@@ -69,7 +69,7 @@ class NotifierController extends Controller
     public function actionSendInvitations()
     {
         try {
-            Console::stdout('Start sending invitation e-mails ' . $type . PHP_EOL);
+            Console::stdout('Start sending invitation e-mails ' . PHP_EOL);
             $sondaggi = $this->listSondaggi();
 
             foreach ($sondaggi as $sondaggio) {
@@ -108,7 +108,7 @@ class NotifierController extends Controller
                 }
             }
 
-            Console::stdout('End send invitations ' . $type . PHP_EOL);
+            Console::stdout('End send invitations ' . PHP_EOL);
 
         } catch (\Exception $ex) {
             Yii::getLogger()->log($ex->getTraceAsString(), Logger::LEVEL_ERROR);
@@ -148,7 +148,7 @@ class NotifierController extends Controller
      */
     protected function sendMail($sondaggio, $referenteOperativo, $organization)
     {
-        $this->sendEmailReferenteOperativo($sondaggio, $referenteOperativo);
+        $this->sendEmailReferenteOperativo($sondaggio, $referenteOperativo, $organization);
 
         Console::stdout('Send Mail to ' . $referenteOperativo->user->email . PHP_EOL);
         $inv_mm = new SondaggiInvitationMm();
@@ -202,9 +202,9 @@ class NotifierController extends Controller
      * @param Sondaggi $sondaggio
      * @param UserProfile $referenteOperativo
      */
-    protected function sendEmailReferenteOperativo($sondaggio, $referenteOperativo)
+    protected function sendEmailReferenteOperativo($sondaggio, $referenteOperativo,$organization)
     {
-        $emailsTo = [$referenteOperativo->user->email];
+        $emailsTo = [$referenteOperativo->user->email,$organization->operativeHeadquarter->email];
 
         $subject = AmosSondaggi::t('amossondaggi', '#invito_referenteOperativo_subject');
         $message = AmosSondaggi::t('amossondaggi', '#invito_referenteOperativo_message', [
@@ -246,7 +246,7 @@ class NotifierController extends Controller
     protected function sendEmailPollClosed($sondaggio) {
         // TO REFACTOR: se il cron gira una volta al giorno, partirà una sola mail per sondaggio.
         // Pensare ad un metodo più elegante...
-        Console::stdout('Sending e-mail for '.$sondaggio->titolo . ':' . $type . PHP_EOL);
+        Console::stdout('Sending e-mail for '.$sondaggio->titolo . PHP_EOL);
 
         $close_date = AmosSondaggi::t('amossondaggi', '#email_closed_poll_close_date', [
             'closeDate' => Yii::$app->formatter->asDate($sondaggio->close_date)
@@ -280,7 +280,7 @@ class NotifierController extends Controller
 
         foreach($users as $user) {
             if (!empty($user->email) && Yii::$app->authManager->checkAccess($user->id, 'AMMINISTRAZIONE_SONDAGGI')) {
-                Console::stdout('   Sending e-mail to '.$user->email . $type . PHP_EOL);
+                Console::stdout('   Sending e-mail to '.$user->email . PHP_EOL);
                 $this->sendEmailGeneral([trim($user->email)], $user, $subject, $message);
             }
         }
@@ -292,7 +292,7 @@ class NotifierController extends Controller
 
         foreach($additionalEmails as $email) {
             $user = User::find()->andWhere(['email' => $email])->one();
-            Console::stdout('   Sending e-mail to '.$email . $type . PHP_EOL);
+            Console::stdout('   Sending e-mail to '.$email . PHP_EOL);
             $this->sendEmailGeneral([trim($email)], $user, $subject, $message);
         }
     }

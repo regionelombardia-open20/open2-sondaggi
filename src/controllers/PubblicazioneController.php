@@ -69,11 +69,11 @@ class PubblicazioneController extends CrudController
     {
         parent::__construct($id, $module, $config                   = []);
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-        if (!isset($this->alias_path)) $this->alias_path         = Yii::getAlias('@backend');
+        if (!isset($this->alias_path)) $this->alias_path         = Yii::getAlias('@common');
         if (!isset($this->base_dir)) $this->base_dir           = "sondaggi".DS."pubblicazione";
-        if (!isset($this->percorso_model)) $this->percorso_model     = "backend\\sondaggi\\pubblicazione\\models\\q";
-        if (!isset($this->percorso_view)) $this->percorso_view      = "backend\\sondaggi\\pubblicazione\\views\\q";
-        if (!isset($this->percorso_validator)) $this->percorso_validator = "backend".DS."sondaggi".DS."validators".DS;
+        if (!isset($this->percorso_model)) $this->percorso_model     = "common\\uploads\\sondaggi\\pubblicazione\\models\\q";
+        if (!isset($this->percorso_view)) $this->percorso_view      = "common\\uploads\\sondaggi\\pubblicazione\\views\\q";
+        if (!isset($this->percorso_validator)) $this->percorso_validator = "common".DS."uploads".DS."sondaggi".DS."validators".DS;
     }
     /**
      * @var string $layout
@@ -272,9 +272,9 @@ class PubblicazioneController extends CrudController
     public function setTitleAndBreadcrumbs($pageTitle)
     {
         Yii::$app->view->title                 = $pageTitle;
-        // Yii::$app->view->params['breadcrumbs'] = [
-        //     ['label' => $pageTitle]
-        // ];
+        Yii::$app->view->params['breadcrumbs'] = [
+            ['label' => $pageTitle]
+        ];
     }
 
     /**
@@ -386,9 +386,9 @@ class PubblicazioneController extends CrudController
      */
     public function actionAll()
     {
-        if ($this->sondaggiModule->enableDashboard == true) {
-            return $this->redirect('/sondaggi/pubblicazione/own-interest');
-        }
+//        if ($this->sondaggiModule->enableDashboard == true) {
+//            return $this->redirect('/sondaggi/pubblicazione/own-interest');
+//        }
         $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
         $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
         $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/own-interest');
@@ -494,9 +494,9 @@ class PubblicazioneController extends CrudController
         $generatore = new GeneratoreSondaggio();
         foreach ($pagine->all() as $pagina) {
             $generatore->creaValidator($this->percorso_validator, $pagina['id']);
-            $generatore->creaView("backend".DS.$this->base_dir.DS."views".DS."q".$idSondaggio, $pagina['id'],
+            $generatore->creaView("common".DS."uploads".DS.$this->base_dir.DS."views".DS."q".$idSondaggio, $pagina['id'],
                 $this->percorso_view.$idSondaggio);
-            $generatore->creaModel("backend".DS.$this->base_dir.DS."models".DS."q".$idSondaggio, $pagina['id'],
+            $generatore->creaModel("common".DS."uploads".DS.$this->base_dir.DS."models".DS."q".$idSondaggio, $pagina['id'],
                 $this->percorso_validator, $this->percorso_model.$idSondaggio);
         }
         $sondaggio->status = Sondaggi::WORKFLOW_STATUS_VALIDATO;
@@ -592,6 +592,9 @@ class PubblicazioneController extends CrudController
         $dir_models = $this->alias_path.DS.$this->base_dir.DS."models".DS."q".$id;
         $dir_views  = $this->alias_path.DS.$this->base_dir.DS."views".DS."q".$id;
 
+        $session = \Yii::$app->session;
+        $session->open();
+
         if (!is_dir($dir_models)) {
             mkdir($dir_models, 0777, true);
         }
@@ -605,9 +608,9 @@ class PubblicazioneController extends CrudController
         $generatore = new GeneratoreSondaggio();
         foreach ($pagine->all() as $pagina) {
             $generatore->creaValidator($this->percorso_validator, $pagina['id']);
-            $generatore->creaView("backend".DS.$this->base_dir.DS."views".DS."q".$id, $pagina['id'],
+            $generatore->creaView("common".DS."uploads".DS.$this->base_dir.DS."views".DS."q".$id, $pagina['id'],
                 $this->percorso_view.$id);
-            $generatore->creaModel("backend".DS.$this->base_dir.DS."models".DS."q".$id, $pagina['id'],
+            $generatore->creaModel("common".DS."uploads".DS.$this->base_dir.DS."models".DS."q".$id, $pagina['id'],
                 $this->percorso_validator, $this->percorso_model.$id);
         }
 
@@ -640,6 +643,8 @@ class PubblicazioneController extends CrudController
             if ($idPagina != $ultimaPagina) {
                 $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
+            } else {
+                $completato = true;
             }
         } else {
             $idPagina       = $primaPagina;
@@ -649,6 +654,7 @@ class PubblicazioneController extends CrudController
 
         $risposteWithFiles = [];
         if ($primaPagina) {
+            if (isset($session['answer_data'])) unset($session['answer_data']);
             $paginaSondaggio        = SondaggiDomandePagine::findOne($primaPagina);
             $query                  = $paginaSondaggio->getSondaggiDomandesWithFiles();
             $risposteWithFiles      = [];
@@ -664,12 +670,13 @@ class PubblicazioneController extends CrudController
         if (Yii::$app->request->isPost) {
             $data     = Yii::$app->request->post();
             $idPagina = $data['idPagina'];
-            \Yii::debug($data, 'sondaggi');
             if ($idPagina != $ultimaPagina) {
                 $idPag          = array_search($idPagina, $arrayPag);
                 $prossimaPagina = $arrayPag[$idPag + 1];
             }
             else {
+                $completato = true;
+                if (isset($session['answer_data'])) unset($session['answer_data']);
                 if (!empty($url))
                     return $this->redirect([$url]);
                 else
@@ -681,16 +688,18 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->read = true;
             if ($newModel->load($data) && $newModel->validate()) {
+                $newModel->save($idSessione, $accesso, $completato, true);
                 $prossimoModel = new $percorsoNew;
                 return $this->render('/pubblicazione/compila',
                     ['model' => $prossimoModel, 'idSessione' => $idSessione, 'idPagina' => $prossimaPagina, 'utente' => $utente,
-                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url, 'useSession' => true]);
 
             } else {
                 return $this->render('/pubblicazione/compila',
                     ['model' => $newModel, 'idSessione' => $idSessione, 'idPagina' => $idPagina, 'utente' => $utente,
-                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url]);
+                    'id' => $id, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'url' => $url, 'useSession' => true]);
             }
         } else {
             if ($primaPagina) {
@@ -746,6 +755,24 @@ class PubblicazioneController extends CrudController
         }
         $this->model = Sondaggi::findOne(['id' => $id]);
 
+        $compilato = false;
+        if(!Yii::$app->user->can('ADMIN')){
+            
+            if(!empty($this->model->sondaggiRisposteSessionisByEntity)){
+                foreach($this->model->sondaggiRisposteSessionisByEntity as $sond){
+                    if($sond->completato){
+                        $compilato = true;
+                        break;
+                    }
+                }
+            }  
+        }
+        
+        if($compilato){
+            \Yii::$app->getSession()->addFlash('warning', AmosSondaggi::tHtml('amossondaggi', 'sondaggio_gia_compilato',[$this->model->titolo]));
+            return $this->render('/pubblicazione/compila',['titolo'=>$this->model->titolo]);
+        }
+        
         if ($read && !empty($this->model->sondaggiRisposteSessionisByEntity[0])) {
             return $this->redirect(['pubblicazione/view-compilation', 'id' => $this->model->sondaggiRisposteSessionisByEntity[0]->id, 'url' => $url]);
         }
@@ -837,6 +864,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
@@ -954,6 +982,7 @@ class PubblicazioneController extends CrudController
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -990,6 +1019,7 @@ class PubblicazioneController extends CrudController
                         $percorso = ($this->percorso_model.$id."\\Pagina_".$primaPagina);
                         if (class_exists($percorso)) {
                             $newModel = new $percorso;
+                            $newModel->session_id = $sessione->id;
                             return $this->render('/pubblicazione/compila',
                                     ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $id,
                                     'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'language' => $language, 'field_extra' => $field_extra]);
@@ -1133,6 +1163,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($id, null, $completato);
 
@@ -1226,6 +1257,7 @@ class PubblicazioneController extends CrudController
                 }
                 $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
                 $newModel          = new $percorso;
+                $newModel->session_id = $sessione->id;
                 $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                 $risposteWithFiles = [];
                 foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -1262,6 +1294,7 @@ class PubblicazioneController extends CrudController
                 $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
                 if (class_exists($percorso)) {
                     $newModel = new $percorso;
+                    $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina,  'language' => $language, 'field_extra' => $field_extra]);
@@ -1352,6 +1385,7 @@ class PubblicazioneController extends CrudController
             $percorso    = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$idSondaggio."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
 
                 $prossimoModel = new $percorsoNew;
@@ -1418,6 +1452,7 @@ class PubblicazioneController extends CrudController
                 }
                 $percorso          = $this->percorso_model.$idSondaggio."\\Pagina_".$idPagina;
                 $newModel          = new $percorso;
+                $newModel->session_id = $sessione->id;
                 $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                 $risposteWithFiles = [];
                 foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -1454,6 +1489,7 @@ class PubblicazioneController extends CrudController
                 $percorso = ($this->percorso_model.$idSondaggio."\\Pagina_".$primaPagina);
                 if (class_exists($percorso)) {
                     $newModel = new $percorso;
+                    $newModel->session_id = $sessione->id;
                     return $this->render('/pubblicazione/compila',
                             ['model' => $newModel, 'idPagina' => $primaPagina, 'idSessione' => $nonCompletato, 'id' => $idSondaggio,
                             'utente' => $utente, 'risposteWithFiles' => $risposteWithFiles, 'ultimaPagina' => $ultimaPagina, 'read' => true]);
@@ -1763,7 +1799,7 @@ class PubblicazioneController extends CrudController
         } else if (!$attivita || !$id) {
             return $this->redirect('sondaggio-pubblico-attivita');
         } else {
-            $modelAttivita     = \backend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita]);
+            $modelAttivita     = \frontend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita]);
             $idAttivita        = $modelAttivita->id;
             $tipologieAttivita = $modelAttivita->getTags()->andWhere(['lvl' => 1])->andWhere(['root' => 1])->one()['id'];
             $verificaSondaggio = \open20\amos\sondaggi\models\SondaggiPubblicazione::find()->innerJoin(Sondaggi::tableName(),

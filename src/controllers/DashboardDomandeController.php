@@ -419,7 +419,7 @@ class DashboardDomandeController extends CrudController
         }
     }
 
-    public function setMenuSidebar($model, $idQuestion)
+    public function setMenuSidebar($model, $idQuestion = null)
     {
         \Yii::$app->getView()->params['showSidebarForm'] = true;
         \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model, $idQuestion);
@@ -496,6 +496,7 @@ class DashboardDomandeController extends CrudController
                     $newSubDomanda->load($data);
                     $newSubDomanda->id                     = null;
                     $newSubDomanda->code                   = null;
+                    $newDomanda->domanda                    = $domanda->domanda . AmosSondaggi::t('amossondaggi', '#clone_append');
                     $newSubDomanda->parent_id              = $newDomanda->id;
                     $newSubDomanda->sondaggi_id            = $newDomanda->sondaggi_id;
                     $newSubDomanda->created_by             = $created_by;

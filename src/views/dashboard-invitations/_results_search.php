@@ -11,7 +11,7 @@ use open20\amos\sondaggi\models\SondaggiInvitations;
             <div class="my-4 d-flex">
 
                 <h5 class="font-weight-bold ">
-                <?= AmosSondaggi::t('AmosSondaggi', '#search_results') ?>
+                <?= AmosSondaggi::t('amossondaggi', '#search_results') ?>
                 </h5>
             </div>
 
@@ -28,7 +28,7 @@ use open20\amos\sondaggi\models\SondaggiInvitations;
         </div>
         <div id="save-inputs" class="col-md-6">
             <p class="text-danger m-t-20">
-            <strong><?= AmosSondaggi::t('AmosSondaggi', "#organizations_found", ['n' => $count]) ?></strong></p>
+            <strong><?= AmosSondaggi::t('amossondaggi', "#organizations_found", ['n' => $count]) ?></strong></p>
         </div>
     </div>
 </div>

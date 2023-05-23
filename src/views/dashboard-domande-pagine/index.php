@@ -16,7 +16,7 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Gestione pagine');
  if ($url) {
      $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => '/' . $this->context->module->id . '/sondaggi/manage'];
  } else {
-     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => 'sondaggi/manage', 'route' => 'sondaggi/sondaggi/manage'];
+     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
      $this->params['breadcrumbs'][] = ['label' => $this->title];
  }
  if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];

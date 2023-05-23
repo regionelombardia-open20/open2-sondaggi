@@ -98,7 +98,7 @@ class SondaggiPubblicazione extends \open20\amos\core\record\Record {
      * @return \yii\db\ActiveQuery
      */
     public function getPeiAttivitaFormativa() {
-        return $this->hasOne(\backend\modules\attivitaformative\models\PeiAttivitaFormative::className(), ['id' => 'entita_id']);
+        return $this->hasOne(\frontend\modules\attivitaformative\models\PeiAttivitaFormative::className(), ['id' => 'entita_id']);
     }
 
 }

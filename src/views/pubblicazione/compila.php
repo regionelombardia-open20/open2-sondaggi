@@ -1,5 +1,6 @@
 <?php
 
+use open20\amos\sondaggi\AmosSondaggi;
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -23,14 +24,25 @@ foreach ((Array)$risposteWithFiles as $rispostaWithFile){
 }
 ?>
 
-<div class="sondaggi-compilazione sondaggi-compilazione-sondaggio<?=$id?>">
-    <?= $this->render('@backend/' . $this->context->module->id . '/pubblicazione/views/q' . $id . '/Pagina_' . $idPagina, \yii\helpers\ArrayHelper::merge([
+<?php if(isset($id) && isset($idPagina)): ?>
+<div class="sondaggi-compilazione container sondaggi-compilazione-sondaggio<?=$id?>">
+    <?= $this->render('@common/uploads/' . $this->context->module->id . '/pubblicazione/views/q' . $id . '/Pagina_' . $idPagina, \yii\helpers\ArrayHelper::merge([
         'model' => $model,
         'idSessione' => $idSessione,
         'idPagina' => $idPagina,
         'utente' => $utente,
         'ultimaPagina' => $ultimaPagina,
         'url' => $url,
-        'read' => $read
+        'read' => $read,
+        'useSession' => $useSession
     ], $arrayModelRisposte)) ?>
 </div>
+
+<?php else: 
+
+    $this->params['breadcrumbs'][] = $titolo;
+    if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
+
+?>
+
+<?php endif; ?>

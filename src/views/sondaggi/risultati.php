@@ -94,6 +94,7 @@ $this->registerJs('
                                 'hAxis' => ['title' => AmosSondaggi::t('amossondaggi', 'Numero dei partecipanti'),
                                     'gridlines' => [
                                         'color' => null, //set grid line transparent
+                                        'multiple' => 1,
                                     ]],
                                 'vAxis' => ['title' => null, 'slantedText' => false],
                             ]
@@ -563,78 +564,83 @@ $this->registerJs('
                     }
                     ?>
                 </div>
-        <?php endif; ?>
+            <?php endif; ?>
         </div>
-            <?php $form = ActiveForm::begin(); ?>
-        <div class="col-lg-4"><?=
-            $form->field($filter, 'data_inizio')->widget(DateControl::className(),
-                [
-                'type' => DateControl::FORMAT_DATE,
-                'options' => [
-                    'layout' => '{remove}{input}'
-                ]
-            ])->label(AmosSondaggi::t('amossondaggi', 'Data inizio'))
-            ?></div>
-        <div class="col-lg-4"><?=
-            $form->field($filter, 'data_fine')->widget(DateControl::className(),
-                [
-                'type' => DateControl::FORMAT_DATE,
-                'options' => [
-                    'layout' => '{remove}{input}'
-                ]
-            ])->label(AmosSondaggi::t('amossondaggi', 'Data fine'))
-            ?></div>
+        <?php $form = ActiveForm::begin(); ?>
+            <div class="col-xs-12 col-sm-4"><?=
+                $form->field($filter, 'data_inizio')->widget(DateControl::className(),
+                    [
+                    'type' => DateControl::FORMAT_DATE,
+                    'options' => [
+                        'layout' => '{remove}{input}'
+                    ]
+                ])->label(AmosSondaggi::t('amossondaggi', 'Data inizio'))
+                ?>
+            </div>
+            <div class="col-xs-12 col-sm-4"><?=
+                $form->field($filter, 'data_fine')->widget(DateControl::className(),
+                    [
+                    'type' => DateControl::FORMAT_DATE,
+                    'options' => [
+                        'layout' => '{remove}{input}'
+                    ]
+                ])->label(AmosSondaggi::t('amossondaggi', 'Data fine'))
+                ?>
+            </div>
 
-            <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0) { ?>
-            <div class="col-lg-4"><?=
-                $form->field($filter, 'area_formativa')->widget(Select2::classname(),
-                    [
-                    'data' => ArrayHelper::map(\open20\amos\tag\models\Tag::find()->andWhere(['root' => 1])->andWhere([
-                            'lvl' => 1])->asArray()->all(), 'id', 'nome'),
-                    //'showToggleAll' => false,
-                    'options' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome dell\'Area formativa ...'),
-                        'multiple' => true,
-                    ],
-                    'pluginOptions' => [
-                        'allowClear' => true,
-                    ],
-                ]);
-                ?></div>
-            <div class="col-lg-4">
-                <?php $nomeAtt = new \yii\db\Expression("concat('[', pei_entita_formative.codice_entita, '] ', pei_entita_formative.titolo) as titolo"); ?>
-                <?=
-                $form->field($filter, 'attivita')->widget(Select2::classname(),
-                    [
-                    'data' => ArrayHelper::map(backend\modules\attivitaformative\models\PeiAttivitaFormative::find()
-                            ->innerJoin('pei_point_sedi as S', 'S.id = pei_entita_formative.pei_point_sedi_id')
-                            ->leftJoin('pei_point as PP', 'S.pei_point_id = PP.id')
-                            ->select(['pei_entita_formative.id as id', $nomeAtt])
-                            ->orderBy('titolo')
-                            ->asArray()->all(), 'id', 'titolo'),
-                    'showToggleAll' => false,
-                    'options' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi',
-                            'Digita il nome o il codice dell\'Attività formativa ...'),
-                        'multiple' => true,
-                    ],
-                    'pluginOptions' => [
-                        'allowClear' => true,
-                    ],
-                ]);
-                ?></div>
-            <div class="col-lg-8"><?=
-                Html::submitButton('Cerca', ['class' => 'btn btn-success', 'style' => 'margin-top:25px;']);
-                ?></div>
-            <?php } else { ?>
-            <div class="col-lg-4"><?=
-                Html::submitButton('Cerca', ['class' => 'btn btn-success', 'style' => 'margin-top:25px;']);
-                ?></div>
-<?php } ?>
+            <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0): ?>
+                <div class="col-xs-12 col-sm-4"><?=
+                    $form->field($filter, 'area_formativa')->widget(Select2::classname(),
+                        [
+                        'data' => ArrayHelper::map(\open20\amos\tag\models\Tag::find()->andWhere(['root' => 1])->andWhere([
+                                'lvl' => 1])->asArray()->all(), 'id', 'nome'),
+                        //'showToggleAll' => false,
+                        'options' => [
+                            'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome dell\'Area formativa ...'),
+                            'multiple' => true,
+                        ],
+                        'pluginOptions' => [
+                            'allowClear' => true,
+                        ],
+                    ]);
+                    ?>
+                </div>
+                <div class="col-xs-12 col-sm-4">
+                    <?php $nomeAtt = new \yii\db\Expression("concat('[', pei_entita_formative.codice_entita, '] ', pei_entita_formative.titolo) as titolo"); ?>
+                    <?=
+                    $form->field($filter, 'attivita')->widget(Select2::classname(),
+                        [
+                        'data' => ArrayHelper::map(frontend\modules\attivitaformative\models\PeiAttivitaFormative::find()
+                                ->innerJoin('pei_point_sedi as S', 'S.id = pei_entita_formative.pei_point_sedi_id')
+                                ->leftJoin('pei_point as PP', 'S.pei_point_id = PP.id')
+                                ->select(['pei_entita_formative.id as id', $nomeAtt])
+                                ->orderBy('titolo')
+                                ->asArray()->all(), 'id', 'titolo'),
+                        'showToggleAll' => false,
+                        'options' => [
+                            'placeholder' => AmosSondaggi::t('amossondaggi',
+                                'Digita il nome o il codice dell\'Attività formativa ...'),
+                            'multiple' => true,
+                        ],
+                        'pluginOptions' => [
+                            'allowClear' => true,
+                        ],
+                    ]);
+                    ?>
+                </div>
+                <div class="col-xs-12 col-sm-8">
+                    <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
+                </div>
+            <?php else: ?>
+                <div class="col-xs-12 col-sm-4">
+                    <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
+                </div>
+            <?php endif; ?>
+        
+        <?php ActiveForm::end(); ?>
 
     </div>
 
-<?php ActiveForm::end(); ?>
 </div>
 <div class="col-lg-12 menu-sondaggio-chiudi">
     <?php

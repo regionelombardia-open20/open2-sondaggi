@@ -100,16 +100,16 @@ if (isset($dateEnd)) {
                                 </a>
                                 <div class="ml-auto">
 
-
-
-                                    <?= ContextMenuWidget::widget([
-                                        'model' => $model,
-                                        'actionModify' => "/sondaggi/dashboard/dashboard?id=" . $model->id,
-                                        'actionDelete' => "/sondaggi/sondaggi/delete?id=" . $model->id,
-                                        'mainDivClasses' => '',
-                                        'checkModifyPermission' => false,
-                                        'labelModify' => \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ? AmosSondaggi::t('amossondaggi', 'Modifica') : AmosSondaggi::t('amossondaggi', 'Gestisci')
-                                    ]) ?>
+                                    <?php if(\Yii::$app->getUser()->can('DASHBOARD_VIEW')): ?> 
+                                        <?= ContextMenuWidget::widget([
+                                            'model' => $model,
+                                            'actionModify' => "/sondaggi/dashboard/dashboard?id=" . $model->id,
+                                            'actionDelete' => "/sondaggi/sondaggi/delete?id=" . $model->id,
+                                            'mainDivClasses' => '',
+                                            'checkModifyPermission' => false,
+                                            'labelModify' => \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ? AmosSondaggi::t('amossondaggi', 'Modifica') : AmosSondaggi::t('amossondaggi', 'Gestisci')
+                                        ]) ?>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <?php

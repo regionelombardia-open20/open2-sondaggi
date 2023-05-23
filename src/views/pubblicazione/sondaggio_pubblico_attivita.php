@@ -29,7 +29,7 @@ $this->title = AmosSondaggi::t('amossondaggi', 'Sondaggio di gradimento');
                 <li>
                     <a href="/<?= $this->context->module->id ?>/pubblicazione/sondaggio-pubblico-attivita"><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></a>
                 </li>
-                <li class="active"><?= backend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita])->titolo; ?></li>
+                <li class="active"><?= frontend\modules\attivitaformative\models\PeiAttivitaFormative::findOne(['codice_attivita' => $attivita])->titolo; ?></li>
             <?php else: ?>
                 <li><?= AmosSondaggi::tHtml('amossondaggi', 'Sondaggio di gradimento') ?></li>
             <?php endif; ?>

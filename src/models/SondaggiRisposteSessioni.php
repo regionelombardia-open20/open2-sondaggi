@@ -200,7 +200,7 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
 //                    pr($query->one()->risposta_libera, 'D. ' . $domanda->id);
                 $risposta = $query->one();
                 if ($risposta) {
-                    $xlsData [$row][$colum] = $risposta->risposta_libera;
+                    $xlsData [$row][$colum] = str_replace(['<', '>'], ' ', $risposta->risposta_libera);
                 } else {
                     $xlsData [$row][$colum] = '';
                 }

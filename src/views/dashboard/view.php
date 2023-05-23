@@ -268,8 +268,7 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                     $partecipazioni = $model->getNumeroPartecipazioni();
                 } else {
                 //partecipazioni totali senza quelli senza stato
-                $partecipazioni = $model->getCompilazioniStatus([SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA, SondaggiRisposteSessioni::WORKFLOW_STATUS_RICHIESTA_INVIO,
-                    SondaggiRisposteSessioni::WORKFLOW_STATUS_INVIATO], [0, 1]);
+                $partecipazioni = $model->getCompilazioniStatus(null, [0, 1]);
                 }
                 ?>
                 <h4 class="m-t-20 p-t-20"><?= AmosSondaggi::t('amossondaggi', 'Report') ?></h4>

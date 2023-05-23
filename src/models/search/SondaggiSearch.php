@@ -28,7 +28,6 @@ use yii\db\Expression;
 use yii\di\Container;
 use yii\di\NotInstantiableException;
 use yii\helpers\ArrayHelper;
-use yii\helpers\VarDumper;
 
 /**
  * SondaggiSearch represents the model behind the search form about `open20\amos\sondaggi\models\Sondaggi`.
@@ -381,24 +380,22 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
         $this->notificationOff($query);
         return $query;
     }
-
+    
     /**
-     *
-     * @param type $params
-     * @param type $limit
-     * @return type
+     * @param array $params
+     * @param int|null $limit
+     * @return ActiveDataProvider|\yii\data\BaseDataProvider
      */
     public function ultimiSondaggi($params, $limit = null)
     {
         $dataProvider = $this->searchAll($params, $limit);
         return $dataProvider;
     }
-
+    
     /**
-     *
-     * @param type $params
-     * @param type $limit
-     * @return type
+     * @param array $params
+     * @param int|null $limit
+     * @return ActiveDataProvider|\yii\data\BaseDataProvider
      */
     public function ultimiSondaggiLive($params, $limit = null)
     {
@@ -411,12 +408,9 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
 
         return $dataProvider;
     }
-
+    
     /**
-     *
-     * @param type $params
-     * @param type $limit
-     * @return type
+     * @inheridoc
      */
     public function searchAll($params, $limit = null)
     {

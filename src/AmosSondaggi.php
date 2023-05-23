@@ -130,7 +130,7 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      *
      * @var bool $enableDashboard
      */
-    public $enableDashboard = false;
+    public $enableDashboard = true;
 
     /**
      *
@@ -173,6 +173,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * @var boolean
      */
     public $hideOwnInterest = false;
+
+    /**
+     * Hides All Polls in poll list.
+     * @var boolean
+     */
+    public $hideAllPolls = false;
 
     /**
      * to turn on communications management
@@ -306,6 +312,11 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $disableInvitationsDeletionAfterSent = false;
 
     /**
+     * @var bool $sondaggiModelSendNotification
+     */
+    public $sondaggiModelSendNotification = true;
+
+    /**
      * @var string $sondaggioDataConfirmMessage
      */
     public $sondaggioDataConfirmMessage = '';
@@ -323,6 +334,11 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * If true, user data older than 2 years will not be shown in reports
      */
     public $resetGdpr = false;
+
+    /**
+     * @var bool $additionalButtonsInAnswerCreation
+     */
+    public $additionalButtonsInAnswerCreation = true;
 
     /**
      * @inheritdoc

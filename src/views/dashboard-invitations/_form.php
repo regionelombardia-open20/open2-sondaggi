@@ -144,7 +144,7 @@ $this->registerJs($js);
         <div class="p-t-20 p-b-20 d-flex title-substeps affix-top">
             <h5 class="font-weight-bold ">
             <!-- <span class="m-r-10">< ?= Amosicons::show('address-card', [], 'dash') ?></span> -->
-            <?= AmosSondaggi::t('AmosSondaggi', "#search_organizations_invitation") ?>
+            <?= AmosSondaggi::t('amossondaggi', "#search_organizations_invitation") ?>
             </h5>
         </div>
 
@@ -152,8 +152,8 @@ $this->registerJs($js);
         <div class="row variable-gutters">
             <div class="col-md-12">
                 <?=$form->field($model, 'type')->radioList([
-                    SondaggiInvitationsSearch::SEARCH_ALL => AmosSondaggi::t('AmosSondaggi', '#all_organizations'),
-                    SondaggiInvitationsSearch::SEARCH_FILTER => AmosSondaggi::t('AmosSondaggi', '#by_filter')
+                    SondaggiInvitationsSearch::SEARCH_ALL => AmosSondaggi::t('amossondaggi', '#all_organizations'),
+                    SondaggiInvitationsSearch::SEARCH_FILTER => AmosSondaggi::t('amossondaggi', '#by_filter')
                 ])->label(false);
                 ?>
 
@@ -166,9 +166,9 @@ $this->registerJs($js);
                 <div id="search-tags" style="<?= $displayNone ?>">
                     <div>
                         <?= $form->field($model, 'filter_type')->radioList([
-                            SondaggiInvitationsSearch::FILTER_GROUPS => AmosSondaggi::t('AmosSondaggi', '#organization_groups'),
-                            SondaggiInvitationsSearch::FILTER_INVITED_TAG => AmosSondaggi::t('AmosSondaggi', '#polls_invited_to_tags'),
-                            SondaggiInvitationsSearch::FILTER_COMPILED_TAG => AmosSondaggi::t('AmosSondaggi', '#polls_compiled_to_tags')
+                            SondaggiInvitationsSearch::FILTER_GROUPS => AmosSondaggi::t('amossondaggi', '#organization_groups'),
+                            SondaggiInvitationsSearch::FILTER_INVITED_TAG => AmosSondaggi::t('amossondaggi', '#polls_invited_to_tags'),
+                            SondaggiInvitationsSearch::FILTER_COMPILED_TAG => AmosSondaggi::t('amossondaggi', '#polls_compiled_to_tags')
                         ])->label(false) ?>
 
                         <?php
@@ -187,7 +187,7 @@ $this->registerJs($js);
                                     'data' => $groups,
                                     'options' => [
                                         'multiple' => true,
-                                        'placeholder' => AmosSondaggi::t('AmosSondaggi', '#search_groups'),
+                                        'placeholder' => AmosSondaggi::t('amossondaggi', '#search_groups'),
                                     ],
                                     'pluginOptions' => [
                                         'allowClear' => true,
@@ -199,7 +199,7 @@ $this->registerJs($js);
                                         ],
                                     ],
                                 ]
-                            )->label(AmosSondaggi::t('AmosSondaggi', "#poll_group")); ?>
+                            )->label(AmosSondaggi::t('amossondaggi', "#poll_group")); ?>
                         </span>
                         <?php
                         // Rendering tag search...
@@ -219,7 +219,7 @@ $this->registerJs($js);
                                     'data' => (!empty($model->search_tags) ? $search_tags : []),
                                     'options' => [
                                         'multiple' => true,
-                                        'placeholder' => AmosSondaggi::t('AmosSondaggi', '#search_tags'),
+                                        'placeholder' => AmosSondaggi::t('amossondaggi', '#search_tags'),
                                     ],
                                     'pluginOptions' => [
                                         'allowClear' => true,
@@ -231,7 +231,7 @@ $this->registerJs($js);
                                         ],
                                     ],
                                 ]
-                            )->label(AmosSondaggi::t('AmosSondaggi', "#poll_tag")); ?>
+                            )->label(AmosSondaggi::t('amossondaggi', "#poll_tag")); ?>
                         </span>
                     </div>
                 </div>
@@ -246,10 +246,10 @@ $this->registerJs($js);
                 <?php \yii\widgets\Pjax::end(); ?>
 
                 <div class="m-b-30">
-                    <?= Html::a(AmosSondaggi::t('AmosSondaggi', "#add_rule"), [], ['id' => 'btn-add-rule']) ?>
+                    <?= Html::a(AmosSondaggi::t('amossondaggi', "#add_rule"), [], ['id' => 'btn-add-rule']) ?>
                 </div>
                 <div class="m-b-30">
-                    <?= Html::a(AmosSondaggi::t('AmosSondaggi', "#search_organizations"), [], ['id' => 'btn-search-users', 'class' => 'btn btn-sm btn-primary']) ?>
+                    <?= Html::a(AmosSondaggi::t('amossondaggi', "#search_organizations"), [], ['id' => 'btn-search-users', 'class' => 'btn btn-sm btn-primary']) ?>
                 </div>
             </div>
         </div>
@@ -260,7 +260,7 @@ $this->registerJs($js);
     </div>
 
     <div>
-        <?= $form->field($model, 'name')->textInput(['placeholder' =>  AmosSondaggi::t('AmosSondaggi', 'Assegna un titolo alla tua ricerca')])->label(AmosSondaggi::t('AmosSondaggi', 'Titolo della ricerca')) ?>
+        <?= $form->field($model, 'name')->textInput(['placeholder' =>  AmosSondaggi::t('amossondaggi', 'Assegna un titolo alla tua ricerca')])->label(AmosSondaggi::t('amossondaggi', 'Titolo della ricerca')) ?>
     </div>
 
         <div id="form-actions" class="bk-btnFormContainer">

@@ -224,6 +224,8 @@ return [
     'Visualizza anteprima' => 'Preview',
     'Visualizza' => 'Show',
     'Visualizzazione risposte' => 'Display answers',
+    '#widget_graphic_cms_last_surveys_description' => 'List the latest surveys',
+    '#widget_graphic_cms_last_surveys_label' => 'Manage surveys',
     '#widget_icon_compila_sondaggi_own_interest_description' => 'It allows you to compile and complete the surveys you are interested in',
     '#widget_icon_compila_sondaggi_own_interest_label' => 'Own interests surveys',
     '#addSondaggio' => 'Add survey',
@@ -290,5 +292,9 @@ Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invit
 Grazie per aver scelto i nostri servizi',
     '#no_role_to_activate_pool_message' => 'You are not allowed to activate the survey',
     '#no_role_to_deactivate_pool_message' => 'You are not allowed to deactivate the survey',
-    'Gestisci questionari' => 'Pools setup'
+    'Gestisci questionari' => 'Pools setup',
+    'Non ci sono sondaggi che corrispondono ai tuoi interessi!' => 'There are no surveys that match your interests!',
+    'Clicca e scopri tutti i sondaggi della piattaforma' => 'Click and discover all polls of the platform',
+    'e scopri ora tutti i sondaggi di' => 'and discover now all the polls of',
+    'Non sono presenti sondaggi' => 'There are no polls'
 ];

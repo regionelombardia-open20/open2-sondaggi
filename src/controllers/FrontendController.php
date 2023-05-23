@@ -72,11 +72,11 @@ class FrontendController extends Controller
     {
         parent::__construct($id, $module, $config                   = []);
         if (!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-        if (!isset($this->alias_path)) $this->alias_path         = Yii::getAlias('@backend');
+        if (!isset($this->alias_path)) $this->alias_path         = Yii::getAlias('@common');
         if (!isset($this->base_dir)) $this->base_dir           = "sondaggi".DS."pubblicazione";
-        if (!isset($this->percorso_model)) $this->percorso_model     = "backend\\sondaggi\\pubblicazione\\models\\q";
-        if (!isset($this->percorso_view)) $this->percorso_view      = "backend\\sondaggi\\pubblicazione\\views\\q";
-        if (!isset($this->percorso_validator)) $this->percorso_validator = "backend".DS."sondaggi".DS."validators".DS;
+        if (!isset($this->percorso_model)) $this->percorso_model     = "common\\uploads\\sondaggi\\pubblicazione\\models\\q";
+        if (!isset($this->percorso_view)) $this->percorso_view      = "common\\uploads\\sondaggi\\pubblicazione\\views\\q";
+        if (!isset($this->percorso_validator)) $this->percorso_validator = "common".DS."uploads".DS."sondaggi".DS."validators".DS;
     }
 
     /**
@@ -125,7 +125,7 @@ class FrontendController extends Controller
         $thankYouPage       = '/pubblicazione/compilato_frontend';
         $thankYouPageisUrl  = false;
         $this->layout       = $sondaggiModule->frontendControllerLayoutPath;
-        $pathFront          = \Yii::getAlias("@backend/web/uploads/");
+        $pathFront          = 'uploads/';//\Yii::getAlias("common/uploads/");
         ModuleRisultatiFrontendAsset::register(\Yii::$app->getView());
 //        if (!$utente) {
 //            $utente = Yii::$app->getUser()->getId();
@@ -202,9 +202,11 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
+            \Yii::debug($data, 'sondaggi');
             if ($newModel->load($data) && $newModel->validate()) {
+                \Yii::debug($newModel->validate(), 'sondaggi');
                 $newModel->save($idSessione, $accesso, $completato);
-
                 if ($this->model->frontend == 1) {
                     $this->model->setFrontendCookie($idSessione);
                 }
@@ -321,6 +323,7 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -417,7 +420,7 @@ class FrontendController extends Controller
         }
         $thankYouPageisUrl  = false;
         $this->layout       = '@frontend/views/layouts/main';
-        $pathFront          = \Yii::getAlias("@backend/web/uploads/");
+        $pathFront          = \Yii::getAlias("@common/uploads/");
        // ModuleRisultatiFrontendAsset::register(\Yii::$app->getView());
         if (!$utente) {
             $utente = Yii::$app->getUser()->getId();
@@ -490,6 +493,7 @@ class FrontendController extends Controller
             $percorso    = $this->percorso_model.$id."\\Pagina_".$idPagina;
             $percorsoNew = $this->percorso_model.$id."\\Pagina_".$prossimaPagina;
             $newModel    = new $percorso;
+            $newModel->session_id = $idSessione;
             if ($newModel->load($data) && $newModel->validate()) {
                 $newModel->save($idSessione, $accesso, $completato);
 
@@ -587,6 +591,7 @@ class FrontendController extends Controller
                         }
                         $percorso          = $this->percorso_model.$id."\\Pagina_".$idPagina;
                         $newModel          = new $percorso;
+                        $newModel->session_id = $sessione->id;
                         $tutteDomande      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $idPagina]);
                         $risposteWithFiles = [];
                         foreach ($tutteDomande->all() as $precompilaRisposte) {
@@ -1022,7 +1027,7 @@ class FrontendController extends Controller
             $xlsData [$row][0] = $profile->nome;
             $xlsData [$row][1] = $profile->cognome;
             $xlsData [$row][2] = $profile->user->email;
-         else if (!empty($dati_utente)) {
+        }elseif (!empty($dati_utente)) {
             $xlsData [$row][0] = $dati_utente['nome'];
             $xlsData [$row][1] = $dati_utente['cognome'];
             $xlsData [$row][2] = $dati_utente['email'];

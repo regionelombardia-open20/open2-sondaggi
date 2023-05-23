@@ -231,7 +231,7 @@ abstract class Sondaggi extends ContentModel
      */
     public function getPeiAttivitaFormatives()
     {
-        return $this->hasMany(\backend\modules\attivitaformative\models\PeiAttivitaFormative::className(),
+        return $this->hasMany(\frontend\modules\attivitaformative\models\PeiAttivitaFormative::className(),
             ['id' => 'entita_id'])->via('sondaggiPubblicaziones');
     }
 }

@@ -41,8 +41,8 @@ class Cardinality extends Validator
         $error_msg_min = AmosSondaggi::t('amossondaggi', $this->messageMin, ['min' => $this->min]);
         $error_msg_max = AmosSondaggi::t('amossondaggi', $this->messageMax, ['max' => $this->max]);
 
-        $min = $this->min;
-        $max = $this->max;
+        $min = empty($this->min) ? 0 : $this->min;
+        $max = empty($this->max) ? 0 : $this->max;
 
         return <<<JS
         var max = $max;

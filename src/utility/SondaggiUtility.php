@@ -76,21 +76,17 @@ class SondaggiUtility
 
         $compilatore = !empty($users[0]) ? $users[0] : null;
 
-        if (!empty($compilatore)) {
-            $message = "<p>".AmosSondaggi::t('amossondaggi',
-                    'Grazie per aver compilato il sondaggio <strong>{titolo}</strong>, in allegato trovi il sondaggio compilato.',
-                    ['titolo' => $model->titolo])."</p>";
-            $subject = AmosSondaggi::t("amossondaggi", "{nomeCognome} ha compilato il sondaggio '{titolo}'",
-                    ['titolo' => $model->titolo, 'nomeCognome' => !empty($compilatore) ? $compilatore->userProfile->nomeCognome
-                        : '']);
-        } else if (!empty($dati_utente)) {
-            $message = "<p>".AmosSondaggi::t('amossondaggi',
-                    'Grazie per aver compilato il sondaggio <strong>{titolo}</strong>, in allegato trovi il sondaggio compilato.',
-                    ['titolo' => $model->titolo])."</p>";
-            $subject = AmosSondaggi::t("amossondaggi", "{nomeCognome} ha compilato il sondaggio '{titolo}'",
-                    ['titolo' => $model->titolo, 'nomeCognome' => !empty($dati_utente['nome']) ? ($dati_utente['nome'].' '.$dati_utente['cognome'])
-                        : AmosSondaggi::t('amossondaggi', 'Utente')]);
-        }
+        $data = [];
+        if (!empty($compilatore))
+            $data = ['titolo' => $model->titolo, 'nomeCognome' => !empty($compilatore) ? $compilatore->userProfile->nomeCognome
+            : ''];
+        else if (!empty($dati_utente))
+            $data = ['titolo' => $model->titolo, 'nomeCognome' => !empty($dati_utente['nome']) ? ($dati_utente['nome'].' '.$dati_utente['cognome']) : AmosSondaggi::t('amossondaggi', 'Utente')];
+
+        $message = "<p>".AmosSondaggi::t('amossondaggi',
+                'Grazie per aver compilato il sondaggio <strong>{titolo}</strong>, in allegato trovi il sondaggio compilato.', $data)."</p>";
+        $subject = AmosSondaggi::t("amossondaggi", "{nomeCognome} ha compilato il sondaggio '{titolo}'", $data);
+
         if (empty($path)) {
             $files = [];
         } else {
@@ -243,8 +239,7 @@ class SondaggiUtility
      * @param $model
      * @return array
      */
-
-    public static function getSidebarPages($model, $idQuestion, $page)
+    public static function getSidebarPages($model, $idQuestion = null, $page = null)
     {
         $controllerDashboard = 'dashboard';
         $menu = [];
@@ -405,9 +400,9 @@ class SondaggiUtility
         $generatore = new GeneratoreSondaggio();
         foreach ($pagine->all() as $pagina) {
             $generatore->creaValidator($controller->percorso_validator, $pagina['id']);
-            $generatore->creaView("backend" . DS . $controller->base_dir . DS . "views" . DS . "q" . $id, $pagina['id'],
+            $generatore->creaView("common" . DS . "uploads" . DS . $controller->base_dir . DS . "views" . DS . "q" . $id, $pagina['id'],
                 $controller->percorso_view . $id);
-            $generatore->creaModel("backend" . DS . $controller->base_dir . DS . "models" . DS . "q" . $id, $pagina['id'],
+            $generatore->creaModel("common" . DS . "uploads" . DS . $controller->base_dir . DS . "models" . DS . "q" . $id, $pagina['id'],
                 $controller->percorso_validator, $controller->percorso_model . $id);
         }
     }

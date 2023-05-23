@@ -9,7 +9,7 @@ class ModuleRisultatiAsset extends AssetBundle
     public $sourcePath = '@vendor/open20/amos-sondaggi/src/assets/web';
 
     public $css = [
-        'css/stile.css'
+        'less/sondaggi-fullsize.less',
     ];
     public $js = [        
     ];

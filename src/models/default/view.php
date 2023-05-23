@@ -29,15 +29,24 @@ use open20\amos\attachments\components\AttachmentsList;
 use open20\amos\sondaggi\assets\ModuleRisultatiFrontendAsset;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
 
-
 /**
 * Questa è la view per la pagina "<?= $generator->paginaSondaggio ?>" del sondaggio "<?= $generator->titoloSondaggio ?>".
 *
 */
 
-$this->title = AmosSondaggi::t('amossondaggi', '<?= ($sondaggio->visualizza_solo_titolo == 1 ? '' : 'Compila: ') ?><?=
-                                                                                                                    (str_replace("'", "\'", $generator->titoloSondaggio))
-                                                                                                                    ?>');
+$title = '<?= str_replace("'", "\'", $generator->titoloSondaggio); ?>';
+$showTitle = <?= $sondaggio->visualizza_solo_titolo ?>;
+
+if (!
+    (
+        $showTitle == 1
+        || date("Y-m-d") > '<?= $sondaggio->close_date ?>'
+    )
+) {
+    $title = 'Compila: ' . $title;
+}
+
+$this->title = AmosSondaggi::t('amossondaggi', $title);
 $this->params['breadcrumbs'][] = $this->title;
 if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 if(!isset($libero)){
@@ -402,7 +411,7 @@ echo "\n?>\n";
             echo "\n ?>\n";
             ?>
             <?php if (!$sondaggioLive) { ?>
-                <div class="row header-page d-flex flex-wrap">
+                <div class="row header-page d-flex flex-wrap my-4">
                     <div class="col-sm-7 col-md-9">
                         <?php if (!empty(trim($generator->paginaSondaggio))) { ?>
                             <h3 class="m-t-10 m-b-30 sondaggio"><?= "<?= AmosSondaggi::t('amossondaggi', '". (str_replace("'", "\'", $generator->paginaSondaggio)) . "') ?>" ?></h3>
@@ -418,7 +427,7 @@ echo "\n?>\n";
                     </div>
                 </div>
             <?php } ?>
-            <div class="row">
+            <div class="row flex-column">
                 <?php foreach ($campi as $campo) : ?>
                     <?= $campo ?>
                 <?php endforeach; ?>
@@ -449,13 +458,19 @@ echo "\n?>\n";
                 echo "<?php
                 if(!isset(\$attivita) && !\$libero): ?>\n
                 <?php
-                \$closeLink = !empty(\$url) ? \$url : '/sondaggi/pubblicazione/index';
-                echo Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), " . (!empty($urlSondaggio && AmosSondaggi::instance()->enableRedirectionUrl) ? "'$urlSondaggio'" : "[\$closeLink]") . ", [
+				\$url_default = '/sondaggi/pubblicazione/index';
+				if (date('Y-m-d') > '" . $sondaggio->close_date . "')
+					\$url_default = '/sondaggi/pubblicazione/by-user-organization-closed';
+				
+                \$closeLink = !empty(\$url) ? \$url : \$url_default;
+                echo Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), " . (!empty($urlSondaggio && open20\amos\sondaggi\AmosSondaggi::instance()->enableRedirectionUrl) ? "'$urlSondaggio'" : "[\$closeLink]") . ", [
                     'class' => 'btn btn-secondary undo-edit'
                 ]);
                 ?>\n
                 <?php endif; ?>\n
-                <?= Html::button(
+                <?php 
+				if(date('Y-m-d') < '".$sondaggio->close_date."')
+				echo Html::button(
                                 ((\$idPagina == \$ultimaPagina)? AmosSondaggi::t('amossondaggi', 'Conferma') : AmosSondaggi::t('amossondaggi', 'Prosegui')), [
                                 'id' => 'truesubmit-" . $pagina->id . "',
                     'class' => 'btn btn-navigation-primary'

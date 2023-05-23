@@ -15,13 +15,13 @@ use open20\amos\core\views\AmosGridView;
  */
 
 $this->title = AmosSondaggi::t('amossondaggi', '#poll_questions');
-if (!$this->context->module->enableDashboard) {
+/*if (!$this->context->module->enableDashboard) {
     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
-}
+}*/
 if ($url) {
     $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Pagine'), 'url' => $url];
 } else {
-    $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => 'sondaggi/manage', 'route' => 'sondaggi/sondaggi/manage'];
+    $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
     $this->params['breadcrumbs'][] = ['label' => $this->title];
 }
 if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
@@ -71,9 +71,13 @@ Yii::$app->urlManager->createUrl([
                 'pageOrder' => [
                     'label' => AmosSondaggi::t('amossondaggi', '#page_number'),
                     'value' => function ($model) {
-                        $pagine = $model->sondaggi->getSondaggiDomandePagines()->orderBy('ordinamento')->all();
-                        $pagine_id = array_map(function($element) {return $element->id;}, $pagine);
-                        return array_search($model->sondaggiDomandePagine->id, $pagine_id) + 1;
+                        $sondaggi = $model->sondaggi;
+                        if (!empty($sondaggi)) {
+                            $pagine = $sondaggi->getSondaggiDomandePagines()->orderBy('ordinamento')->all();
+                            $pagine_id = array_map(function($element) {return $element->id;}, $pagine);
+                            return array_search($model->sondaggiDomandePagine->id, $pagine_id) + 1;
+                        }
+                        return '';
                     },
                 ],
                 [

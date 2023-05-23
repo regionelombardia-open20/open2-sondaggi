@@ -9,15 +9,13 @@
  * @category   CategoryName
  */
 
-use open20\amos\core\forms\WidgetGraphicsActions;
 use open20\amos\core\helpers\Html;
-use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
+use open20\amos\sondaggi\controllers\PubblicazioneController;
 use open20\amos\sondaggi\widgets\graphics\WidgetGraphicsUltimiSondaggi;
 use yii\data\ActiveDataProvider;
 use yii\web\View;
-use yii\widgets\Pjax;
 
 /**
  * @var View $this
@@ -28,7 +26,6 @@ use yii\widgets\Pjax;
 
 ModuleSondaggiAsset::register($this);
 
-$moduleSondaggi = \Yii::$app->getModule(AmosSondaggi::getModuleName());
 $listaModels = $lista->getModels();
 
 ?>
@@ -37,29 +34,20 @@ $listaModels = $lista->getModels();
 
 $modelLabel = 'sondaggi';
 
-$titleSection = AmosSondaggi::t('amossondaggi', 'Amministra i sondaggi');
 $labelLinkAll = AmosSondaggi::t('amossondaggi', 'Pubblica i sondaggi');
-$urlLinkAll   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/pubblicazione');
-$titleLinkAll = AmosSondaggi::t(
-    'amossondaggi',
-    'Visualizza la lista dei sondaggi pubblicabili o ri-pubblicabili'
-);
+$urlLinkAll = '/sondaggi/pubblicazione/pubblicazione';
+$titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista dei sondaggi pubblicabili o ri-pubblicabili');
 
 $subTitleSection = Html::tag('p', AmosSondaggi::t('amossondaggi', ''));
-
 
 $labelCreate = AmosSondaggi::t('amossondaggi', 'Nuovo');
 $titleCreate = AmosSondaggi::t('amossondaggi', 'Crea un nuovo sondaggio');
 $labelManage = AmosSondaggi::t('amossondaggi', 'Gestisci');
 $titleManage = AmosSondaggi::t('amossondaggi', 'Gestisci i sondaggi');
-$urlCreate   = '/sondaggi/dashboard/create';
+$urlCreate = '/sondaggi/dashboard/create';
 
-$manageLinks = [];
-$controller = \open20\amos\news\controllers\NewsController::class;
-if (method_exists($controller, 'getManageLinks')) {
-    $manageLinks = $controller::getManageLinks();
-}
-
+$controller = PubblicazioneController::class;
+$manageLinks = (method_exists($controller, 'getManageLinks') ? $controller::getManageLinks() : []);
 
 $moduleCwh = \Yii::$app->getModule('cwh');
 if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
@@ -67,6 +55,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
     $isSetScope = (!empty($scope)) ? true : false;
 }
 
+$hideCreate = !\Yii::$app->user->can('SONDAGGI_CREATE');
 ?>
 
 <div class="widget-graphic-cms-bi-less card-<?= $modelLabel ?> container">
@@ -77,11 +66,12 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
                 'isGuest' => \Yii::$app->user->isGuest,
                 'isSetScope' => $isSetScope,
                 'modelLabel' => 'news',
-                'titleSection' => $titleSection,
+                'titleSection' => $widget->getLabel(),
                 'subTitleSection' => $subTitleSection,
-                'urlLinkAll' => $urlLinkAll,
+                'urlLinkAll' => $hideCreate ? null : $urlLinkAll,
                 'labelLinkAll' => $labelLinkAll,
                 'titleLinkAll' => $titleLinkAll,
+                'hideCreate' => $hideCreate,
                 'labelCreate' => $labelCreate,
                 'titleCreate' => $titleCreate,
                 'labelManage' => $labelManage,
@@ -92,7 +82,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
         );
         ?>
     </div>
-
+    
     <?php if ($listaModels) { ?>
         <div class="list-view">
             <div>
@@ -113,7 +103,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
                                 </div>
 
                                 <div class="container-text">
-                                    <h2 class="box-widget-subtitle">
+                                    <div class="h3 box-widget-subtitle">
                                         <?php
                                         if (strlen($sondaggio->titolo) > 55) {
                                             $stringCut = substr($sondaggio->titolo, 0, 55);
@@ -122,7 +112,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
                                             echo $sondaggio->titolo;
                                         }
                                         ?>
-                                    </h2>
+                                    </div>
                                     <p class="box-widget-text">
                                         <?php
                                         if (strlen($sondaggio->descrizione) > 80) {
@@ -134,7 +124,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
                                         ?>
                                     </p>
                                 </div>
-                                <div class="footer-listbox">
+                                <div class="footer-listbox m-t-10">
                                     <?= Html::a(AmosSondaggi::t('amossondaggi', '#readMore'), ['/sondaggi/pubblicazione/compila', 'id' => $sondaggio->id], ['class' => 'btn btn-navigation-primary']); ?>
                                 </div>
                             </article>
@@ -143,6 +133,6 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
                 </div>
             </div>
         </div>
-
+    
     <?php } ?>
 </div>

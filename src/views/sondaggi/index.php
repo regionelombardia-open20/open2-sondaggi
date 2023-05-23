@@ -87,7 +87,7 @@ $this->registerJs($js2, View::POS_READY);
 
 ?>
 <div class="sondaggi-index">
-    <?php echo $this->render('_search', ['model' => $searchModel]);  ?>
+    <?php echo $this->render('_search', ['model' => $model]);  ?>
 
     <p>
         <?php /* echo         Html::a(AmosSondaggi::t('amossondaggi', 'Nuovo {modelClass}', [
@@ -120,7 +120,13 @@ $this->registerJs($js2, View::POS_READY);
                     }
                 ],
                 'titolo:ntext',
-                'descrizione:ntext',
+                'descrizione'=>[
+                    'attribute' => 'descrizione',
+                    'value' => function ($model) {
+                        return (strlen($model->descrizione) > 150) ? substr($model->descrizione,0,150).' ...' : $model->descrizione;
+                        
+                    }
+                ],
                 [
                     'attribute' => 'sondaggio_type',
                     'value' => function($model){
@@ -172,7 +178,7 @@ $this->registerJs($js2, View::POS_READY);
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
                     'template' => '{update} {clone} {pagine} {domande} {download} {risultati} {delete}',
                     'buttons' => [
-                        'download' => function ($url, $model) use ($isCommunityManager) {
+                        /*'download' => function ($url, $model) use ($isCommunityManager) {
                             $url = \yii\helpers\Url::current();
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || $isCommunityManager) {
                                 return Html::a(AmosIcons::show('download', [
@@ -183,7 +189,7 @@ $this->registerJs($js2, View::POS_READY);
                                     'class' => 'btn btn-tool-secondary btn-sondaggi-download'
                                 ]);
                             }
-                        },
+                        },*/
                         'anteprima' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();

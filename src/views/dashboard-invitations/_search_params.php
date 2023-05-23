@@ -19,14 +19,14 @@ if ($count == 0) {
         <div class="col-xs-12 col-sm-12 col-md-3">
             <?= $form->field($model, "include_exclude[$i]")->widget(Select2::className(), [
                 'data' => [
-                    SondaggiInvitationsSearch::FILTER_INCLUDE => AmosSondaggi::t('AmosSondaggi', '#invite'),
-                    SondaggiInvitationsSearch::FILTER_EXCLUDE => AmosSondaggi::t('AmosSondaggi', "#no_invite")
+                    SondaggiInvitationsSearch::FILTER_INCLUDE => AmosSondaggi::t('amossondaggi', '#invite'),
+                    SondaggiInvitationsSearch::FILTER_EXCLUDE => AmosSondaggi::t('amossondaggi', "#no_invite")
                 ],
                 'options' => [
                     //                'placeholder' => AmosSondaggi::t('AmosSondaggi', "Select...")
 
                 ]
-            ])->label(AmosSondaggi::t('AmosSondaggi', '#rule')) ?>
+            ])->label(AmosSondaggi::t('amossondaggi', '#rule')) ?>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-4">
             <?= $form->field($model, "field[$i]")->widget(Select2::className(), [
@@ -34,9 +34,9 @@ if ($count == 0) {
                 'options' => [
                     'class' => 'filter-field',
                     'id' => 'field-' . $i,
-                    'placeholder' => AmosSondaggi::t('AmosSondaggi', "#select")
+                    'placeholder' => AmosSondaggi::t('amossondaggi', "#select")
                 ]
-            ])->label(AmosSondaggi::t('AmosSondaggi', 'Field')) ?>
+            ])->label(AmosSondaggi::t('amossondaggi', 'Field')) ?>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-4">
             <?php
@@ -59,7 +59,7 @@ if ($count == 0) {
                 'pluginOptions' => [
                     'url' => \yii\helpers\Url::to(['/sondaggi/dashboard-invitations/get-values']),
                     'depends' => ['field-' . $i],
-                    'placeholder' => AmosSondaggi::t('AmosSondaggi', "#select"),
+                    'placeholder' => AmosSondaggi::t('amossondaggi', "#select"),
                 ],
                 'select2Options' => [
                     // 'options' => [
@@ -75,7 +75,7 @@ if ($count == 0) {
                         // ],
                     ],
                 ]
-            ])->label(AmosSondaggi::t('AmosSondaggi', 'Value')); ?>
+            ])->label(AmosSondaggi::t('amossondaggi', 'Value')); ?>
         </div>
 
         <div class="col-xs-2 col-sm-2 col-md-1 text-right">

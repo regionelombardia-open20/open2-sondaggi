@@ -267,7 +267,16 @@ textarea {
         div[class*='col-'] > div[class*='col-'] {
             padding: 0 !important;
         }
+        .row.flex-column {
+            flex-direction: column;
+        }
         fieldset {
+            .checkbox {
+                label {
+                    display: flex;
+                    align-items: center;
+                }
+            }
             label {
                 input {
                     margin-right: 6px;
@@ -500,4 +509,8 @@ textarea {
 }
 .input-group-btn .btn {
     margin: 0 !important;
+}
+
+.modal-always-hamburger-menu.modal.fade.show {
+    opacity: 1;
 }
