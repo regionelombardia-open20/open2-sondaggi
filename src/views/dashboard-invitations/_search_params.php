@@ -36,7 +36,7 @@ if ($count == 0) {
                     'id' => 'field-' . $i,
                     'placeholder' => AmosSondaggi::t('amossondaggi', "#select")
                 ]
-            ])->label(AmosSondaggi::t('amossondaggi', 'Field')) ?>
+            ])->label(AmosSondaggi::t('amossondaggi', '#field')) ?>
         </div>
         <div class="col-xs-12 col-sm-12 col-md-4">
             <?php
@@ -75,7 +75,7 @@ if ($count == 0) {
                         // ],
                     ],
                 ]
-            ])->label(AmosSondaggi::t('amossondaggi', 'Value')); ?>
+            ])->label(AmosSondaggi::t('amossondaggi', '#value')); ?>
         </div>
 
         <div class="col-xs-2 col-sm-2 col-md-1 text-right">

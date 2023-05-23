@@ -1985,7 +1985,7 @@ class PubblicazioneController extends CrudController
             $subTitleSection  = Html::tag(
                     'p',
                     AmosSondaggi::t(
-                        'amossondaggi', 'Per partecipare alla creazione di nuove notizie, {ctaLoginRegister}',
+                        'amossondaggi', 'Per partecipare alla creazione di nuovi sondaggi, {ctaLoginRegister}',
                         ['ctaLoginRegister' => $ctaLoginRegister]
                     )
             );

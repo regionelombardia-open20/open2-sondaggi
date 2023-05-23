@@ -133,12 +133,19 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
         }
         for ($i = 1; $i <= count($params['field']); $i++) {
             $operator = '=';
-            if ($params['include_exclude'][$i] == SondaggiInvitations::FILTER_EXCLUDE) $operator = '!=';
-            if ($params['field'][$i] == 'type') {
-                $query = $query->joinWith('tipologiaDiOrganizzazione')->andFilterWhere([$operator, 'profilo_types_pmi.id', $params['value'][$i]]);
+            if (isset($params['include_exclude'][$i])) {
+                if ($params['include_exclude'][$i] == SondaggiInvitations::FILTER_EXCLUDE) {
+                    $operator = '!=';
+                }
             }
-            if ($params['field'][$i] == 'name') {
-                $query = $query->andFilterWhere([$operator, 'profilo.id', $params['value'][$i]]);
+
+            if (isset($params['field'][$i])) {
+                if ($params['field'][$i] == 'type') {
+                    $query = $query->joinWith('tipologiaDiOrganizzazione')->andFilterWhere([$operator, 'profilo_types_pmi.id', $params['value'][$i]]);
+                }
+                if ($params['field'][$i] == 'name') {
+                    $query = $query->andFilterWhere([$operator, 'profilo.id', $params['value'][$i]]);
+                }
             }
         }
         $query->groupBy('id');

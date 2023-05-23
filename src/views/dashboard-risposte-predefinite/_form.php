@@ -85,12 +85,20 @@ $sondaggioLive = ($model->sondaggiDomande->sondaggi->sondaggio_type == \open20\a
         <div class="col-sm-8">
             <?= $form->field($model, 'risposta')->textarea(['rows' => 4]) ?>
         </div>
-        <div class="col-xs-12">
-            <?= $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine', 'dopo' => 'Dopo la seguente risposta'], ['id' => 'ordinamento-radio-risposta'])->label(AmosSondaggi::t('amossondaggi', 'Posiziona la risposta') . ':') ?>
-        </div>
-        <div class="col-xs-12">
-            <?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteRisposteSondaggio()->all(), 'id', 'risposta'), ['id' => 'ordina-dopo-risposta'])->label(FALSE); ?>
-        </div>
+        <?php $answersCount = $model->getTutteRisposteSondaggio()->count(); ?>
+            <div class="col-xs-12">
+                <?php if ($answersCount > 0) {
+                    echo $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine', 'dopo' => 'Dopo la seguente risposta'], ['id' => 'ordinamento-radio-risposta'])->label(AmosSondaggi::t('amossondaggi', 'Posiziona la risposta') . ':');
+                } else {
+                    echo $form->field($model, 'ordine')->inline()->radioList(['inizio' => 'All\'inizio', 'fine' => 'Alla fine'], ['id' => 'ordinamento-radio-risposta'])->label(AmosSondaggi::t('amossondaggi', 'Posiziona la risposta') . ':');
+                } ?>
+            </div>
+
+        <?php if ($answersCount > 0) { ?>
+            <div class="col-xs-12">
+                <?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteRisposteSondaggio()->all(), 'id', 'risposta'), ['id' => 'ordina-dopo-risposta'])->label(AmosSondaggi::t('amossondaggi', 'Selezionare una risposta') . ':'); ?>
+            </div>
+        <?php } ?>
     </div>
     <div class="clearfix"></div>
     <?php $this->endBlock(); ?>

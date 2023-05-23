@@ -1152,7 +1152,7 @@ class DashboardController extends CrudController
             $to  = $comunicazione->email_test;
             $all = \Yii::$app->db->createCommand($comunicazione->query)->queryAll();
             if ($preview == true) {
-                $this->sendEmailGeneral($comunicazione->email_test, $comunicazione->subject, $comunicazione->message);
+                $this->sendEmailGeneral($to, $comunicazione->subject, $comunicazione->message);
             } else {
 
                 foreach ($all as $single) {

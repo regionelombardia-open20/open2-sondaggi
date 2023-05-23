@@ -219,6 +219,13 @@ echo "\n?>\n";
                         });
                     }
                 });
+                
+                let requiredOnCondition = $(this).data('required_on_condition');
+                let requiredQuestionId = $(this).data('question_id');
+                if (requiredOnCondition){
+                    $( "div[data-domanda="+requiredQuestionId+"]" ).addClass('required');
+                }
+
             });
 
             // trigger change event on file remove button click
@@ -258,11 +265,24 @@ echo "\n?>\n";
                                     }
                                 });
 
+                                let requiredOnCondition = v.element.data('required_on_condition');
+                                let requiredQuestionId = v.element.data('question_id');
+
                                 // show or hide question
                                 if (visible) {
+                                     // add required on visible conditional questions required
+                                    if (requiredOnCondition){
+                                        $( "div[data-domanda="+requiredQuestionId+"]" ).addClass('required');
+                                    }
+
                                     v.element.show();
                                 } else {
                                     v.element.hide();
+                                    
+                                    if (requiredOnCondition){
+                                        $( "div[data-domanda="+requiredQuestionId+"]" ).removeClass('required');
+                                    }
+
 
                                     // get question inputs
                                     var $conditional_question_inputs = v.element.find('input, textarea, select');

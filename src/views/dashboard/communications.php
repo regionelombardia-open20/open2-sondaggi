@@ -36,7 +36,7 @@ $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;
     </p>
 
     <?php
-    Pjax::begin(['id' => 'dashboard-invitations-view']);
+    Pjax::begin(['id' => 'dashboard-invitations-view', 'timeout' => 10000]);
     echo DataProviderView::widget([
         'dataProvider' => $dataProvider,
         //'filterModel' => $model,

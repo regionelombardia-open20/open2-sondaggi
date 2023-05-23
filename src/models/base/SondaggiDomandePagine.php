@@ -51,7 +51,7 @@ class SondaggiDomandePagine extends \open20\amos\core\record\Record
     public function rules()
     {
         return [
-            [['sondaggi_id'], 'required'],
+            [['sondaggi_id', 'titolo'], 'required'],
             [['sondaggi_id', 'ordinamento', 'filemanager_mediafile_id', 'created_by', 'updated_by', 'deleted_by', 'version'], 'integer'],
             [['descrizione'], 'string'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe'],

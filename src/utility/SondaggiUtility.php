@@ -20,6 +20,8 @@ use open20\amos\sondaggi\models\SondaggiDomande;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
 use open20\amos\core\user\User;
+use Yii;
+use yii\base\InvalidConfigException;
 use yii\log\Logger;
 
 class SondaggiUtility
@@ -497,6 +499,50 @@ class SondaggiUtility
         \open20\amos\sondaggi\models\SondaggiDomandeCondizionate::deleteAll(['sondaggi_domande_id' => $id]);
         $model->delete();
         return 'ok';
+    }
+
+    /**
+     * Get invitation email content message
+     * @param $sondaggio
+     * @param $userProfile
+     * @return string
+     * @throws InvalidConfigException
+     */
+    public static function getInvitationEmailContent($sondaggio, $userProfile)
+    {
+        return AmosSondaggi::t('amossondaggi', 'invitation_message', [
+            'titolo' => $sondaggio->titolo,
+            'platformName' => Yii::$app->name,
+            'urlPollCompilation' => Yii::$app->urlManager->createAbsoluteUrl([
+                '/' . AmosSondaggi::getModuleName() . '/pubblicazione/compila',
+                'id' => $sondaggio->id
+            ]),
+            'urlPlatform' => Yii::$app->urlManager->createAbsoluteUrl('/'),
+            'nomeCognome' => $userProfile->nomeCognome,
+            'data' => Yii::$app->formatter->asDate($sondaggio->close_date),
+        ]);
+    }
+
+    /**
+     * Get invitation organization email content message
+     * @param $sondaggio
+     * @param $userProfile
+     * @return string
+     * @throws InvalidConfigException
+     */
+    public static function getInvitationOrganizationEmailContent($sondaggio, $organization)
+    {
+        return AmosSondaggi::t('amossondaggi', 'invitation_organization_message', [
+            'titolo' => $sondaggio->titolo,
+            'platformName' => Yii::$app->name,
+            'urlPollCompilation' => Yii::$app->urlManager->createAbsoluteUrl([
+                '/' . AmosSondaggi::getModuleName() . '/pubblicazione/compila',
+                'id' => $sondaggio->id
+            ]),
+            'urlPlatform' => Yii::$app->urlManager->createAbsoluteUrl('/'),
+            'ente' => $organization->name,
+            'data' => Yii::$app->formatter->asDate($sondaggio->close_date),
+        ]);
     }
 
 

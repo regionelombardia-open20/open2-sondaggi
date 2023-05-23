@@ -13,6 +13,9 @@ use yii\widgets\Pjax;
  * @var open20\amos\sondaggi\models\search\SondaggiDomandeSearch $searchModel
  */
 
+$this->params['forceBreadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/sondaggi/sondaggi/manage']];
+$this->params['forceBreadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Liste inviti')];
+
  $js = <<<JS
   $('#dashboard-invitations-view').on('click', '.activate-list', function(e){
       e.preventDefault();

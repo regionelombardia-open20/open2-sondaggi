@@ -198,13 +198,13 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
                 ->andWhere(['sondaggi_domande.sondaggi_id' => $this->sondaggi->id])
                 //->andWhere(['sondaggi_domande.sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
                 ->andWhere(['!=', 'sondaggi_domande.id', $this->id])
-                ->andWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
+                ->andFilterWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
                 ->andWhere(['in', 'sondaggi_domande_tipologie_id', [1, 2, 3, 4]]);
         } else {
             $domande = $this->find()
                 ->andWhere(['sondaggi_domande.sondaggi_id' => $this->sondaggi->id])
                 //->andWhere(['sondaggi_domande.sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
-                ->andWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
+                ->andFilterWhere(['<=', 'sondaggi_domande.sondaggi_domande_pagine_id', $idPaginaAttuale])
                 ->andWhere(['in', 'sondaggi_domande_tipologie_id', [1, 2, 3, 4]]);
         }
         $arrDomande = [];

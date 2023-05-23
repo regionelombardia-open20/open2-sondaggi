@@ -20,7 +20,9 @@ use open20\amos\sondaggi\models\search\SondaggiInvitationsSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiInvitationMm;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\console\Controller;
 use yii\db\Expression;
 use yii\helpers\Console;
@@ -201,44 +203,27 @@ class NotifierController extends Controller
     /**
      * @param Sondaggi $sondaggio
      * @param UserProfile $referenteOperativo
+     * @throws InvalidConfigException
      */
     protected function sendEmailReferenteOperativo($sondaggio, $referenteOperativo,$organization)
     {
         $emailsTo = [$referenteOperativo->user->email,$organization->operativeHeadquarter->email];
-
         $subject = AmosSondaggi::t('amossondaggi', '#invito_referenteOperativo_subject');
-        $message = AmosSondaggi::t('amossondaggi', '#invito_referenteOperativo_message', [
-            'titolo' => $sondaggio->titolo,
-            'urlPollCompilation' => Yii::$app->urlManager->createAbsoluteUrl([
-                '/' . AmosSondaggi::getModuleName() . '/pubblicazione/compila',
-                'id' => $sondaggio->id
-            ]),
-            'urlPlatform' => Yii::$app->urlManager->createAbsoluteUrl('/'),
-            'nomeCognome' => $referenteOperativo->nomeCognome,
-            'data' => Yii::$app->formatter->asDate($sondaggio->close_date),
-        ]);
+        $message = SondaggiUtility::getInvitationEmailContent($sondaggio, $referenteOperativo);
+
         $this->sendEmailGeneral($emailsTo, $referenteOperativo->user, $subject, $message);
     }
 
     /**
      * @param Sondaggi $sondaggio
      * @param Profilo $organization
+     * @throws InvalidConfigException
      */
     protected function sendEmailOrganization($sondaggio, $organization)
     {
         $emailsTo = [$organization->operativeHeadquarter->email];
-
         $subject = AmosSondaggi::t('amossondaggi', '#invito_organization_subject');
-        $message = AmosSondaggi::t('amossondaggi', '#invito_organization_message', [
-            'titolo' => $sondaggio->titolo,
-            'urlPollCompilation' => Yii::$app->urlManager->createAbsoluteUrl([
-                '/' . AmosSondaggi::getModuleName() . '/pubblicazione/compila',
-                'id' => $sondaggio->id
-            ]),
-            'urlPlatform' => Yii::$app->urlManager->createAbsoluteUrl('/'),
-            'ente' => $organization->name,
-            'data' => Yii::$app->formatter->asDate($sondaggio->close_date),
-        ]);
+        $message = SondaggiUtility::getInvitationOrganizationEmailContent($sondaggio, $organization);
 
         $this->sendEmailGeneral($emailsTo, null, $subject, $message);
     }

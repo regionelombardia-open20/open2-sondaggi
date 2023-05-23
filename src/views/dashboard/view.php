@@ -13,6 +13,22 @@ use kartik\dropdown\DropdownX;
  * @var Sondaggi $model
  */
 
+$isStatusValidato = $model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO;
+$js = <<<JS
+    // Se lo stato è validato mostra il modale
+    var isStatusValidato = $isStatusValidato;
+    if (isStatusValidato) {
+        $('#delete-poll').on('click', function(e) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            $('#delete-modal').modal('show');
+        });
+    }
+JS;
+
+$this->registerJs($js);
+
+
 ModuleSondaggiAsset::register($this);
 
 $this->title = $model->getTitle();
@@ -29,20 +45,26 @@ $sondaggioPubblicabile = $model->verificaSondaggioPubblicabile();
 $sondaggioPreview = $model->verificaSondaggioPubblicabile(false);
 
 if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
-    $this->params['titleButtons'][] = Html::a(AmosIcons::show('delete').'&nbsp;'.AmosSondaggi::t('amossondaggi',
-                '#delete_poll'),
+    $this->params['titleButtons'][] = Html::a(
+            AmosIcons::show('delete').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#delete_poll'),
             Yii::$app->urlManager->createUrl([
                 '/'.$this->context->module->id.'/sondaggi/delete',
                 'id' => $model->id,
                 'url' => $url,
             ]),
             [
+            'id' => 'delete-poll',
             'title' => AmosSondaggi::t('amossondaggi', '#delete_poll'),
             'class' => 'btn btn-danger-inverse',
             'data' => [
                 'confirm' => AmosSondaggi::t('amossondaggi', '#delete_poll_dialog')
             ]
         ]);
+    // Modal Delete
+    if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+        echo $this->render('parts/_modalDelete', ['model' => $model]);
+    }
+
     // controllo prima di tutto che l'utente abbia il permesso di portare il sondaggio in stato attivo o disattivo
     // qundi 1) il parametro è settatto 2) se non hai il ruolo per poter getire il pulsante ti blocco subito!
     if (!Yii::$app->controller->sondaggiModule->currentUserCanActivatePool()) {

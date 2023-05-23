@@ -459,6 +459,8 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
             'sondaggi-risposte' => '/sondaggi/pubblicazione/own-interest',
             'sondaggi-risposte-predefinite' => '/sondaggi/pubblicazione/own-interest',
             'pubblicazione' => '/sondaggi/pubblicazione/own-interest',
+            'dashboard-domande' => '/sondaggi/sondaggi/manage',
+            'dashboard-domande-pagine' => '/sondaggi/sondaggi/manage',
         ];
     }
 
@@ -475,6 +477,8 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
             'sondaggi-risposte' => '/sondaggi/pubblicazione/all',
             'sondaggi-risposte-predefinite' => '/sondaggi/pubblicazione/all',
             'pubblicazione' => '/sondaggi/pubblicazione/all',
+            'dashboard-domande' => '/sondaggi/sondaggi/manage',
+            'dashboard-domande-pagine' => '/sondaggi/sondaggi/manage'
         ];
     }
 
@@ -491,6 +495,8 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
             'sondaggi-domande-tipologie' => self::t('amosdocumenti', "Sondaggi"),
             'sondaggi-risposte' => self::t('amosdocumenti', "Sondaggi"),
             'sondaggi-risposte-predefinite' => self::t('amosdocumenti', "Sondaggi"),
+            'dashboard-domande' => self::t('amosdocumenti', "Sondaggi"),
+            'dashboard-domande-pagine' => self::t('amosdocumenti', "Sondaggi"),
         ];
 
         return $names;

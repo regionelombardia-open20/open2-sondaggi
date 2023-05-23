@@ -100,13 +100,25 @@ if (isset($dateEnd)) {
                                 </a>
                                 <div class="ml-auto">
 
-                                    <?php if(\Yii::$app->getUser()->can('DASHBOARD_VIEW')): ?> 
+                                    <?php if(\Yii::$app->getUser()->can('DASHBOARD_VIEW')): ?>
+                                        <?php
+                                        $labelDeleteConfirm = null;
+                                        $actionDelete = '/sondaggi/sondaggi/delete?id=' . $model->id;
+                                        $checkDeletePermission = true;
+                                        if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+                                            $labelDeleteConfirm = AmosSondaggi::t('amossondaggi', 'E\' necessario disattivare il sondaggio per procedere con l\'eliminazione. Procedere con la disattivazione del sondaggio?');
+                                            $actionDelete = ['/sondaggi/pubblicazione/depubblica', 'idSondaggio' => $model->id, 'url' => '/sondaggi/dashboard/dashboard?id=' . $model->id];
+                                            $checkDeletePermission = false;
+                                        }
+                                        ?>
                                         <?= ContextMenuWidget::widget([
                                             'model' => $model,
                                             'actionModify' => "/sondaggi/dashboard/dashboard?id=" . $model->id,
-                                            'actionDelete' => "/sondaggi/sondaggi/delete?id=" . $model->id,
+                                            'actionDelete' => $actionDelete,
+                                            'labelDeleteConfirm' => $labelDeleteConfirm,
                                             'mainDivClasses' => '',
                                             'checkModifyPermission' => false,
+                                            'checkDeletePermission' => $checkDeletePermission,
                                             'labelModify' => \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ? AmosSondaggi::t('amossondaggi', 'Modifica') : AmosSondaggi::t('amossondaggi', 'Gestisci')
                                         ]) ?>
                                     <?php endif; ?>

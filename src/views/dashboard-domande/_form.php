@@ -116,6 +116,15 @@ $js2 = <<<JS
     if ($('#sondaggidomande-sondaggi_domande_tipologie_id').val()) {
         $('#sondaggidomande-sondaggi_domande_tipologie_id').trigger('change');
     }
+    
+    $('#domcond').on('change', function () {
+        if (this.checked) {
+            $('#introduzione_condizionata').show();
+        } else {
+            $('#introduzione_condizionata').hide();
+        }
+    });
+    
 JS;
 
 $this->registerJs($js2, yii\web\View::POS_READY);
@@ -128,30 +137,18 @@ $this->registerJs($js2, yii\web\View::POS_READY);
 
     <div class="row sondaggio-row">
        <?php if (AmosSondaggi::instance()->questionIntro) { ?>
-        <div class="col-sm-12">
-            <?=
-            $form->field($model, 'introduzione')->widget(TextEditorWidget::className(),
-                [
-                    'clientOptions' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi',
-                            'Qui si può inserire una descrizione introduttiva alla domanda, essa sarà sempre visibile'),
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ]
-                ])
-            ?>
-        </div>
-        <div class="col-sm-12">
-            <?=
-            $form->field($model, 'introduzione_condizionata')->widget(TextEditorWidget::className(),
-                [
-                    'clientOptions' => [
-                        'placeholder' => AmosSondaggi::t('amossondaggi',
-                            'Qui si può inserire una descrizione introduttiva alla domanda, sarà vincolata alla presenza della stessa'),
-                        'lang' => substr(Yii::$app->language, 0, 2)
-                    ]
-                ])
-            ?>
-        </div>
+            <div class="col-sm-12">
+                <?=
+                $form->field($model, 'introduzione')->widget(TextEditorWidget::className(),
+                    [
+                        'clientOptions' => [
+                            'placeholder' => AmosSondaggi::t('amossondaggi',
+                                'Qui si può inserire una descrizione introduttiva alla domanda, essa sarà sempre visibile'),
+                            'lang' => substr(Yii::$app->language, 0, 2)
+                        ]
+                    ])
+                ?>
+            </div>
         <?php } ?>
         <div class="col-sm-12">
             <?= $form->field($model, 'domanda', ['options' => ['class' => 'nom']])->textarea(['rows' => 4]) ?>
@@ -478,6 +475,20 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                     $model->condizione_necessaria = $model->getSondaggiRispostePredefinitesCondizionate()->all();
                 endif;
                 ?>
+
+                <?php if (AmosSondaggi::instance()->questionIntro) { ?>
+                    <div id="introduzione_condizionata" style="display: none">
+                        <?= $form->field($model, 'introduzione_condizionata')->widget(TextEditorWidget::className(), [
+                                'clientOptions' => [
+                                    'placeholder' => AmosSondaggi::t('amossondaggi',
+                                        'Qui si può inserire una descrizione introduttiva alla domanda, sarà vincolata alla presenza della stessa'),
+                                    'lang' => substr(Yii::$app->language, 0, 2)
+                                ]
+                            ]
+                        ); ?>
+                    </div>
+                <?php } ?>
+
                 <?=
                 $form->field($model, 'condizione_necessaria')->dropDownList(
                     yii\helpers\ArrayHelper::map($model->getTutteDomandeDellePagine()->all(), 'id', 'risposta', 'domanda'),

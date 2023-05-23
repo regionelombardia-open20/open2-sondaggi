@@ -245,7 +245,7 @@ return [
     '#menu_front_sondaggi' => 'Sondaggi',
 
 
-    "#beforeActionSubtitleSectionGuest" => "Per partecipare alla creazione di nuove notizie, {ctaLoginRegister}",
+    "#beforeActionSubtitleSectionGuest" => "Per partecipare a tutti i sondaggi, {ctaLoginRegister}",
     "#beforeActionCtaLoginRegister" => "accedi o registrati alla piattaforma",
     "#beforeActionSubtitleSectionLogged" => "",
 
@@ -305,10 +305,10 @@ return [
     '#activate_list' => 'Attiva lista',
     '#deactivate_list' => 'Disattiva lista',
     '#invito_referenteOperativo_message' => 'Gentile {nomeCognome},<br>
-sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma Fabbisogni Online.<br>
+sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>
 
-Si ricorda di completare il questionario entro la data di fine questionario, {data}.<br>
-<a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma Fabbisogni Online.<br>
+Si ricorda di completare il questionario entro la data di scadenza {data}.<br>
+<a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br>
 <br>
 Una volta effettuato l’accesso, è possibile compilare il questionario dal plugin QUESTIONARI.<br>
 <br>
@@ -424,4 +424,8 @@ Grazie per aver scelto i nostri servizi.',
     'Add new survey'=>'Nuovo',
     'Search by'=>'Cerca per',
     'sondaggio_gia_compilato'=>'IL SONDAGGIO {0} E\' GIA\' STATO COMPILATO',
+    '#field' => 'Campo',
+    '#value' => 'Valore',
+    'invitation_message' => 'Gentile {nomeCognome},<br>sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>Si ricorda di completare il questionario entro la data di scadenza {data}.<br><a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br><br>Grazie per aver scelto i nostri servizi.',
+    'invitation_organization_message' => '{ente}, sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> questionario sulla piattaforma {platformName} entro la data {data}.<br><br>Si segnala che l’Ente è sprovvisto di un REFERENTE OPERATIVO, si prega di invitare un proprio operatore a candidarsi come referente operativo per poter compilare il questionario.<br><br>Grazie per aver scelto i nostri servizi.',
 ];

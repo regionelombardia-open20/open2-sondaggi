@@ -428,7 +428,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
         $params = array_merge($params, Yii::$app->request->get());
         $this->load($params);
         $query  = $this->baseSearch($params);
-        $this->applySearchFilters($query);
+//        $this->applySearchFilters($query);
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
@@ -450,6 +450,48 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
                 $query->andWhere(eval("return ".$command.";"));
             }
         }
+        return $dataProvider;
+    }
+
+    /**
+     * Method for cms.
+     * Finds own interest polls for logged users and frontend polls for guests.
+     * @param $params
+     * @param $limit
+     * @return ActiveDataProvider
+     * @throws InvalidConfigException
+     */
+    public function cmsSearchOwnInterest($params, $limit)
+    {
+        $params = array_merge($params, Yii::$app->request->get());
+        $this->load($params);
+        if (!Yii::$app->user->isGuest) {
+            $dataProvider = $this->searchOwnInterest($params, $limit);
+        } else {
+            if (AmosSondaggi::instance()->enableFrontendCompilation || AmosSondaggi::instance()->forceOnlyFrontend) {
+                $dataProvider = $this->cmsSearchFrontend($params, $limit);
+            } else {
+                $dataProvider = $this->cmsSearch($params, $limit);
+            }
+        }
+
+        return $dataProvider;
+
+    }
+
+    /**
+     * Method for cms.
+     * Finds only polls enabled for frontend.
+     * @param $params
+     * @param $limit
+     * @return ActiveDataProvider
+     */
+    public function cmsSearchFrontend($params, $limit)
+    {
+        $dataProvider = $this->cmsSearch($params, $limit);
+        $dataProvider->query->andWhere(['frontend' => true])
+            ->andWhere(['status' => self::WORKFLOW_STATUS_VALIDATO]);
+
         return $dataProvider;
     }
 
