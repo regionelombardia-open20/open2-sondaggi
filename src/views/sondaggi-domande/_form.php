@@ -213,7 +213,7 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                 $form->field($model, 'abilita_ordinamento_risposte')->dropDownList([
                     0 => AmosSondaggi::t('amossondaggi', 'Nessun ordinamento'),
                     1 => AmosSondaggi::t('amossondaggi',
-                        'Si, le risposte saranno ordinabili e condizioneranno l\'ordinamento delle domande condizionate alle risposte.')
+                        'Sì, risposte ordinabili con la funzione "Gestisci Risposte"')
                 ]);
                 ?>
             </div>

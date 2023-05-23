@@ -175,6 +175,7 @@ class Risposte extends \yii\base\Model
                                     INNER JOIN sondaggi_domande_pagine as P on P.id = D.sondaggi_domande_pagine_id
                                     INNER JOIN sondaggi_risposte_sessioni S ON R.sondaggi_risposte_sessioni_id = S.id
                                     WHERE D.id = $Domanda->id AND R.deleted_by is null AND P.deleted_by is null $condizione
+                                    AND D.sondaggi_domande_tipologie_id NOT IN (10, 11)
                                     AND S.deleted_by is null AND R.deleted_by is null AND P.deleted_by is null
                                     GROUP BY risposta ORDER BY P.ordinamento";
 

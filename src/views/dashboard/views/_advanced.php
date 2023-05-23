@@ -4,7 +4,7 @@ use open20\amos\core\helpers\Html;
 use open20\amos\sondaggi\AmosSondaggi;
 ?>
 <div class="row">
-    <div class="col-md-12">
+    <div>
         <?php
         echo Html::tag(
             'div', $form->field($model, 'send_pdf_to_compiler')->checkbox(), ['class' => 'col-sm-12']
@@ -24,23 +24,25 @@ use open20\amos\sondaggi\AmosSondaggi;
                 ->label(AmosSondaggi::t('amossondaggi', '#compiled_poll_emails_option')), ['class' => 'col-sm-12']
         );
 
-        if (AmosSondaggi::instance()->enableRedirectionUrl) {
-            echo '<hr/>';
-            echo $form->field($model, 'url_chiudi_sondaggio')->textInput();
-        }
+        if (AmosSondaggi::instance()->enableRedirectionUrl) { ?>
+            <div class="col-md-12">
+                <hr/>
+                <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
+            </div>
+        <?php }
 
 
         if (empty($model->compilazioni_disponibili)) $model->compilazioni_disponibili = 1;
 
         echo Html::tag(
-            'div', $form->field($model, 'compilazioni_disponibili')->textInput(['disabled' => true]),
-            ['class' => 'col-sm-12']
+            'div', $form->field($model, 'compilazioni_disponibili')->textInput(['disabled' => true])->label(false),
+            ['class' => 'col-sm-12 hidden']
         );
         ?>
     </div>
     <?php
     if (!$sondaggiModule->forceOnlyFrontend) { // Se non è settata l'intenzione di forzare il campo frontend forzatamente a 1
-        if ($sondaggiModule->enableFrontendCompilation) {
+        if ($sondaggiModule->enableFrontendCompilation && !$model->isCommunitySurvey()) {
             ?>
             <div class="col-md-12"><hr/>
                 <?=

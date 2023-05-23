@@ -137,4 +137,52 @@ class SondaggiComunication extends \open20\amos\sondaggi\models\base\SondaggiCom
     {
         return NULL; //TODO
     }
+
+    /**
+     * @param $target
+     * @return array
+     */
+    public function getFilterData($target = null, $isCommunitySurvey = false) {
+        $data = [];
+        if (!is_null($target)) {
+            $this->target = $target;
+        }
+
+        if ($this->target == SondaggiInvitations::TARGET_USERS) {
+            if (!$isCommunitySurvey) {
+                $data = [
+                    SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO => AmosSondaggi::t('amossondaggi', 'Tutti gli utenti invitati alla compilazione del sondaggio'),
+                    SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO => AmosSondaggi::t('amossondaggi', 'Solo gli utenti che hanno compilato il sondaggio'),
+                    SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO => AmosSondaggi::t('amossondaggi', 'Solo gli utenti invitati ma che ancora non hanno compilato il sondaggio')
+                ];
+            } else {
+                $data = [
+                    SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO => AmosSondaggi::t('amossondaggi', 'Tutti i partecipanti della community invitati alla compilazione del sondaggio'),
+                    SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO => AmosSondaggi::t('amossondaggi', 'Solo i partecipanti della community che hanno compilato il sondaggio'),
+                    SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO => AmosSondaggi::t('amossondaggi', 'Solo i partecipanti della community invitati ma che ancora non hanno compilato il sondaggio')
+                ];
+            }
+        }
+        else if ($this->target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+            $data = [
+                SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO => AmosSondaggi::t('amossondaggi', '#all_organizations_invited_to_poll'),
+                SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO => AmosSondaggi::t('amossondaggi', '#organizations_poll_compiled'),
+                SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO => AmosSondaggi::t('amossondaggi', '#organizations_invited_to_poll_not_compiled')
+            ];
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTargetLabel()
+    {
+        return [
+            SondaggiInvitations::TARGET_USERS => AmosSondaggi::t('amossondaggi', 'Utenti'),
+            SondaggiInvitations::TARGET_ORGANIZATIONS => AmosSondaggi::t('amossondaggi', 'Organizzazioni'),
+        ];
+    }
+
 }

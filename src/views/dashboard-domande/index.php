@@ -91,7 +91,7 @@ Yii::$app->urlManager->createUrl([
                     },
                     'detail' => function ($model, $key, $index, $column) use ($currentView) {
                         $provider = new ActiveDataProvider([
-                            'query' => $model->getChildren()
+                            'query' => $model->getChildren()->orderBy(['ordinamento' => SORT_ASC]),
                         ]);
                         return Yii::$app->controller->renderPartial('_sub_index', ['dataProvider' => $provider, 'currentView' => $currentView]);
                     },
@@ -232,10 +232,15 @@ Yii::$app->urlManager->createUrl([
                             /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
                             $url = \yii\helpers\Url::current();
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
+                                $idPagina = null;
+                                if (Yii::$app->request->get('idPagina')) {
+                                    $idPagina = $model->sondaggi_domande_pagine_id;
+                                }
                                 return Html::a(AmosIcons::show('copy'), Yii::$app->urlManager->createUrl([
                                     '/' . $this->context->module->id . '/dashboard-domande/clone',
                                     'id' => $model->id,
                                     'idSondaggio' => $model->sondaggi_id,
+                                    'idPagina' => $idPagina,
                                     'url' => $url
                                 ]), [
                                     'title' => AmosSondaggi::t('amossondaggi', '#clone'),

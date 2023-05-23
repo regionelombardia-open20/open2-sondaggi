@@ -12,6 +12,7 @@
 namespace open20\amos\sondaggi\models;
 
 use open20\amos\organizzazioni\models\ProfiloGroups;
+use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\ArrayHelper;
 
 /**
@@ -21,6 +22,10 @@ use yii\helpers\ArrayHelper;
  */
 class SondaggiInvitations extends \open20\amos\sondaggi\models\base\SondaggiInvitations
 {
+
+    const TARGET_USERS = 1;
+    const TARGET_ORGANIZATIONS = 2;
+
     /**
      * @inheritdoc
      */
@@ -33,5 +38,16 @@ class SondaggiInvitations extends \open20\amos\sondaggi\models\base\SondaggiInvi
 
     public function getGroups() {
         return ProfiloGroups::find()->andWhere(['id' => $this->search_groups]);
+    }
+
+    /**
+     * @return array
+     */
+    public function getTargetLabel()
+    {
+        return [
+            self::TARGET_USERS => AmosSondaggi::t('amossondaggi', 'Utenti'),
+            self::TARGET_ORGANIZATIONS => AmosSondaggi::t('amossondaggi', 'Organizzazioni'),
+        ];
     }
 }

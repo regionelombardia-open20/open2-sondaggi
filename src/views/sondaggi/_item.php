@@ -15,6 +15,7 @@ use open20\amos\core\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\design\utility\DateUtility;
 use open20\amos\sondaggi\models\Sondaggi;
 
@@ -98,6 +99,19 @@ if (isset($dateEnd)) {
                                 ?>" title="<?= $model->titolo ?>" class="link-list-title title-two-line">
                                     <h5 class="card-title font-weight-bold big-heading mb-2 "><strong><?= $model->titolo ?></strong></h5>
                                 </a>
+                                <?php
+                                if ($model->isCommunitySurvey()) {
+                                    $community = \open20\amos\community\models\Community::findOne($model->community_id);
+                                    if ($community && $community->name) { ?>
+                                        <a href="javascript:void(0)" data-toggle="tooltip" title="dalla community <?= $community->name ?>">
+
+                                            <span class="mdi mdi-account-supervisor-circle text-muted m-l-5"></span>
+
+                                            <span class="sr-only"><?= $community->name ?></span>
+                                        </a>
+                                    <?php }
+                                } ?>
+
                                 <div class="ml-auto">
 
                                     <?php if(\Yii::$app->getUser()->can('DASHBOARD_VIEW')): ?>
@@ -146,8 +160,21 @@ if (isset($dateEnd)) {
                                 <?php if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_MANAGE')) { ?>
                                     <span class="partecipanti-poll"><?= AmosSondaggi::t('amossondaggi', 'Partecipanti') . ':' ?><strong> <?= $model->getNumeroPartecipazioni() ?></strong></span>
                                     <?php
-                                    if (!$hideStatusPoll) { ?>
-                                        <span class="status-poll"><?=  AmosSondaggi::t('amossondaggi', 'Stato') ?>:<strong> <?= $model->hasWorkflowStatus() ? $model->getWorkflowStatus()->getLabel() : '--'; ?></strong></span>
+                                    if (!$hideStatusPoll) {
+                                        $statusLabel = '--';
+                                        if ($model->hasWorkflowStatus()) {
+                                            if ($model->getWorkflowStatus()->id == Sondaggi::WORKFLOW_STATUS_VALIDATO && SondaggiUtility::isTerminated($model)) {
+                                                $statusLabel = AmosSondaggi::t('amossondaggi', Sondaggi::STATUS_CONCLUSO);
+                                            } else {
+                                                $statusLabel = AmosSondaggi::t('amossondaggi', $model->getWorkflowStatus()->getLabel());
+                                            }
+                                        }
+                                        ?>
+                                        <span class="status-poll"><?=  AmosSondaggi::t('amossondaggi', 'Stato') ?>:
+                                            <strong>
+                                                <?= $statusLabel ?>
+                                            </strong>
+                                        </span>
                                     <?php }; ?>
                                 <?php }
                                 /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */

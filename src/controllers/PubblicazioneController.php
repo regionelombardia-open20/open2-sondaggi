@@ -11,6 +11,7 @@
 namespace open20\amos\sondaggi\controllers;
 
 use open20\amos\admin\models\UserProfile;
+use open20\amos\attachments\assets\ModuleAttachmentsAsset;
 use open20\amos\attachments\components\AttachmentsList;
 use open20\amos\attachments\models\File;
 use open20\amos\core\controllers\CrudController;
@@ -30,6 +31,7 @@ use open20\amos\sondaggi\models\SondaggiUsersInvitationMm;
 use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\amos\sondaggi\widgets\icons\WidgetIconSondaggiGeneral;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\helpers\ArrayHelper;
@@ -303,14 +305,22 @@ class PubblicazioneController extends CrudController
     }
 
     /**
-     * @return string
+     * @return string|\yii\web\Response
+     * @throws InvalidConfigException
      */
     public function actionOwnInterest()
     {
+        Url::remember();
+
         if ($this->sondaggiModule->hideOwnInterest) {
-            return $this->redirect(['sondaggi/manage']);
+            return $this->redirect(['/sondaggi/pubblicazione/all']);
         }
-        $dataProvider = $this->modelSearch->searchOwnInterest(Yii::$app->request->getQueryParams());
+
+        if (!Yii::$app->user->isGuest) {
+            $dataProvider = $this->modelSearch->searchOwnInterest(Yii::$app->request->getQueryParams());
+        } else {
+            return $this->redirect(\Yii::$app->params['linkConfigurations']['loginLinkCommon']);
+        }
 
         $this->setDataProvider($dataProvider);
 
@@ -386,15 +396,18 @@ class PubblicazioneController extends CrudController
      */
     public function actionAll()
     {
+        Url::remember();
 //        if ($this->sondaggiModule->enableDashboard == true) {
 //            return $this->redirect('/sondaggi/pubblicazione/own-interest');
 //        }
         $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
-        $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
-        $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/own-interest');
-        $this->view->params['titleLinkAll'] = AmosSondaggi::t(
+        if (!AmosSondaggi::instance()->hideOwnInterest) {
+            $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse ');
+            $this->view->params['urlLinkAll'] = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/own-interest');
+            $this->view->params['titleLinkAll'] = AmosSondaggi::t(
                 'amossondaggi', 'Visualizza la lista dei sondaggi di mio interesse'
-        );
+            );
+        }
         $this->setDataProvider($this->modelSearch->searchAll(Yii::$app->request->getQueryParams()));
         return $this->baseListsAction(AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi'), true, true);
     }
@@ -750,6 +763,10 @@ class PubblicazioneController extends CrudController
         $pageNonCompilabile = '/pubblicazione/non_compilabile';
         $thankYouPage       = '/pubblicazione/compilato';
         $this->setUpLayout('main');
+        ModuleRisultatiAsset::register(\Yii::$app->getView());
+        ModuleSondaggiAsset::register(\Yii::$app->getView());
+        ModuleAttachmentsAsset::register(\Yii::$app->getView());
+
         if (!$utente) {
             $utente = Yii::$app->getUser()->getId();
         }
@@ -879,7 +896,8 @@ class PubblicazioneController extends CrudController
                     $sessione->generateSondaggiPdf($path);
                     if (!$this->sondaggiModule->enableCompilationWorkflow) {
                         if ($this->model->send_pdf_to_compiler || $this->model->send_pdf_via_email) {
-                            SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
+                            $userProfile = $sessione->user->userProfile;
+                            SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path, $userProfile);
                         }
                     }
 
@@ -1040,7 +1058,7 @@ class PubblicazioneController extends CrudController
                         $sessione->field_extra = $field_extra;
                         $sessione->user_id     = $utente;
                         if (AmosSondaggi::instance()->compilationToOrganization) {
-                            $sessione->$organization_id = $orgId;
+                            $sessione->organization_id = $orgId;
                         }
                         $sessione->save();
                         $idSessione    = $sessione->id;
@@ -1176,8 +1194,9 @@ class PubblicazioneController extends CrudController
                     $path = "uploads/Sondaggio_compilato".$idSessione.'_'.time().".pdf";
                     $sessione = SondaggiRisposteSessioni::findOne($idSessione);
                     $sessione->generateSondaggiPdf($path);
+                    $userProfile = $sessione->user->userProfile;
                     if ($this->model->send_pdf_via_email) {
-                        SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
+                        SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path, $userProfile);
                     }
 
                     return $this->render($thankYouPage,
@@ -1513,7 +1532,8 @@ class PubblicazioneController extends CrudController
             $sessione = SondaggiRisposteSessioni::findOne($idSessione);
             $sessione->generateSondaggiPdf($path);
             if ($this->model->send_pdf_via_email) {
-                SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path);
+                $userProfile = $sessione->user->userProfile;
+                SondaggiUtility::sendEmailSondaggioCompilato($this->model, $idSessione, $path, $userProfile);
             }
             pr('OK');
         } catch (\Exception $e) {
@@ -1991,12 +2011,14 @@ class PubblicazioneController extends CrudController
             );
         } else {
             $titleSection = AmosSondaggi::t('amossondaggi', 'Sondaggi di mio interesse');
-            if ($this->sondaggiModule->disableLinkAll == false) {
-                $labelLinkAll = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
-                $urlLinkAll   = '/sondaggi/pubblicazione/all';
-                $titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
-            }
             $subTitleSection = Html::tag('p', AmosSondaggi::t('amossondaggi', ''));
+            if ($this->sondaggiModule->disableLinkAll == false) {
+                if (Yii::$app->controller->action->id != 'all') {
+                    $labelLinkAll = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+                    $urlLinkAll = '/sondaggi/pubblicazione/all';
+                    $titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
+                }
+            }
         }
         $hideCreate = false;
         if (!\Yii::$app->user->can('SONDAGGI_CREATE')) {
@@ -2079,6 +2101,11 @@ class PubblicazioneController extends CrudController
                 'title' => AmosSondaggi::t('amossondaggi', 'Gestisci i sondaggi'),
                 'label' => AmosSondaggi::t('amossondaggi', 'Gestisci'),
                 'url' => '/sondaggi/sondaggi/manage',
+            ];
+            $links[] = [
+                'title' => AmosSondaggi::t('amossondaggi', 'Visualizza i sondaggi creati da me'),
+                'label' => AmosSondaggi::t('amossondaggi', 'Creati da me'),
+                'url' => '/sondaggi/sondaggi/created-by-me',
             ];
         }
 

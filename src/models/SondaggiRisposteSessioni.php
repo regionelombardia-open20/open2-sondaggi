@@ -137,8 +137,13 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
         if (AmosSondaggi::instance()->compilationToOrganization) {
             $xlsData[0][] = AmosSondaggi::t('amossondaggi', '#organization');
         }
-        $domande    = $sondaggio->getSondaggiDomandes()->andWhere(['sondaggi_domande.parent_id' => null])->orderBy('ordinamento ASC')->all();
-        $count      = 1;
+        $domande = $sondaggio->getSondaggiDomandes()
+            ->andWhere(['sondaggi_domande.parent_id' => null])
+            ->orderBy([
+                'sondaggi_domande_pagine_id' => SORT_ASC,
+                'ordinamento' => SORT_ASC
+            ])->all();
+        $count = 1;
         foreach ($domande as $domanda) {
             $xlsData[0][] = "D.".$count." ".$domanda->domanda;
             $count ++;
@@ -189,7 +194,7 @@ class SondaggiRisposteSessioni extends \open20\amos\sondaggi\models\base\Sondagg
         $colum = 3;
         if (AmosSondaggi::instance()->compilationToOrganization) {
             $profilo = \open20\amos\organizzazioni\models\Profilo::find()->andWhere(['id' => $sondRisposta->organization_id])->one();
-            $xlsData[$row][$colum] = $profilo->name;
+            $xlsData[$row][$colum] = !empty($profilo->name) ? $profilo->name : '';
             $colum++;
         }
         $divider = $colum;

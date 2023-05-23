@@ -19,6 +19,7 @@ use open20\amos\sondaggi\AmosSondaggi;
  *
  * @property integer $id
  * @property integer $sondaggi_id
+ * @property integer $invitation_id
  * @property integer $invitation_class
  * @property integer $to_id
  * @property string $created_at

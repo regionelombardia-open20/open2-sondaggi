@@ -82,6 +82,12 @@ Yii::$app->urlManager->createUrl([
                 // 'id',
                 'name:ntext',
                 'count',
+                [
+                    'attribute' => 'target',
+                    'value' => function ($model) {
+                        return $model->getTargetLabel()[$model->target];
+                    }
+                ],
                 'active:statosino',
                 'invited:statosino',
                 [

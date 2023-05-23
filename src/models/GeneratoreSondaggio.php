@@ -565,7 +565,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 				$content .= "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 				 . (! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 				 . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-				 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 				 . "<div class='control-label'>".$Domanda->domanda."</div>";
 				$content .= '<div class="table_switch table-responsive"><table class="table"><tr><th></th>';
 				if ($tipo == 'radio') {
@@ -574,29 +573,42 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$content .= '<th>'.$col->risposta.'</th>';
 					}
 				} else {
-					foreach($Domanda->multi_columns as $key => $column) {
-						$content .= '<th scope="col">'.$column.'</th>';
-					}
+                    if ($Domanda->multi_columns != "null") {
+                        foreach ($Domanda->multi_columns as $key => $column) {
+                            $content .= '<th scope="col">' . $column . '</th>';
+                        }
+                    } else {
+                        $content .= '<th scope="col">' . $Domanda->domanda . '</th>';
+                    }
 				}
 				$content .= '</tr>';
 				foreach($Domanda->getChildren()->all() as $child) {
 					$content .= "<tr class=\"<?php if (array_key_exists('domanda_{$child->id}', \$model->errors)) echo 'danger text-danger'?>\"><th scope=\"row\">".$child->domanda."<?php if (array_key_exists('domanda_{$child->id}', \$model->errors)) foreach(\$model->errors['domanda_{$child->id}'] as \$error) echo '<br/><small class=\"text-danger\">'.\$error.\"</small>\"; ?></th>";
 					switch ( $tipo ) {
 						case 'select':
-							foreach($Domanda->multi_columns as $key => $column) {
-									$content .= "<td><?php echo \$form->field(\$model, 'domanda_{$child->id}', ['options' => ['name' =>  \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => {$idD}])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
-									 . "'language' => substr(Yii::\$app->language, 0, 2),\n"
-									 . "'options' => ['value' => [SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one()->sondaggi_risposte_predefinite_id], 'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...'), 'id' => 'select-domanda_{$child->id}_{$key}', 'name' => \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['question' => '{$child->id}']],\n"
-									 . "'pluginOptions' => [\n"
-									 . "    'allowClear' => true\n"
-									 . "],\n"
-									 . "'toggleAllSettings' => [\n"
-									 . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
-									 . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
-									 . "],\n"
-									 . "])->label('');\n"
-									 . "?></td>\n";
-								}
+                            if ($Domanda->multi_columns != "null") {
+                                foreach ($Domanda->multi_columns as $key => $column) {
+                                    $content .= "<td><?php echo \$form->field(\$model, 'domanda_{$child->id}', ['options' => ['name' =>  \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => {$idD}])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
+                                        . "'language' => substr(Yii::\$app->language, 0, 2),\n"
+                                        . "'options' => ['value' => [SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one()->sondaggi_risposte_predefinite_id], 'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona una risposta ...'), 'id' => 'select-domanda_{$child->id}_{$key}', 'name' => \$reflect->getShortName() . '[domanda_{$child->id}][$key]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['question' => '{$child->id}']],\n"
+                                        . "'pluginOptions' => [\n"
+                                        . "    'allowClear' => true\n"
+                                        . "],\n"
+                                        . "'toggleAllSettings' => [\n"
+                                        . "'selectLabel' => '<i class=\"glyphicon glyphicon-unchecked\"></i>' . \Yii::t('amosapp', 'Seleziona tutto'),\n"
+                                        . "'unselectLabel' => '<i class=\"glyphicon glyphicon-check\"></i>' . \Yii::t('amosapp', 'Deseleziona tutto'),\n"
+                                        . "],\n"
+                                        . "])->label('');\n"
+                                        . "?></td>\n";
+                                }
+                            } else {
+                                $content .= "<td><?php echo \$form->field(\$model, 'domanda_{$child->id}', ['options' => ['name' =>  \$reflect->getShortName() . '[domanda_{$child->id}]', 'style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => {$idD}])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
+                                    . "'language' => substr(Yii::\$app->language, 0, 2),\n"
+                                    . "'options' => ['value' => [SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_predefinite_id' => SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => {$idD}])->select(['id'])->column()])->select(['sondaggi_risposte_predefinite_id'])->column()], 'placeholder' => Yii::t('sondaggi', 'Select...')],\n"
+                                    . "'pluginOptions' => ['allowClear' => true],\n"
+                                    . "'pluginEvents' => ['select2:select' => 'function(e) { $(\"#div-domanda_{$idD}\").trigger(\"change\"); }', 'select2:unselect' => 'function(e) { $(\"#div-domanda_{$idD}\").trigger(\"change\"); }']])->label(false);\n"
+                                    . "?></td>";
+                            }
 							break;
 							case 'radio':
 								$content .= "<td><?php \n"
@@ -606,24 +618,36 @@ class GeneratoreSondaggio extends \yii\base\Model {
 								break;
 
 							case 'string':
-								foreach($Domanda->multi_columns as $key => $column) {
-									$content .= "<td><?php \n"
-														 . "echo Html::input('text', \$reflect->getShortName() . '[domanda_{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
-														 . "?></td>\n";
-									}
+                                if ($Domanda->multi_columns != "null") {
+                                    foreach ($Domanda->multi_columns as $key => $column) {
+                                        $content .= "<td><?php \n"
+                                            . "echo Html::input('text', \$reflect->getShortName() . '[domanda_{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+                                            . "?></td>\n";
+                                    }
+                                } else {
+                                    $content .= "<td><?php \n"
+                                        . "echo Html::input('text', \$reflect->getShortName() . '[domanda_{$child->id}]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+                                        . "?></td>\n";
+                                }
 								break;
 
 							case 'text':
-								foreach($Domanda->multi_columns as $key => $column) {
-									$content .= "<td><?php \n"
-									 . "echo Html::input('text', \$reflect->getShortName() . '[{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
-									 . "?></td>\n";
-									break;
-							}
+                                if ($Domanda->multi_columns != "null") {
+                                    foreach ($Domanda->multi_columns as $key => $column) {
+                                        $content .= "<td><?php \n"
+                                            . "echo Html::input('text', \$reflect->getShortName() . '[{$child->id}][$key]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione, 'column' => $key])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+                                            . "?></td>\n";
+                                        break;
+                                    }
+                                } else {
+                                    $content .= "<td><?php \n"
+                                        . "echo Html::input('text', \$reflect->getShortName() . '[domanda_{$child->id}]', SondaggiRisposte::find()->andWhere(['sondaggi_domande_id' => {$child->id}, 'sondaggi_risposte_sessioni_id' => \$idSessione])->one(), ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$child->id}']]]);\n"
+                                        . "?></td>\n";
+                                }
 						}
 					$content .= '</tr>';
 				}
-				$content .= '</table></div>'.$js.'</div>';
+				$content .= '</table></div>'.( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' ).$js.'</div>';
 				$campi[] = $content;
 
 			} else {
@@ -634,11 +658,11 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 												. "<?php \n"
 						           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->checkboxList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $checkboxoptions)->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -666,11 +690,11 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" $extraAttributes data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
 						           . "\$dati_$idD = SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->orderBy('ordinamento ASC')->asArray()->all(); \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->inline($inline)->radioList(ArrayHelper::map(\$dati_$idD, 'id', 'risposta'), $generalOptions)->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -679,7 +703,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null,'data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
 						           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
@@ -693,6 +716,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "],\n"
 						           . "])->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -700,8 +724,8 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<div class=\"testo-introduttivo testo-sezione\"><?= stripslashes(\$model->attributeLabels()['domanda_$idD']) . '$tooltipHtml' ?></div>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -710,7 +734,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>"
 								: '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['data' => ['domanda' => '{$idD}']]])->widget(Select2::className(), ['data' => ArrayHelper::map(SondaggiRispostePredefinite::find()->andWhere(['sondaggi_domande_id' => $idD])->select(['id', 'risposta'])->all(), 'id', 'risposta'),\n"
 						           . "'language' => substr(Yii::\$app->language, 0, 2),\n"
@@ -724,6 +747,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						           . "],\n"
 						           . "])->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -731,10 +755,10 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->textInput(['maxlength' => true], $generalOptions)->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
+                                   . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . $js
 						           . "</div>\n";
 						break;
@@ -742,7 +766,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">\n"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
 						           . "<?php \n"
 						           . "echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->textarea(['rows' => 6], $generalOptions)->label(stripslashes(\$model->attributeLabels()[ 'domanda_$idD']) . '$tooltipHtml');\n"
 						           . "?>\n"
@@ -753,7 +776,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>
 	                    <?php
 											if (!\$read) {
@@ -789,7 +812,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"col-xs-12 sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
+											 . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>
 	                    <?php
 	                    if (!\$read) echo
@@ -822,7 +845,6 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						$campi[] = "<div class=\"sondaggi-content_domanda\" id=\"div-domanda_$idD\" data-required_on_condition=\"".($domCondObbligatoria? 'true': 'false')."\" data-question_id=\"$idD\" " . ( $conditions_data ? "data-conditions=\"$conditions_data\" " : "" ) . ">"
 											 . ( ! empty( $introduzione ) ? "<div class=\"testo-introduttivo\">$introduzione</div>" : '' )
 						           . ( ! empty( $introduzioneCondizionata ) && $domandaVincolata ? "<div class=\"testo-introduttivo testo-vincolato\">$introduzioneCondizionata</div>" : '' )
-											 . ( ! empty( $allegati ) ? "<div>$allegati</div>" : '' )
                                                  . "<?php echo Html::tag('label', stripslashes(\$model->attributeLabels()['domanda_{$idD}']). '$tooltipHtml', ['class'=>'control-label']); ?>"
 						           . "<?php echo \$form->field(\$model, 'domanda_$idD', ['options' => ['style' => \$read ? 'pointer-events: none;' : null, 'data' => ['domanda' => '{$idD}']]])->widget(DateControl::classname(), [ \n
 	                          'options' => [ \n
@@ -830,6 +852,7 @@ class GeneratoreSondaggio extends \yii\base\Model {
 	                                'layout' => '{input} {picker} ' . (empty(\$model->domanda_$idD)? '' : '{remove}')], \n
 	                                    'data' => ['question' => $idD] \n
 	                        ])->label(false); ?> \n"
+                            . ( ! empty( $allegati ) ? "<div class='col-xs-12' style='float:none'>$allegati</div>" : '' )
 						           . "<script>"
 						           . "$( document ).ready(function() {"
 						           . "if($('#date_control_rispDomanda_$idD').val() == ''){
@@ -1365,9 +1388,11 @@ class GeneratoreSondaggio extends \yii\base\Model {
 						                 . "\$risposta->save();\n"
 						                 . "\$attachfiles = File::find()->andWhere(['model' => get_class(new SondaggiRisposte()), 'attribute' => \"domanda_{$Domanda['id']}\"])->all();\n"
 						                 . "foreach(\$attachfiles as \$attachfile){\n"
+                                         . "if (is_null(\$attachfile->itemId)){\n"
 						                 . "\$attachfile->itemId = \$risposta->id;\n"
 						                 . "\$attachfile->attribute = \"domanda_{$Domanda['id']}\";\n"
 						                 . "\$attachfile->save(false);\n"
+                                         . "}\n"
 						                 . "} \n"
 						                 . "\n"
 														 . "}\n"

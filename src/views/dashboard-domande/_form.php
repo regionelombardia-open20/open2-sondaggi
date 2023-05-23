@@ -29,7 +29,7 @@ if ((empty($model->getSondaggi()->one()['frontend']) && empty($model->getSondagg
     $registrazione = false;
 }
 $sondaggiModule = AmosSondaggi::instance();
-$otherQuestions = $model->sondaggi->getSondaggiDomandes()->andWhere(['is_parent' => true])->all();
+$otherQuestions = $model->sondaggi->getSondaggiDomandes()->andWhere(['is_parent' => true])->andFilterWhere(['!=', 'id', $model->id])->all();
 $answerTypes = json_encode(ArrayHelper::map($otherQuestions, 'id', 'sondaggi_domande_tipologie_id'));
 $answerPages = json_encode(ArrayHelper::map($otherQuestions, 'id', 'sondaggi_domande_pagine_id'));
 
@@ -68,7 +68,7 @@ $js2 = <<<JS
          $('#sondaggidomande-parent_id').val(null);
          $('#sondaggidomande-is_parent').attr('checked', false);
       }
-      if(front == 5 || front == 6 || front == 13) {
+      if(front == 5 || front == 6) {
         $('#sondaggidomande-sondaggi_map_id').prop('disabled', false);
         $('#anagrafica-abilitata').show();
         $('#sondaggi_validazione-id').prop('disabled', false);
@@ -221,8 +221,7 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                 </div>
                 <!--?= $form->field($model, 'ordina_dopo')->dropDownList(ArrayHelper::map($model->getTutteDomandeSondaggio()->all(), 'id', 'domanda'), ['id' => 'ordina-dopo'])->label(''); ?-->
                 <div class="col-xs-12">
-                    <?=
-                    $form->field($model, 'ordina_dopo')->widget(DepDrop::classname(),
+                    <?= $form->field($model, 'ordina_dopo')->widget(DepDrop::classname(),
                         [
                             //'type' => DepDrop::TYPE_SELECT2,
                             'data' => $model->getDomandaPrecedente() ? [$model->getDomandaPrecedente() => open20\amos\sondaggi\models\SondaggiDomande::findOne($model->getDomandaPrecedente())->domanda]
@@ -232,7 +231,7 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                             'pluginOptions' => [
                                 'depends' => ['sondaggi_domande_pagine_id-id'],
                                 'placeholder' => ['Seleziona ...'],
-                                'url' => Url::to(['/' . $this->context->module->id . '/ajax/domande-by-pagine']),
+                                'url' => Url::to(['/' . $this->context->module->id . '/ajax/domande-by-pagine', 'currentDomandaId' => $model->id]),
                                 'initialize' => true,
                                 'params' => ['ordina_dopo'],
                             ],
@@ -302,7 +301,7 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                    echo $form->field($model, 'abilita_ordinamento_risposte')->dropDownList([
                        0 => AmosSondaggi::t('amossondaggi', 'Nessun ordinamento'),
                        1 => AmosSondaggi::t('amossondaggi',
-                           'Si, le risposte saranno ordinabili e condizioneranno l\'ordinamento delle domande condizionate alle risposte.')
+                           'Sì, risposte ordinabili con la funzione "Gestisci Risposte"')
                    ]);
                 }
                 ?>
@@ -317,8 +316,11 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                             'placeholder' => AmosSondaggi::t('amossondaggi', 'Seleziona ...'),
                             'id' => 'sondaggi_validazione-id',
                             'disabled' => true,
-                            'multiple' => true,
+                            'multiple' => false,
                         ],
+                        'pluginOptions' => [
+                            'allowClear' => true,
+                        ]
                     ]);
                   }
                 ?>

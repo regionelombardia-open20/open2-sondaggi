@@ -98,13 +98,19 @@ class AjaxController extends Controller
         return false;
     }
 
-    public function actionDomandeByPagine()
+    public function actionDomandeByPagine($currentDomandaId = null)
     {
         $out = [];
         if (isset($_POST['depdrop_parents'])) {
             $id          = end($_POST['depdrop_parents']);
             $id_selected = end($_POST['depdrop_params']);
-            $pagine      = SondaggiDomande::find()->andWhere(['sondaggi_domande_pagine_id' => $id])->orderBy('ordinamento ASC')->asArray()->all();
+            $pagine      = SondaggiDomande::find()
+                ->andWhere(['sondaggi_domande_pagine_id' => $id])
+                ->andWhere(['parent_id' => null])
+                ->andFilterWhere(['!=', 'id', $currentDomandaId])
+                ->orderBy('ordinamento ASC')
+                ->asArray()
+                ->all();
             $selected    = null;
             if ($id != null && count($pagine) > 0) {
                 $selected = '';

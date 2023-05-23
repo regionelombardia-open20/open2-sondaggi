@@ -1,34 +1,35 @@
 <?php
 
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\controllers\DashboardInvitationsController;
 use open20\amos\sondaggi\models\SondaggiInvitations;
 
+/** @var $target DashboardInvitationsController */
+if ($target == SondaggiInvitations::TARGET_USERS) {
+    $message = AmosSondaggi::t('amossondaggi', 'Sono stati trovati {n} utenti', ['n' => $count]);
+}
+else if ($target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+    $message = AmosSondaggi::t('amossondaggi', '#organizations_found', ['n' => $count]);
+}
 ?>
 
 <div id="form-results" class="mb-5 p-4 neutral-1-bg-a1">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-xs-12">
             <div class="my-4 d-flex">
-
                 <h5 class="font-weight-bold ">
-                <?= AmosSondaggi::t('amossondaggi', '#search_results') ?>
+                    <?= AmosSondaggi::t('amossondaggi', '#search_results') ?>
                 </h5>
             </div>
-
-            <?php if ($model->type == SondaggiInvitations::SEARCH_ALL) {
-                //$typeSearchText = AmosSondaggi::t('AmosSondaggi', 'Hai cercato tutti gli utenti');
-            } else {
-                //$typeSearchText = AmosSondaggi::t('AmosSondaggi', 'Hai cercato utenti appartenenti alla lista');
-            } ?>
-            <p><?= $typeSearchText ?></p><br>
-            <!--        <p>--><?php //AmosSondaggi::t('AmosSondaggi', 'Con le seguenti preferenze anagrafiche:');
-                                ?>
-            <!--</p>-->
-
         </div>
-        <div id="save-inputs" class="col-md-6">
-            <p class="text-danger m-t-20">
-            <strong><?= AmosSondaggi::t('amossondaggi', "#organizations_found", ['n' => $count]) ?></strong></p>
+    </div>
+    <div class="row">
+        <div id="save-inputs" class="col-xs-12">
+            <p class="text-danger m-b-20">
+                <strong>
+                    <?= $message ?>
+                </strong>
+            </p>
         </div>
     </div>
 </div>

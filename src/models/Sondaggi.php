@@ -15,6 +15,10 @@ use open20\amos\attachments\models\File;
 use open20\amos\community\utilities\CommunityUtil;
 use open20\amos\core\helpers\Html;
 use open20\amos\core\interfaces\NewsletterInterface;
+use open20\amos\core\user\User;
+use open20\amos\cwh\models\CwhConfigContents;
+use open20\amos\cwh\models\CwhPubblicazioni;
+use open20\amos\cwh\models\CwhPubblicazioniCwhNodiEditoriMm;
 use open20\amos\notificationmanager\behaviors\NotifyBehavior;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\i18n\grammar\SondaggiGrammar;
@@ -50,6 +54,8 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     const WORKFLOW_STATUS_BOZZA      = 'SondaggiWorkflow/BOZZA';
     const WORKFLOW_STATUS_DAVALIDARE = 'SondaggiWorkflow/DAVALIDARE';
     const WORKFLOW_STATUS_VALIDATO   = 'SondaggiWorkflow/VALIDATO';
+    // Finto status (non appartiene al workflow) per sondaggi con close_date < data_di_oggi
+    const STATUS_CONCLUSO = 'CONCLUSO';
     const SONDAGGI_LIVE_CHART_PIE    = 1;
     const SONDAGGI_LIVE_CHART_COLUMN = 2;
 
@@ -528,7 +534,12 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
             ['sondaggi_id' => 'id']);
         if (AmosSondaggi::instance()->compilationToOrganization) {
             $org   = $this->getOrgEntity($userId);
-            $query = $query->andWhere([SondaggiRisposteSessioni::tableName().'.organization_id' => $org->id]);
+            if (!is_null($org->id)) {
+                $query = $query->andWhere([SondaggiRisposteSessioni::tableName() . '.organization_id' => $org->id]);
+            } else {
+                $user  = $this->getUserEntity($userId);
+                $query = $query->andWhere([SondaggiRisposteSessioni::tableName().'.user_id' => $user->id]);
+            }
         } else {
             $user  = $this->getUserEntity($userId);
             $query = $query->andWhere([SondaggiRisposteSessioni::tableName().'.user_id' => $user->id]);
@@ -559,6 +570,18 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
         return $this->hasMany(\open20\amos\organizzazioni\models\Profilo::className(),
                 ['id' => 'organization_id'])->viaTable(SondaggiRisposteSessioni::tableName(), ['sondaggi_id' => 'id'])->andWhere([
                 'in', 'profilo.id', $entiAttivi]);
+    }
+
+    /**
+     * @return ActiveQuery
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function getUtentiCheHannoCompilato()
+    {
+        $utentiInvitati = SondaggiUsersInvitationMm::find()->andWhere(['sondaggi_id' => $this->id])->select('user_id');
+        return $this->hasMany(User::className(), ['id' => 'user_id'])
+            ->viaTable(SondaggiRisposteSessioni::tableName(), ['sondaggi_id' => 'id'])
+            ->andWhere(['in', 'user.id', $utentiInvitati]);
     }
 
     public function sondaggioLiveVoted()
@@ -974,7 +997,7 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     {
         $compilable = true;
         if ($this->frontend) {
-            // Se settato questionario di frontend allora controllo un cookie
+            // Se settato sondaggio di frontend allora controllo un cookie
             // se l'ha termineto lo fermo, non ne deve compilare altri
             $cookieValues = $this->getFrontendCookie($this->id);
             if (isset($cookieValues['idSessione']) && !empty($cookieValues['idSessione'])) {
@@ -1068,6 +1091,14 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     }
 
     /**
+     * @return ActiveQuery
+     */
+    public function getInvitedUsers()
+    {
+        return $this->hasMany(SondaggiUsersInvitationMm::className(), ['sondaggi_id' => 'id']);
+    }
+
+    /**
      * Per nomenclatura corretta anche se fa la stessa cosa di getEntiInvitati
      *
      * @return type
@@ -1078,6 +1109,14 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     }
 
     /**
+     * @return ActiveQuery
+     */
+    public function getUsersInvited()
+    {
+        return $this->hasMany(SondaggiUsersInvitationMm::className(), ['sondaggi_id' => 'id']);
+    }
+
+    /**
      *
      * @return type
      */
@@ -1085,6 +1124,16 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     {
         return $this->hasMany(SondaggiInvitationMm::className(), ['sondaggi_id' => 'id'])->andWhere(['not in', 'sondaggi_invitation_mm.to_id',
                 $enti]);
+    }
+
+    /**
+     * @param $users_id
+     * @return ActiveQuery
+     */
+    public function getUtentiInvitatiNonCompilato($users_id)
+    {
+        return $this->hasMany(SondaggiUsersInvitationMm::className(), ['sondaggi_id' => 'id'])
+            ->andWhere(['not in', 'sondaggi_users_invitation_mm.user_id', $users_id]);
     }
 
     /**
@@ -1236,6 +1285,68 @@ class Sondaggi extends \open20\amos\sondaggi\models\base\Sondaggi implements New
     public function sendNotification()
     {
         return AmosSondaggi::instance()->sondaggiModelSendNotification;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isCommunitySurvey($adjustScope = false)
+    {
+        $moduleCwh = \Yii::$app->getModule('cwh');
+
+        if ($this->isNewRecord && $moduleCwh) {
+            $cwhScope = $moduleCwh->getCwhScope();
+            if (isset($cwhScope['community'])) {
+                return true;
+            }
+        }
+
+        if (!is_null($this->community_id)) {
+            if ($moduleCwh && $adjustScope) {
+                $moduleCwh->setCwhScopeInSession([
+                    'community' => $this->community_id
+                ]);
+            }
+            return true;
+        }
+        else {
+            if ($moduleCwh) {
+                $sondaggiCwhConfigContent = CwhConfigContents::findOne(['classname' => Sondaggi::className()]);
+                if ($sondaggiCwhConfigContent) {
+                    $sondaggiCwhPubblicazioni = CwhPubblicazioni::find()
+                        ->andWhere(['cwh_config_contents_id' => $sondaggiCwhConfigContent->id])
+                        ->andWhere(['content_id' => $this->id])
+                        ->andWhere(['in', 'cwh_regole_pubblicazione_id', [3, 4]])
+                        ->one();
+                    if ($sondaggiCwhPubblicazioni) {
+                        $sondaggiCwhNodiMm = CwhPubblicazioniCwhNodiEditoriMm::find()
+                            ->andWhere(['cwh_pubblicazioni_id' => $sondaggiCwhPubblicazioni->id])
+                            ->andWhere(['cwh_config_id' => $sondaggiCwhPubblicazioni->cwh_regole_pubblicazione_id])
+                            ->andWhere(['like', 'cwh_nodi_id', 'community'])
+                            ->one();
+                        if ($sondaggiCwhNodiMm) {
+                            if ($adjustScope) {
+                                $moduleCwh->setCwhScopeInSession([
+                                    'community' => $sondaggiCwhNodiMm->cwh_network_id
+                                ]);
+                            }
+                            $sondaggio = Sondaggi::findOne($this->id);
+                            if (is_null($sondaggio->community_id)) {
+                                $sondaggio->community_id = $sondaggiCwhNodiMm->cwh_network_id;
+                                $sondaggio->save(false);
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($moduleCwh && $adjustScope) {
+            $moduleCwh->resetCwhScopeInSession();
+        }
+
+        return false;
     }
 
 }

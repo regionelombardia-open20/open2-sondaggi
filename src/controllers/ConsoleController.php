@@ -52,7 +52,7 @@ class ConsoleController extends \yii\console\Controller
      * @param $id
      * @throws \yii\web\NotFoundHttpException
      */
-    public function actionExtract($id, $task_id = null)
+    public static function actionExtract($id, $task_id = null)
     {
         $model   = Sondaggi::findOne($id);
         $xlsData = [];

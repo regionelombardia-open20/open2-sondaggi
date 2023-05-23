@@ -32,10 +32,14 @@ use open20\amos\sondaggi\AmosSondaggi;
  * @property integer $filemanager_mediafile_id
  * @property integer $sondaggi_temi_id
  * @property integer $sondaggio_type
+ * @property integer $community_id
+ * @property integer $sondaggio_live_community_id
  * @property string $begin_date_hour_live
  * @property string $end_date_hour_live
  * @property string $graphics_live
  * @property string $how_show_live
+ * @property string $publish_date
+ * @property string $close_date
  * @property string $created_at
  * @property string $updated_at
  * @property string $deleted_at
@@ -74,13 +78,13 @@ abstract class Sondaggi extends ContentModel
     {
         return [
             [['titolo', 'sondaggio_type', 'descrizione', 'publish_date', 'close_date'], 'required'],
-            [['titolo', 'sottotitolo', 'descrizione', 'additional_emails', 'thank_you_page', 'url_sondaggio_non_compilabile', 'url_chiudi_sondaggio', 'link_landing_page', 'testo_sondaggio_non_compilabile_front', 'titolo_fine_sondaggio_front', 'testo_fine_sondaggio_front', 'mail_mittente_nuovo_utente', 'mail_soggetto_nuovo_utente', 'mail_contenuto_nuovo_utente', 'mail_mittente_utente_presente', 'mail_soggetto_utente_presente', 'mail_contenuto_utente_presente', 'mail_registrazione_mittente', 'mail_registrazione_soggetto', 'mail_registrazione_corpo', 'mail_conf_community_mittente', 'mail_conf_community_soggetto', 'mail_conf_community_corpo', 'forza_lingua', 'thank_you_page_sondaggio_chiuso'], 'string'],
-            [['status'], 'string', 'max' => 255],
+            [['descrizione', 'additional_emails', 'thank_you_page', 'url_sondaggio_non_compilabile', 'url_chiudi_sondaggio', 'link_landing_page', 'testo_sondaggio_non_compilabile_front', 'titolo_fine_sondaggio_front', 'testo_fine_sondaggio_front', 'mail_mittente_nuovo_utente', 'mail_soggetto_nuovo_utente', 'mail_contenuto_nuovo_utente', 'mail_mittente_utente_presente', 'mail_soggetto_utente_presente', 'mail_contenuto_utente_presente', 'mail_registrazione_mittente', 'mail_registrazione_soggetto', 'mail_registrazione_corpo', 'mail_conf_community_mittente', 'mail_conf_community_soggetto', 'mail_conf_community_corpo', 'forza_lingua', 'thank_you_page_sondaggio_chiuso'], 'string'],
+            [['status', 'titolo', 'sottotitolo'], 'string', 'max' => 255],
             [['publish_date', 'close_date'], 'date', 'format' => 'php:Y-m-d'],
             ['publish_date', 'compare', 'compareValue' => date('Y-m-d'), 'operator' => '>=', 'on' => self::SCENARIO_CREATE],
             ['close_date', 'compare', 'compareAttribute' => 'publish_date', 'operator' => '>'],
             [['compilazioni_disponibili', 'send_pdf_via_email', 'send_pdf_via_email_closed', 'send_pdf_to_compiler', 'sondaggi_stato_id', 'filemanager_mediafile_id', 'sondaggi_temi_id', 'created_by',
-                'updated_by', 'deleted_by', 'version', 'send_pdf_via_email', 'frontend', 'abilita_registrazione', 'mail_registrazione_custom', 'mail_conf_community', 'mail_conf_community_id', 'abilita_criteri_valutazione', 'n_max_valutatori', 'sondaggio_chiuso_frontend', 'visualizza_solo_titolo', 'sondaggio_type', 'sondaggio_live_community_id', 'use_get_language', 'field_extra'], 'integer'],
+                'updated_by', 'deleted_by', 'version', 'send_pdf_via_email', 'frontend', 'abilita_registrazione', 'mail_registrazione_custom', 'mail_conf_community', 'mail_conf_community_id', 'abilita_criteri_valutazione', 'n_max_valutatori', 'sondaggio_chiuso_frontend', 'visualizza_solo_titolo', 'sondaggio_type', 'sondaggio_live_community_id', 'use_get_language', 'field_extra', 'community_id'], 'integer'],
             [['created_at', 'updated_at', 'deleted_at', 'begin_date_hour_live', 'end_date_hour_live', 'graphics_live', 'how_show_live', 'customTags', 'customTagsDefault'], 'safe']
         ];
     }
@@ -121,7 +125,7 @@ abstract class Sondaggi extends ContentModel
             'sondaggi_stato_id' => AmosSondaggi::t('amossondaggi', 'Stato'),
             'filemanager_mediafile_id' => AmosSondaggi::t('amossondaggi', 'Immagine'),
             'sondaggi_temi_id' => AmosSondaggi::t('amossondaggi', 'Tema'),
-            'frontend' => AmosSondaggi::t('amossondaggi', 'Sondaggio compilabile in frontend'),
+            'frontend' => AmosSondaggi::t('amossondaggi', 'Sondaggio compilabile da utente Guest'),
             'link_landing_page' => AmosSondaggi::t('amossondaggi', 'Url della Landing Page'),
             'testo_sondaggio_non_compilabile_front' => AmosSondaggi::t('amossondaggi', 'Testo in caso di sondaggio non compilabile'),
             'titolo_fine_sondaggio_front' => AmosSondaggi::t('amossondaggi', 'H1 della "thank you page"'),
@@ -141,6 +145,7 @@ abstract class Sondaggi extends ContentModel
             'mail_conf_community_mittente' => AmosSondaggi::t('amossondaggi', 'Mittente'),
             'mail_conf_community_soggetto' => AmosSondaggi::t('amossondaggi', 'Soggetto'),
             'mail_conf_community_corpo' => AmosSondaggi::t('amossondaggi', 'Testo'),
+            'community_id' => AmosSondaggi::t('amossondaggi', 'Community'),
             'created_at' => AmosSondaggi::t('amossondaggi', 'Creato il'),
             'updated_at' => AmosSondaggi::t('amossondaggi', 'Aggiornato il'),
             'deleted_at' => AmosSondaggi::t('amossondaggi', 'Cancellato il'),

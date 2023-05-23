@@ -12,6 +12,8 @@ use Yii;
  * @property string $name
  * @property string $subject
  * @property string $message
+ * @property integer $target
+ * @property integer $type
  * @property string $query
  * @property integer $count
  * @property string $created_at
@@ -40,8 +42,8 @@ class SondaggiComunication extends \open20\amos\core\record\Record
     public function rules()
     {
         return [
-            [['sondaggi_id', 'name', 'subject', 'message', 'type'], 'required'],
-            [['sondaggi_id', 'count', 'created_by', 'updated_by', 'deleted_by'], 'integer'],
+            [['sondaggi_id', 'name', 'subject', 'message', 'type', 'target'], 'required'],
+            [['sondaggi_id', 'count', 'created_by', 'updated_by', 'deleted_by', 'target'], 'integer'],
             [['message', 'query'], 'string'],
             ['email_test', 'email'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe'],
@@ -60,6 +62,8 @@ class SondaggiComunication extends \open20\amos\core\record\Record
             'name' => Yii::t('amossondaggi', 'Name'),
             'subject' => Yii::t('amossondaggi', 'Subject'),
             'message' => Yii::t('amossondaggi', 'Message'),
+            'target' => Yii::t('amossondaggi', 'Target'),
+            'type' => Yii::t('amossondaggi', 'Filtro'),
             'query' => Yii::t('amossondaggi', 'Query'),
             'count' => Yii::t('amossondaggi', 'Count'),
             'created_at' => Yii::t('amossondaggi', 'Creato il'),
@@ -70,4 +74,12 @@ class SondaggiComunication extends \open20\amos\core\record\Record
             'deleted_by' => Yii::t('amossondaggi', 'Cancellato da'),
         ];
     }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSondaggi(){
+        return $this->hasOne(\open20\amos\sondaggi\models\Sondaggi::className(), ['id' => 'sondaggi_id']);
+    }
+
 }

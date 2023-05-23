@@ -201,22 +201,32 @@ WorkflowTransitionStateDescriptorWidget::widget([
 <div class="sondaggi-form col-xs-12">
     <div class="row">
         <div class="col-xs-12">
-           <?= $form->field($model, 'titolo')->textInput() ?>
+            <?= $form->field($model, 'titolo')->limitedCharsTextInput([
+                  'maxlength' => 255,
+                  'showCount' => false
+            ])->hint(AmosSondaggi::t('amossondaggi', 'Max {x} caratteri', ['x' => 255])); ?>
             <?php
             $textTootlip = AmosSondaggi::t('amossondaggi', "#poll_type_description");
             $icon = " <span  data-toggle=\"tooltip\" data-html=\"true\" data-placement=\"top\" title=\"$textTootlip\">" . \open20\amos\core\icons\AmosIcons::show('info') . "</span>"; ?>
             <?php
-            if (empty($model->sondaggio_type)) $model->sondaggio_type = $standardId;
-            echo $form->field($model, 'sondaggio_type')->hiddenInput()->label(false);
-            // $form->field($model, 'sondaggio_type')->widget(\kartik\select2\Select2::className(), [
-            //     'data' => $sondaggi_types,
-            //     'options' => [
-            //         'id' => 'sondaggio-type-id',
-            //         'placeholder' => AmosSondaggi::t('amossondaggi', "Seleziona...")
-            //     ]
-            // ])->label(AmosSondaggi::t('amossondaggi', "Tipologia sondaggio") . $icon);
-            ?>
-            <?= $form->field($model, 'sottotitolo')->textInput() ?>
+            if (empty($model->sondaggio_type)) {
+                $model->sondaggio_type = $standardId;
+            } ?>
+            <span class="hidden">
+                <?= $form->field($model, 'sondaggio_type')->hiddenInput()->label(false);
+                // $form->field($model, 'sondaggio_type')->widget(\kartik\select2\Select2::className(), [
+                //     'data' => $sondaggi_types,
+                //     'options' => [
+                //         'id' => 'sondaggio-type-id',
+                //         'placeholder' => AmosSondaggi::t('amossondaggi', "Seleziona...")
+                //     ]
+                // ])->label(AmosSondaggi::t('amossondaggi', "Tipologia sondaggio") . $icon);
+                ?>
+            </span>
+            <?= $form->field($model, 'sottotitolo')->limitedCharsTextInput([
+                    'maxlength' => 255,
+                    'showCount' => false
+            ])->hint(AmosSondaggi::t('amossondaggi', 'Max {x} caratteri', ['x' => 255])); ?>
             <?= $form->field($model, 'visualizza_solo_titolo')->checkbox() ?>
             <?= $form->field($model, 'descrizione')->textarea(['rows' => 4]) ?>
             <?= $form->field($model, 'customTags')->widget(\xj\tagit\Tagit::className(),
@@ -306,8 +316,8 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
        <?php if ($sondaggiModule->enableAdvancedSettings) { ?>
 
-        <div class="row">
-         
+        <div>
+
             <?=
             AccordionWidget::widget([
                 'items' => [
@@ -330,16 +340,24 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
         </div>
     <?php } ?>
-   
-   <div style="display:none; width: 0px;">
-       <?=
-       \open20\amos\cwh\widgets\DestinatariPlusTagWidget::widget([
-           'model' => $model,
-           'moduleCwh' => $moduleCwh,
-           'scope' => $scope
-       ]);
-       ?>
-   </div>
+
+    <?php if ($model->isNewRecord) { ?>
+        <div style="display:none; width: 0px;">
+            <?=
+            \open20\amos\cwh\widgets\DestinatariPlusTagWidget::widget([
+                'model' => $model,
+                'moduleCwh' => $moduleCwh,
+                'scope' => $scope
+            ]);
+            ?>
+        </div>
+
+        <span class="hidden">
+            <?= $form->field($model, 'community_id')->hiddenInput([
+                'value' => !empty($scope['community']) ? $scope['community'] : null
+            ])->label(false) ?>
+        </span>
+    <?php } ?>
 
     <?= RequiredFieldsTipWidget::widget() ?>
 

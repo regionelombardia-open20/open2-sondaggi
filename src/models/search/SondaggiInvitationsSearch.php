@@ -2,7 +2,14 @@
 
 namespace open20\amos\sondaggi\models\search;
 
+use open20\amos\admin\models\UserProfile;
+use open20\amos\admin\models\UserProfileAgeGroup;
+use open20\amos\admin\models\UserProfileClasses;
+use open20\amos\admin\utility\UserProfileUtility;
+use open20\amos\community\models\CommunityUserMm;
+use open20\amos\core\user\User;
 use Yii;
+use yii\base\InvalidConfigException;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use yii\helpers\ArrayHelper;
@@ -16,6 +23,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\organizzazioni\models\Profilo;
 use open20\amos\organizzazioni\models\ProfiloGroups;
 use open20\amos\organizzazioni\models\ProfiloTypesPmi;
+use yii\helpers\Console;
 
 /**
  * SondaggiDomandeSearch represents the model behind the search form about `open20\amos\sondaggi\models\SondaggiDomande`.
@@ -39,14 +47,38 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
         ];
     }
 
-    public static function getAttributesValues($type, $query) {
+    /**
+     * @param $target
+     * @param $type
+     * @param $query
+     * @return array|UserProfileAgeGroup[]|Profilo[]|ProfiloTypesPmi[]
+     * @throws InvalidConfigException
+     */
+    public static function getAttributesValues($target, $type, $query = null) {
         $data = [];
-        if ($type == 'type') {
-            $data = ProfiloTypesPmi::find()->select(['id', 'name'])->andFilterWhere(['like', 'name', $query])->all();
+        if ($target == 'users') {
+            if ($type == 'age_group') {
+                $data = UserProfileAgeGroup::find()->select(['id', 'name' => 'age_group'])->asArray()->all();
+            }
+            else if ($type == 'gender') {
+                $genderValues = UserProfileUtility::getGenderValues();
+                foreach ($genderValues as $id => $name) {
+                    $data[] = ['id' => $id, 'name' => $name];
+                }
+            }
+            else if ($type == 'profile_class') {
+                $data = UserProfileClasses::find()->select(['id', 'name'])->all();
+            }
         }
-        if ($type == 'name') {
-            $data = Profilo::find()->select(['id', 'name'])->andFilterWhere(['like', 'name', $query])->all();
+        else if ($target == 'organizations') {
+            if ($type == 'type') {
+                $data = ProfiloTypesPmi::find()->select(['id', 'name'])->andFilterWhere(['like', 'name', $query])->all();
+            }
+            if ($type == 'name') {
+                $data = Profilo::find()->select(['id', 'name'])->andFilterWhere(['like', 'name', $query])->all();
+            }
         }
+
         return $data;
     }
 
@@ -154,4 +186,136 @@ class SondaggiInvitationsSearch extends SondaggiInvitations {
         ]);
         return $dataProvider;
     }
+
+    /**
+     * @param $params
+     * @return mixed
+     * @throws InvalidConfigException
+     */
+    public static function searchInvitedUsers($params)
+    {
+        //          pr($params);
+        $query = User::find()
+            ->innerJoin('user_profile', 'user_profile.user_id = user.id')
+            ->andWhere(['user_profile.attivo' => true])
+            ->distinct();
+
+        if (isset($params['community_id'])) {
+            $query->innerJoin('community_user_mm', 'community_user_mm.user_id = user.id')
+                ->andWhere(['community_user_mm.community_id' => $params['community_id']])
+                ->andWhere(['community_user_mm.status' => CommunityUserMm::STATUS_ACTIVE])
+                ->andWhere(['community_user_mm.deleted_at' => null]);
+        }
+
+//        if (class_exists('open20\amos\admin\models\UserProfileClasses')) {
+//            $query->leftJoin('user_profile_classes_user_mm as profile_class', 'profile_class.user_id = user.id')
+//                ->andWhere(['profile_class.deleted_at' => null]);
+//        }
+
+        if (!empty($params['tagValues']) && $params['type'] == self::SEARCH_FILTER) {
+            $query->leftJoin('cwh_tag_owner_interest_mm as user_tag', 'user_tag.record_id = user.id')
+                ->andWhere([
+                    'user_tag.deleted_at' => null,
+                    'user_tag.classname' => 'open20\amos\admin\models\UserProfile',
+                    'user_tag.interest_classname' => 'simple-choice'
+                ]);
+            $searchTags = [];
+            foreach ($params['tagValues'] as $root => $tag_ids) {
+                $explodedTags = explode(',', $tag_ids);
+                foreach ($explodedTags as $tag_id) {
+                    $searchTags[] = $tag_id;
+                }
+            }
+            $query->andFilterWhere(['in', 'user_tag.tag_id', $searchTags]);
+        }
+
+        if ($params['type'] == self::SEARCH_FILTER) {
+
+            $query->andFilterWhere(['in', 'user_profile.user_id', $params['users']]);
+
+            if ($params['field']) {
+                foreach ($params['field'] as $key => $field) {
+                    if ($field == 'age_group') {
+                        if ($params['include_exclude'][$key] == 1) {
+                            $query->andWhere(['user_profile.user_profile_age_group_id' => $params['value'][$key]]);
+                        } else {
+                            $query->andWhere(['!=', 'user_profile.user_profile_age_group_id', $params['value'][$key]])
+                                ->andWhere(['is not', 'user_profile.user_profile_age_group_id', null]);
+                        }
+                    }
+                    if ($field == 'gender') {
+                        if ($params['include_exclude'][$key] == 1) {
+                            $query->andWhere(['user_profile.sesso' => $params['value'][$key]]);
+                        } else {
+                            $query->andWhere(['!=', 'user_profile.sesso', $params['value'][$key]])
+                                ->andWhere(['is not', 'user_profile.sesso', null])
+                                ->andWhere(['!=', 'user_profile.sesso', '']);
+                        }
+                    }
+                    if ($field == 'profile_class') {
+                        if ($params['include_exclude'][$key] == 1) {
+                            $query->andWhere(['in', 'profile_class.user_profile_classes_id', $params['value'][$key]]);
+                        } else {
+                            // TODO
+                            $query->andWhere(['not in', 'profile_class.user_profile_classes_id', $params['value'][$key]]);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param $text string
+     * @return UserProfile[]
+     * @throws InvalidConfigException
+     */
+    public static function searchUsersAll($text)
+    {
+        return UserProfile::find()
+            ->innerJoin('user', 'user.id = user_profile.user_id')
+            ->andWhere(['or',
+                ['like', 'user_profile.nome', $text],
+                ['like', 'user_profile.cognome', $text],
+                ['like', 'CONCAT(user_profile.nome, " ", user_profile.cognome)', $text],
+                ['like', 'CONCAT(user_profile.cognome, " ", user_profile.nome)', $text],
+                ['like', 'user.email', $text],
+                ['like', 'user_profile.codice_fiscale', $text],
+            ])
+            ->andWhere(['user_profile.attivo' => true])
+//                ->andWhere(['not in', 'user_id', SondaggiInvitations::find()->select('user_id')->andWhere(['sondaggio_id' => $id])])
+            ->limit(20)
+            ->all();
+    }
+
+    /**
+     * @param $text string
+     * @param $communityId integer
+     * @return UserProfile[]
+     * @throws InvalidConfigException
+     */
+    public static function searchUsersCommunity($text, $communityId)
+    {
+        return UserProfile::find()
+            ->innerJoin('user', 'user.id = user_profile.user_id')
+            ->innerJoin('community_user_mm', 'community_user_mm.user_id = user.id')
+            ->andWhere(['community_user_mm.community_id' => $communityId])
+            ->andWhere(['community_user_mm.status' => CommunityUserMm::STATUS_ACTIVE])
+            ->andWhere(['community_user_mm.deleted_at' => null])
+            ->andWhere(['or',
+                ['like', 'user_profile.nome', $text],
+                ['like', 'user_profile.cognome', $text],
+                ['like', 'CONCAT(user_profile.nome, " ", user_profile.cognome)', $text],
+                ['like', 'CONCAT(user_profile.cognome, " ", user_profile.nome)', $text],
+                ['like', 'user.email', $text],
+                ['like', 'user_profile.codice_fiscale', $text],
+            ])
+            ->andWhere(['user_profile.attivo' => true])
+//                ->andWhere(['not in', 'user_id', SondaggiInvitations::find()->select('user_id')->andWhere(['sondaggio_id' => $id])])
+            ->limit(20)
+            ->all();
+    }
+
 }

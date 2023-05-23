@@ -16,10 +16,13 @@ use open20\amos\core\utilities\Email;
 use open20\amos\core\user\User;
 use open20\amos\organizzazioni\models\Profilo;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\controllers\ConsoleController;
 use open20\amos\sondaggi\models\search\SondaggiInvitationsSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiInvitationMm;
+use open20\amos\sondaggi\models\SondaggiInvitations;
 use open20\amos\sondaggi\models\SondaggiRisposteSessioni;
+use open20\amos\sondaggi\models\SondaggiUsersInvitationMm;
 use open20\amos\sondaggi\utility\SondaggiUtility;
 use Yii;
 use yii\base\InvalidConfigException;
@@ -81,31 +84,11 @@ class NotifierController extends Controller
 
                 $invitations = $queryInv->all();
                 foreach ($invitations as $invitation) {
-                    $organizationsQuery = SondaggiInvitationsSearch::searchOrganizations($invitation->toArray())->query;
-                    $invitedOrgs = \yii\helpers\ArrayHelper::getColumn(SondaggiInvitationMm::find()->select('to_id')->andWhere(['sondaggi_id' => $sondaggio->id])->asArray()->all(), 'to_id');
-                    $sent_to = \yii\helpers\ArrayHelper::merge($sent_to, $invitedOrgs);
-                    $invitation->count = $organizationsQuery->count();
-                    Console::stdout('Already invited: ' . implode(', ', $sent_to) . PHP_EOL);
-                    $invitation->invited = 1;
-                    $invitation->save(false);
-                    // $organizationsQuery->leftJoin(SondaggiInvitationMm::tableName(), [SondaggiInvitationMm::tableName() . '.sondaggi_id' => $sondaggio->id,
-                    //     SondaggiInvitationMm::tableName() . '.to_id' => new Expression('profilo.id'), SondaggiInvitationMm::tableName() . '.deleted_at' => null]);
-                    // $organizationsQuery->andWhere([SondaggiInvitationMm::tableName() . '.sondaggi_id' => null,
-                    //     SondaggiInvitationMm::tableName() . '.to_id' => null]);
-                    foreach ($organizationsQuery->each() as $organization) {
-                        // Checks if invite has been sent already to this organization...
-                        if (!in_array($organization->id, $sent_to)) {
-                            Console::stdout('Organization ' . $organization->name . PHP_EOL);
-                            $email = '';
-                            $referente = $organization->referenteOperativo;
-                            $sent_to[] = $organization->id;
-                            if (!is_null($referente)) {
-                                $this->sendMail($sondaggio, $referente, $organization);
-                            } else {
-                                $this->sendMailOrganization($sondaggio, $organization);
-                            }
-                        }
-
+                    if ($invitation->target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+                        $this->notifyOrganization($sondaggio, $invitation, $sent_to);
+                    }
+                    else if ($invitation->target == SondaggiInvitations::TARGET_USERS) {
+                        $this->notifyUser($sondaggio, $invitation, $sent_to);
                     }
                 }
             }
@@ -115,6 +98,17 @@ class NotifierController extends Controller
         } catch (\Exception $ex) {
             Yii::getLogger()->log($ex->getTraceAsString(), Logger::LEVEL_ERROR);
         }
+    }
+
+    /**
+     * @param $id
+     * @param $task_id
+     * @return void
+     * @throws \yii\web\NotFoundHttpException
+     */
+    public function actionExtract($id, $task_id = null)
+    {
+        ConsoleController::actionExtract($id, $task_id);
     }
 
     /**
@@ -171,6 +165,28 @@ class NotifierController extends Controller
         $inv_mm = new SondaggiInvitationMm();
         $inv_mm->sondaggi_id = $sondaggio->id;
         $inv_mm->to_id = $organization->id;
+        $inv_mm->save(false);
+    }
+
+    /**
+     * @param $sondaggio Sondaggi
+     * @param $user User
+     * @param $invitation SondaggiInvitations
+     * @return void
+     * @throws InvalidConfigException
+     */
+    protected function sendMailUser($sondaggio, $user, $invitation)
+    {
+        $to = [$user->email];
+        $subject = AmosSondaggi::t('amossondaggi', 'Invito sondaggio');
+        $message = SondaggiUtility::getInvitationEmailContent($sondaggio, $user->userProfile);
+        $this->sendEmailGeneral($to, null, $subject, $message);
+
+        Console::stdout('Send Mail to ' . $user->email);
+        $inv_mm = new SondaggiUsersInvitationMm();
+        $inv_mm->sondaggi_id = $sondaggio->id;
+        $inv_mm->user_id = $user->id;
+        $inv_mm->to_id = $user->id;
         $inv_mm->save(false);
     }
 
@@ -248,7 +264,7 @@ class NotifierController extends Controller
 
         $participations = AmosSondaggi::t('amossondaggi', '#email_closed_poll_participations', [
             'invited' => $sondaggio->getEntiInvitati()->count(),
-            'compiled' => $sondaggio->getCompilazioniStatus(SondaggiRisposteSessioni::WORKFLOW_STATUS_INVIATO)
+            'compiled' => \Yii::$app->getModule('sondaggi')->forceOnlyFrontend ? $sondaggio->getNumeroPartecipazioni() : $sondaggio->getCompilazioniStatus(null, [0, 1])
         ]);
 
         $subject = AmosSondaggi::t('amossondaggi', '#email_closed_poll_subject', ['title' => $sondaggio->titolo]);
@@ -260,13 +276,19 @@ class NotifierController extends Controller
             'manageLink' => $manageLink,
             'participations' => $participations
         ]);
+        $xlsResults = SondaggiUtility::generateXlsResults($sondaggio->id);
+        $files = [];
+        if (!empty($xlsResults)) {
+            $files = [$xlsResults];
+        }
 
         $users = User::find()->where(['status' => User::STATUS_ACTIVE])->all();
 
+        // Send mail to users with permission AMMINISTRAZIONE_SONDAGGI
         foreach($users as $user) {
             if (!empty($user->email) && Yii::$app->authManager->checkAccess($user->id, 'AMMINISTRAZIONE_SONDAGGI')) {
                 Console::stdout('   Sending e-mail to '.$user->email . PHP_EOL);
-                $this->sendEmailGeneral([trim($user->email)], $user, $subject, $message);
+                $this->sendEmailGeneral([trim($user->email)], $user, $subject, $message, $files);
             }
         }
 
@@ -275,10 +297,96 @@ class NotifierController extends Controller
             $additionalEmails = explode(';', $sondaggio->additional_emails);
         }
 
+        // Send mail to additional emails
         foreach($additionalEmails as $email) {
             $user = User::find()->andWhere(['email' => $email])->one();
             Console::stdout('   Sending e-mail to '.$email . PHP_EOL);
-            $this->sendEmailGeneral([trim($email)], $user, $subject, $message);
+            $this->sendEmailGeneral([trim($email)], $user, $subject, $message, $files);
+        }
+
+        // Delete xls file
+        unlink($xlsResults);
+    }
+
+    /**
+     * @param $sondaggio Sondaggi
+     * @param $invitation SondaggiInvitations
+     * @param $sent_to array
+     * @return void
+     * @throws InvalidConfigException
+     */
+    protected function notifyOrganization($sondaggio, $invitation, $sent_to)
+    {
+        Console::stdout('Sending mails to organizations' . PHP_EOL);
+        $organizationsQuery = SondaggiInvitationsSearch::searchOrganizations($invitation->toArray())->query;
+        $invitedOrgs = \yii\helpers\ArrayHelper::getColumn(
+            SondaggiInvitationMm::find()
+                ->select('to_id')
+                ->andWhere(['sondaggi_id' => $sondaggio->id])
+                ->asArray()
+                ->all(),
+            'to_id');
+        $sent_to = \yii\helpers\ArrayHelper::merge($sent_to, $invitedOrgs);
+        $invitation->count = $organizationsQuery->count();
+        Console::stdout('Already invited: ' . implode(', ', $sent_to) . PHP_EOL);
+        $invitation->invited = 1;
+        $invitation->save(false);
+        // $organizationsQuery->leftJoin(SondaggiInvitationMm::tableName(), [SondaggiInvitationMm::tableName() . '.sondaggi_id' => $sondaggio->id,
+        //     SondaggiInvitationMm::tableName() . '.to_id' => new Expression('profilo.id'), SondaggiInvitationMm::tableName() . '.deleted_at' => null]);
+        // $organizationsQuery->andWhere([SondaggiInvitationMm::tableName() . '.sondaggi_id' => null,
+        //     SondaggiInvitationMm::tableName() . '.to_id' => null]);
+        foreach ($organizationsQuery->each() as $organization) {
+            // Checks if invite has been sent already to this organization...
+            if (!in_array($organization->id, $sent_to)) {
+                Console::stdout('Organization ' . $organization->name . PHP_EOL);
+                $email = '';
+                $referente = $organization->referenteOperativo;
+                $sent_to[] = $organization->id;
+                if (!is_null($referente)) {
+                    $this->sendMail($sondaggio, $referente, $organization);
+                } else {
+                    $this->sendMailOrganization($sondaggio, $organization);
+                }
+            }
         }
     }
+
+    /**
+     * @param $sondaggio Sondaggi
+     * @param $invitation SondaggiInvitations
+     * @param $sent_to array
+     * @return void
+     * @throws InvalidConfigException
+     */
+    protected function notifyUser($sondaggio, $invitation, $sent_to)
+    {
+        Console::stdout('Sending mails to users' . PHP_EOL);
+        $params = $invitation->toArray();
+        $params['users'] = $invitation->search_users;
+        $params['tagValues'] = $invitation->search_tags;
+        if ($sondaggio->isCommunitySurvey()) {
+            $params['community_id'] = $sondaggio->community_id;
+        }
+        $usersQuery = SondaggiInvitationsSearch::searchInvitedUsers($params);
+
+        $invitedUsers = \yii\helpers\ArrayHelper::getColumn(
+            SondaggiUsersInvitationMm::find()
+                ->andWhere(['sondaggi_id' => $sondaggio->id])
+                ->all(),
+            'to_id');
+        $sent_to = \yii\helpers\ArrayHelper::merge($sent_to, $invitedUsers);
+        $invitation->count = $usersQuery->count();
+        Console::stdout('Already invited: ' . implode(', ', $sent_to) . PHP_EOL);
+        $invitation->invited = 1;
+        $invitation->save(false);
+        foreach ($usersQuery->each() as $user) {
+            // Checks if invite has been sent already to this user...
+            if (!in_array($user->id, $sent_to)) {
+                Console::stdout('User ' . $user->id . ': ' . $user->userProfile->nomeCognome . PHP_EOL);
+                $sent_to[] = $user->id;
+                $this->sendMailUser($sondaggio, $user, $invitation);
+            }
+        }
+    }
+
 }

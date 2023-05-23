@@ -176,8 +176,8 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
     {
         return $this->find()
                 ->andWhere(['sondaggi_id' => $this->sondaggi->id])
-                ->andWhere(['sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
-                ->andWhere(['!=', 'id', $this->id])
+                ->andFilterWhere(['sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id])
+                ->andFilterWhere(['!=', 'id', $this->id])
                 ->andWhere(['in', 'sondaggi_domande_tipologie_id', [5, 6]]);
     }
 
@@ -421,14 +421,14 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
 
     /**
      *
-     * @param type $ids_validazioni
+     * @param array $ids_validazioni
      */
     public function setValidazione($ids_validazioni)
     {
         if (!empty($this->id)) {
             SondaggiDomandeRuleMm::deleteAll(['sondaggi_domande_id' => $this->id]);
             if (!empty($ids_validazioni)) {
-                if (in_array($this->sondaggiDomandeTipologie->id, [5, 6, 13])) {
+                if (in_array($this->sondaggiDomandeTipologie->id, [5, 6])) { // 5 = libera breve, 6 = libera lunga
                     foreach ($ids_validazioni as $k => $v) {
                         $model                           = new SondaggiDomandeRuleMm();
                         $model->sondaggi_domande_id      = $this->id;

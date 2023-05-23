@@ -44,7 +44,7 @@ if (!empty($forzato)) {
             'class' => 'am-4 success m-t-30'
         ])
         ?>
-        <h2 class="p-t-5 nom-b"><?= AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il questionario.')
+        <h2 class="p-t-5 nom-b"><?= AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il sondaggio.')
         ?></h2>
         <?php } ?>
 

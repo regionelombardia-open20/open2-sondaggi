@@ -46,7 +46,13 @@ $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;
                 // ['class' => 'yii\grid\SerialColumn'],
                 // 'id',
                 'name:ntext',
-                'subject:ntext',
+//                'subject:ntext',
+                'target' => [
+                    'attribute' => 'target',
+                    'value' => function ($model) {
+                        return $model->getTargetLabel()[$model->target];
+                    }
+                ],
                 'count',
                 'email_test',
                 [

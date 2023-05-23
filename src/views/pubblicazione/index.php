@@ -8,10 +8,13 @@
  * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
+
+use open20\amos\community\models\Community;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\views\DataProviderView;
 use open20\amos\core\utilities\ModalUtility;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\Sondaggi;
 use yii\helpers\Html;
 use yii\widgets\Pjax;
 
@@ -90,6 +93,20 @@ $this->registerJs($js);
                     return AmosSondaggi::t('amossondaggi', $model->getSondaggiRisposteSessionisByEntity()->one()->status);
                   },
                 ],
+                'contesto' => [
+                    'label' => AmosSondaggi::t('amossondaggi', 'Contesto'),
+                    'value' => function ($model) {
+                        /** @var Sondaggi $model */
+                        if ($model->isCommunitySurvey()) {
+                            /** @var Community $community */
+                            $community = Community::findOne($model->community_id);
+                            if ($community) {
+                                return AmosSondaggi::t('amossondaggi', 'Community') . ' ' . $community->name;
+                            }
+                        }
+                        return AmosSondaggi::t('amossondaggi', 'Piattaforma');
+                    },
+                ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
@@ -141,7 +158,7 @@ $this->registerJs($js);
                                             [
                                             'data-confirm' => (($stato != \open20\amos\sondaggi\models\SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA
                                             && $stato != null) ? AmosSondaggi::t('amossondaggi',
-                                                'Attenzione! La ri-compilazione rimetterà il questionario in stato Bozza')
+                                                'Attenzione! La ri-compilazione rimetterà il sondaggio in stato Bozza')
                                                 : null),
                                             'title' => AmosSondaggi::t('amossondaggi', '#recompile_poll'),
                                             'class' => 'btn btn-tool-secondary'

@@ -26,6 +26,11 @@ use open20\amos\cwh\models\CwhRegolePubblicazione;
 use open20\amos\dashboard\models\AmosWidgets;
 use open20\amos\emailmanager\models\EmailTemplate;
 use open20\amos\news\models\search\NewsSearch;
+use open20\amos\organizzazioni\models\ProfiloSedi;
+use open20\amos\sondaggi\models\base\SondaggiComunicationUserMm;
+use open20\amos\sondaggi\models\search\SondaggiComunicationSearch;
+use open20\amos\sondaggi\models\SondaggiComunication;
+use yii\base\InvalidConfigException;
 use yii\data\ActiveDataProvider;
 use yii\data\ArrayDataProvider;
 use yii\db\ActiveQuery;
@@ -93,7 +98,8 @@ class DashboardController extends CrudController
                                 'update-communication',
                                 'send-communications',
                                 'delete-communication',
-                                'delete-compilations'
+                                'delete-compilations',
+                                'communication-filter-values'
                             ],
                             'roles' => ['AMMINISTRAZIONE_SONDAGGI']
                         ],
@@ -203,8 +209,13 @@ class DashboardController extends CrudController
         $this->model = $this->findModel($id);
         $this->model->loadCustomTags();
         $this->setMenuSidebar($this->model);
+        $isCommunitySurvey = $this->model->isCommunitySurvey(false);
         $user = \Yii::$app->user;
-        return $this->render('view', ['model' => $this->model, 'user' => $user]);
+        return $this->render('view', [
+            'model' => $this->model,
+            'user' => $user,
+            'isCommunitySurvey' => $isCommunitySurvey
+        ]);
     }
 
     /**
@@ -450,6 +461,7 @@ class DashboardController extends CrudController
                     }
                     if ($this->model->save($validateOnSave)) {
                         $this->model->getOtherAttributes(Yii::$app->request->post());
+                        $this->model->saveCustomTags();
                         $pagine->sondaggi_id = $this->model->id;
                         Yii::$app->getSession()->addFlash('success',
                             AmosSondaggi::tHtml('amossondaggi', "Sondaggio creato correttamente."));
@@ -511,6 +523,7 @@ class DashboardController extends CrudController
                         $validateOnSave      = false;
                     }
                     if ($this->model->save($validateOnSave)) {
+                        $this->model->saveCustomTags();
                         $pagine->sondaggi_id = $this->model->id;
                         Yii::$app->getSession()->addFlash('success',
                             AmosSondaggi::tHtml('amossondaggi', "Sondaggio creato correttamente."));
@@ -1013,38 +1026,63 @@ class DashboardController extends CrudController
      * If creation is successful, the browser will be redirected to the 'index' page.
      * @param string|null $url
      * @return string
+     * @throws InvalidConfigException
      */
     public function actionCreateCommunication($idSondaggio, $url = null)
     {
         $this->setUpLayout('form');
-        $this->model              = new \open20\amos\sondaggi\models\SondaggiComunication();
+        $this->model              = new SondaggiComunication();
         $this->model->sondaggi_id = $idSondaggio;
 
         $sondaggio = Sondaggi::findOne($idSondaggio);
         $this->setMenuSidebar($sondaggio, $this->model->id);
 
         if ($this->model->load(Yii::$app->request->post())) {
-            $post                             = \Yii::$app->request->post();
-            $entiInvitati                     = $sondaggio->getEntiInvitati();
-            $cloneEntiInvitati                = clone $entiInvitati;
-            $entiCheHannoCompilato            = $sondaggio->getEntiCheHannoCompilato();
-            $entiInvitatiCheNonHannoCompilato = $sondaggio->getEntiInvitatiNonCompilato($cloneEntiInvitati->select('to_id'));
-            $type                             = $post['SondaggiComunication']['type'];
-            $query                            = null;
-            $count                            = 0;
-            switch ($type) {
-                case 0:
-                    $query = $entiInvitati->createCommand()->rawSql;
-                    $count = $entiInvitati->count();
-                    break;
-                case 1:
-                    $query = $entiCheHannoCompilato->createCommand()->rawSql;
-                    $count = $entiCheHannoCompilato->count();
-                    break;
-                case 2:
-                    $query = $entiInvitatiCheNonHannoCompilato->createCommand()->rawSql;
-                    $count = $entiInvitatiCheNonHannoCompilato->count();
-                    break;
+            $post = \Yii::$app->request->post()['SondaggiComunication'];
+            $type = $post['type'];
+            $query = null;
+            $count = 0;
+//            pr($post);die;
+            if ($post['target'] == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+                $entiInvitati = $sondaggio->getEntiInvitati();
+                $entiCheHannoCompilato = $sondaggio->getEntiCheHannoCompilato();
+                $cloneEntiCheHannoCompilato = clone $entiCheHannoCompilato;
+                $entiInvitatiCheNonHannoCompilato = $sondaggio->getEntiInvitatiNonCompilato($cloneEntiCheHannoCompilato->select('id'));
+                switch ($type) {
+                    case 0:
+                        $query = $entiInvitati->createCommand()->rawSql;
+                        $count = $entiInvitati->count();
+                        break;
+                    case 1:
+                        $query = $entiCheHannoCompilato->createCommand()->rawSql;
+                        $count = $entiCheHannoCompilato->count();
+                        break;
+                    case 2:
+                        $query = $entiInvitatiCheNonHannoCompilato->createCommand()->rawSql;
+                        $count = $entiInvitatiCheNonHannoCompilato->count();
+                        break;
+                }
+            }
+            else if ($post['target'] == SondaggiInvitations::TARGET_USERS) {
+//                pr($type);die;
+                $invitedUsers = $sondaggio->getInvitedUsers();
+                $utentiCheHannoCompilato = $sondaggio->getUtentiCheHannoCompilato();
+                $cloneUtentiCheHannoCompilato = clone $utentiCheHannoCompilato;
+                $utentiInvitatiCheNonHannoCompilato = $sondaggio->getUtentiInvitatiNonCompilato($cloneUtentiCheHannoCompilato->select('id'));
+                switch ($type) {
+                    case 0:
+                        $query = $invitedUsers->createCommand()->rawSql;
+                        $count = $invitedUsers->count();
+                        break;
+                    case 1:
+                        $query = $utentiCheHannoCompilato->createCommand()->rawSql;
+                        $count = $utentiCheHannoCompilato->count();
+                        break;
+                    case 2:
+                        $query = $utentiInvitatiCheNonHannoCompilato->createCommand()->rawSql;
+                        $count = $utentiInvitatiCheNonHannoCompilato->count();
+                        break;
+                }
             }
             $this->model->query = $query;
             $this->model->count = $count;
@@ -1066,7 +1104,7 @@ class DashboardController extends CrudController
     public function actionUpdateCommunication($id, $url = null)
     {
         $this->setUpLayout('form');
-        $this->model              = \open20\amos\sondaggi\models\SondaggiComunication::findOne($id);
+        $this->model              = SondaggiComunication::findOne($id);
 
 
         $sondaggio = Sondaggi::findOne($this->model->sondaggi_id);
@@ -1147,35 +1185,21 @@ class DashboardController extends CrudController
 
     public function actionSendCommunications($id, $url, $preview = false)
     {
-        $comunicazione = \open20\amos\sondaggi\models\SondaggiComunication::findOne($id);
+        $comunicazione = SondaggiComunication::findOne($id);
         if (!empty($comunicazione)) {
             $to  = $comunicazione->email_test;
             $all = \Yii::$app->db->createCommand($comunicazione->query)->queryAll();
             if ($preview == true) {
                 $this->sendEmailGeneral($to, $comunicazione->subject, $comunicazione->message);
             } else {
-
-                foreach ($all as $single) {
-                    if ($comunicazione->type == 1)
-                        $to_id = $single['id'];
-                    else
-                        $to_id        = $single['to_id'];
-                    $email        = '';
-                    $profile = null;
-                    $organization = Profilo::findOne($to_id);
-                    if (!empty($organization)) {
-                        $referente = $organization->referenteOperativo;
-                        if (!is_null($referente)) {
-                            $profile = $referente->user;
-                            $email = $referente->user->email;
-                        } else {
-                            $email = $organization->email;
-                        }
-                    }
-                    if (!empty($email)) {
-                        $this->sendEmailGeneral($email, $comunicazione->subject, $comunicazione->message, [], $profile);
-                    }
-                }
+                $this->sendEmails($all, $comunicazione);
+            }
+        }
+        if (empty($communicationsFailed)) {
+            \Yii::$app->session->addFlash('success', AmosSondaggi::t('amossondaggi', "Comunicazione inviata correttamente"));
+        } else {
+            foreach ($communicationsFailed as $communicationFailed) {
+                \Yii::$app->session->addFlash('danger', AmosSondaggi::t('amossondaggi', "Errore nell'invio della comunicazione a {organization}, nessuna email trovata.", ['organization' => $communicationFailed]));
             }
         }
         return $this->redirect([$url]);
@@ -1199,12 +1223,98 @@ class DashboardController extends CrudController
         return true;
     }
 
+    /**
+     * @param $all array
+     * @param $comunicazione SondaggiComunication
+     * @return void
+     */
+    protected function sendEmails($all, $comunicazione)
+    {
+        if ($comunicazione->target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+            foreach ($all as $single) {
+                if ($comunicazione->type == 1) {
+                    $to_id = $single['id'];
+                } else {
+                    $to_id = $single['to_id'];
+                }
+                $email = '';
+                $profile = null;
+                $organization = Profilo::findOne($to_id);
+                if (!empty($organization)) {
+                    $referente = $organization->referenteOperativo;
+                    if (!is_null($referente)) {
+                        $profile = $referente;
+                        $email = $referente->user->email;
+                    } else if (!empty($organization->email)) {
+                        $email = $organization->email;
+                    } else if (!empty($organization->operativeHeadquarter->email)) {
+                        $email = $organization->operativeHeadquarter->email;
+                    }
+                }
+                if (!empty($email)) {
+                    if (!$this->sendEmailGeneral($email, $comunicazione->subject, $comunicazione->message, [], $profile)) {
+                        $communicationsFailed[] = $organization->name;
+                    }
+                } else {
+                    $communicationsFailed[] = $organization->name;
+                }
+            }
+        }
+        else if ($comunicazione->target == SondaggiInvitations::TARGET_USERS) {
+            foreach ($all as $single) {
+                if ($comunicazione->type == 1) {
+                    $to_id = $single['id'];
+                } else {
+                    $to_id = $single['user_id'];
+                }
+                $email = '';
+                $profile = null;
+                $user = User::findOne($to_id);
+                if (!empty($user)) {
+                    $email = $user->email;
+                    $profile = $user->userProfile;
+                }
+                if (!empty($email)) {
+                    if (!$this->sendEmailGeneral($email, $comunicazione->subject, $comunicazione->message, [], $profile)) {
+                        $communicationsFailed[] = $user->userProfile->nomeCognome;
+                    } else {
+                        $communicationUserMm = new SondaggiComunicationUserMm();
+                        $communicationUserMm->sondaggi_comunication_id = $comunicazione->id;
+                        $communicationUserMm->user_id = $user->id;
+                        $communicationUserMm->sondaggi_id = $comunicazione->sondaggi_id;
+                        $communicationUserMm->save();
+                    }
+                } else {
+                    $communicationsFailed[] = $user->userProfile->nomeCognome;
+                }
+            }
+        }
+    }
+
     public function actionDeleteCommunication($id, $url)
     {
-        $comunicazione = \open20\amos\sondaggi\models\SondaggiComunication::findOne($id);
+        $comunicazione = SondaggiComunication::findOne($id);
         if (!empty($comunicazione)) {
             $comunicazione->delete();
         }
         return $this->redirect([$url]);
     }
+
+    /**
+     * @return array
+     * @throws InvalidConfigException
+     */
+    public function actionCommunicationFilterValues()
+    {
+        \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+
+        $data = [];
+        $parents = \Yii::$app->request->post('depdrop_parents');
+        $query = \Yii::$app->request->get('q');
+        $target = $parents[0];
+        $data = SondaggiComunicationSearch::getCommunicationFilterValues($target);
+
+        return !empty($data) ? ['output' => $data] : null;
+    }
+
 }

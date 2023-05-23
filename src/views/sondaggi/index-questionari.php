@@ -8,9 +8,14 @@
  * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
+
+use open20\amos\community\models\Community;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\views\DataProviderView;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\search\SondaggiSearch;
+use open20\amos\sondaggi\models\Sondaggi;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use yii\helpers\Html;
 
 /**
@@ -45,7 +50,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                     'label' => AmosSondaggi::t('amossondaggi', 'Immagine'),
                     'format' => 'html',
                     'value' => function ($model) {
-                        /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                        /** @var SondaggiSearch $model */
                         $url       = '/img/img_default.jpg';
                         if ($model->file) {
                             $url = $model->file->getUrl('table_small');
@@ -60,31 +65,61 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                 [
                     'attribute' => 'status',
                     'value' => function($model) {
-                        return $model->getWorkflowStatus()->getLabel();
+                        $statusLabel = '--';
+                        if ($model->hasWorkflowStatus()) {
+                            if ($model->getWorkflowStatus()->id == Sondaggi::WORKFLOW_STATUS_VALIDATO && SondaggiUtility::isTerminated($model)) {
+                                $statusLabel = AmosSondaggi::t('amossondaggi', 'Concluso');
+                            } else {
+                                $statusLabel = AmosSondaggi::t('amossondaggi', $model->getWorkflowStatus()->getLabel());
+                            }
+                        }
+                        return $statusLabel;
                     }
                 ],
                 [
+                    'label' => AmosSondaggi::t('amossondaggi', 'Data di pubblicazione'),
                     'attribute' => 'publish_date',
                     'value' => function($model) {
-                        return \Yii::$app->formatter->asDate($model->publish_date);
+                        if ($model->publish_date) {
+                            return \Yii::$app->formatter->asDate($model->publish_date);
+                        }
+                        return '';
                     }
                 ],
                 [
+                    'label' => AmosSondaggi::t('amossondaggi', 'Data di chiusura'),
                     'attribute' => 'close_date',
                     'value' => function($model) {
-                        return \Yii::$app->formatter->asDate($model->close_date);
+                        if ($model->close_date) {
+                            return \Yii::$app->formatter->asDate($model->close_date);
+                        }
+                        return '';
                     }
                 ],
-                // 'compilazioni' => [
-                //     'label' => AmosSondaggi::t('amossondaggi', 'Partecipanti'),
-                //     'value' => function ($model) {
-                //         if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI'))
-                //         /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                //             return ($model->getNumeroPartecipazioni()) ? $model->getNumeroPartecipazioni() : AmosSondaggi::t('amossondaggi',
-                //                 'Nessuno');
-                //         return '';
-                //     }
-                // ],
+                 'compilazioni' => [
+                     'label' => AmosSondaggi::t('amossondaggi', 'Partecipanti'),
+                     'value' => function ($model) {
+                         if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+                             /** @var SondaggiSearch $model */
+                             return $model->getNumeroPartecipazioni();
+                         }
+                         return '';
+                     }
+                 ],
+                'contesto' => [
+                    'label' => AmosSondaggi::t('amossondaggi', 'Contesto'),
+                    'value' => function ($model) {
+                        /** @var Sondaggi $model */
+                        if ($model->isCommunitySurvey()) {
+                            /** @var Community $community */
+                            $community = Community::findOne($model->community_id);
+                            if ($community) {
+                                return AmosSondaggi::t('amossondaggi', 'Community') . ' ' . $community->name;
+                            }
+                        }
+                        return AmosSondaggi::t('amossondaggi', 'Piattaforma');
+                    },
+                ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'deleted_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
@@ -97,7 +132,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                     'template' => '{anteprima}{compila}{update}{delete}',
                     'buttons' => [
                         'compila' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                            /** @var SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();
                             //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
                             if ($model->isCompilable() && \Yii::$app->user->can('COMPILA_SONDAGGIO', ['model' => $model])) {

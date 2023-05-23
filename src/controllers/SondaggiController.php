@@ -156,7 +156,8 @@ class SondaggiController extends CrudController
                         [
                             'allow' => true,
                             'actions' => [
-                                'manage'
+                                'manage',
+                                'created-by-me'
                             ],
                             'roles' => ['SONDAGGI_MANAGE']
                         ]
@@ -247,7 +248,7 @@ class SondaggiController extends CrudController
     public function actionManage()
     {
         $this->setUpLayout('list');
-        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Gestisci questionari');
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Gestisci sondaggi');
         if (!$this->sondaggiModule->hideAllPolls) {
 
             $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
@@ -271,6 +272,36 @@ class SondaggiController extends CrudController
                 'currentView' => $this->getCurrentView(),
                 'title' => $title
         ]);
+    }
+
+    /**
+     * @return string
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function actionCreatedByMe()
+    {
+        $this->setUpLayout('list');
+        $this->view->params['titleSection'] = AmosSondaggi::t('amossondaggi', 'Sondaggi creati da me');
+        if (!$this->sondaggiModule->hideAllPolls) {
+
+            $this->view->params['labelLinkAll'] = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+            $this->view->params['urlLinkAll']   = AmosSondaggi::t('amossondaggi', '/sondaggi/pubblicazione/all');
+            $this->view->params['titleLinkAll'] = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
+        } else {
+            $this->view->params['urlLinkAll'] = '';
+        }
+        $this->view->params['dataConfirmCreate'] = AmosSondaggi::instance()->sondaggioDataConfirmMessage;
+
+        $this->modelSearch->status = null;
+        $this->setDataProvider($this->modelSearch->searchCreatedByMe(Yii::$app->request->getQueryParams()));
+
+        return $this->render('index-questionari',
+            [
+                'model' => $this->modelSearch,
+                'dataProvider' => $this->getDataProvider(),
+                'currentView' => $this->getCurrentView(),
+                'title' => $title
+            ]);
     }
 
     /**
@@ -835,9 +866,10 @@ class SondaggiController extends CrudController
         }
 
         if ($this->sondaggiModule->enableExportBeforeClosing == false && ($this->model->status != Sondaggi::WORKFLOW_STATUS_VALIDATO || $this->model->close_date >= date('Y-m-d'))) {
-            Yii::$app->getSession()->addFlash('danger',
-                AmosSondaggi::tHtml('amossondaggi', '#cannot_download_not_closed'));
-            return $this->redirect($url);
+            if (!AmosSondaggi::instance()->forceDownloadResults) {
+                Yii::$app->getSession()->addFlash('danger', AmosSondaggi::tHtml('amossondaggi', '#cannot_download_not_closed'));
+                return $this->redirect($url);
+            }
         }
 
         $intestazioneStart = [];
@@ -974,15 +1006,15 @@ class SondaggiController extends CrudController
 
             if (AmosSondaggi::instance()->compilationToOrganization) {
                 $profilo                     = \open20\amos\organizzazioni\models\Profilo::find()->andWhere(['id' => $sondRisposta->organization_id])->one();
-                $xlsData [$row][3 + $offset] = $profilo->name;
-                $xlsData [$row][4 + $offset] = $sondRisposta->begin_date;
-                $xlsData [$row][5 + $offset] = $sondRisposta->end_date;
+                $xlsData [$row][3 + $offset] = !empty($profilo->name) ? $profilo->name : '';
+                $xlsData [$row][4 + $offset] = Yii::$app->formatter->asDatetime($sondRisposta->begin_date, 'php:d/m/Y H:i:s');
+                $xlsData [$row][5 + $offset] = Yii::$app->formatter->asDatetime($sondRisposta->end_date, 'php:d/m/Y H:i:s');
                 if (AmosSondaggi::instance()->enableCompilationWorkflow) {
                     $xlsData[$row][6 + $offset] = AmosSondaggi::t('amossondaggi', $sondRisposta->status);
                 }
             } else {
-                $xlsData [$row][3 + $offset] = $sondRisposta->begin_date;
-                $xlsData [$row][4 + $offset] = $sondRisposta->end_date;
+                $xlsData [$row][3 + $offset] = Yii::$app->formatter->asDatetime($sondRisposta->begin_date, 'php:d/m/Y H:i:s');
+                $xlsData [$row][4 + $offset] = Yii::$app->formatter->asDatetime($sondRisposta->end_date, 'php:d/m/Y H:i:s');
                 if (AmosSondaggi::instance()->enableCompilationWorkflow) {
                     $xlsData[$row][5 + $offset] = AmosSondaggi::t('amossondaggi', $sondRisposta->status);
                 }
@@ -998,6 +1030,9 @@ class SondaggiController extends CrudController
 
                     $risposta = $query->asArray()->one();
                     if ($risposta) {
+                        if ($domanda->sondaggi_domande_tipologie_id == 13) {
+                            $risposta['risposta_libera'] = Yii::$app->formatter->asDate($risposta['risposta_libera'], 'php:d/m/Y');
+                        }
                         $xlsData[$row][$colRispLibere[$domanda->id] + $offset] = $risposta['risposta_libera'];
                     } else {
 

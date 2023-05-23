@@ -10,7 +10,7 @@ use kartik\select2\Select2;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 
-$this->title = AmosSondaggi::t('amossondaggi', "Info questionario");
+$this->title = AmosSondaggi::t('amossondaggi', "Info sondaggio");
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
 $this->params['breadcrumbs'][] = ['label' => $model->titolo, 'url' => ['sondaggi/dashboard', 'id' => $model->id]];
 $this->params['breadcrumbs'][] = $this->title;

@@ -125,10 +125,21 @@ if (isset($dateEnd)) {
                                 <?php } else { ?>
                                     <h5 class="card-title font-weight-bold big-heading mb-2 "><strong><?= $model->titolo ?></strong></h5>
                                 <?php } ?>
+
+                                <?php
+                                if ($model->isCommunitySurvey()) {
+                                    $community = \open20\amos\community\models\Community::findOne($model->community_id);
+                                    if ($community) { ?>
+                                        <a href="javascript:void(0)" data-toggle="tooltip" title="dalla community <?= $community->name ?>">
+
+                                            <span class="mdi mdi-account-supervisor-circle text-muted m-l-5"></span>
+
+                                            <span class="sr-only"><?= $community->name ?></span>
+                                        </a>
+                                    <?php }
+                                } ?>
+
                                 <div class="ml-auto">
-
-
-
                                     <?=
                                     ContextMenuWidget::widget([
                                         'model' => $model,
@@ -280,7 +291,7 @@ if (isset($dateEnd)) {
                                                 'data-confirm' => (($session->status != \open20\amos\sondaggi\models\SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA
                                                     && $session->status != null) ? AmosSondaggi::t(
                                                     'amossondaggi',
-                                                    'Attenzione! La ri-compilazione rimetterà il questionario in stato Bozza'
+                                                    'Attenzione! La ri-compilazione rimetterà il sondaggio in stato Bozza'
                                                 )
                                                     : null),
                                                 'class' => 'btn btn-xs btn-primary',

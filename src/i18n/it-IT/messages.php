@@ -98,7 +98,8 @@ return [
     'Impossibile cancellare la pagina per la presenza di domande.' => 'Impossibile cancellare la pagina per la presenza di domande.',
     'Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA.' => 'Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA.',
     'Impossibile cancellare la risposta in quanto sono presenti domande condizionate da questa risposta.' => 'Impossibile cancellare la risposta in quanto sono presenti domande condizionate da questa risposta.',
-    'Info questionario' => 'Info questionario',
+    'Gestione sondaggio' => 'Gestione sondaggio',
+    'Gestione comunicazioni' => 'Gestione comunicazioni',
     'Inizio compilazione' => 'Inizio compilazione',
     'Inserisci' => 'Inserisci',
     'Inserisci domanda' => 'Inserisci domanda',
@@ -234,10 +235,9 @@ return [
     '#noSondaggi' => 'Nessun sondaggio',
     '#readMore' => 'Leggi tutto',
     'Crea nuovo' => 'Crea nuovo',
-    'Sondaggio compilabile in frontend' => 'Sondaggio compilabile in frontend',
-    'Grazie per aver compilato il questionario.' => 'Grazie per aver compilato il questionario.',
+    'Grazie per aver compilato il sondaggio.' => 'Grazie per aver compilato il sondaggio.',
 
-    '#thankyoumessage' => 'Grazie per aver compilato il questionario.',
+    '#thankyoumessage' => 'Grazie per aver compilato il sondaggio.',
     '#CONGRATULAZIONI' => 'CONGRATULAZIONI',
     '#sondaggioterminato' => 'Sondaggio terminato',
 
@@ -253,6 +253,7 @@ return [
     '#delete_poll_dialog' => 'Sei sicuro di voler cancellare il sondaggio corrente?',
     '#publish_poll' => 'Attiva sondaggio',
     '#publish_poll_dialog' => 'Sei sicuro di voler rendere attivo il sondaggio corrente?',
+    '#publish_poll_dialog_empty_list' => '<br>ATTENZIONE: Non è attiva nessuna lista di inviti.',
     '#depublish_poll' => 'Disattiva sondaggio',
     '#depublish_poll_dialog' => 'Sei sicuro di voler rendere disattivo il sondaggio corrente?',
     '#publication_date' => 'Data pubblicazione',
@@ -305,18 +306,18 @@ return [
     '#activate_list' => 'Attiva lista',
     '#deactivate_list' => 'Disattiva lista',
     '#invito_referenteOperativo_message' => 'Gentile {nomeCognome},<br>
-sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>
+sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>
 
-Si ricorda di completare il questionario entro la data di scadenza {data}.<br>
+Si ricorda di completare il sondaggio entro la data di scadenza {data}.<br>
 <a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br>
 <br>
-Una volta effettuato l’accesso, è possibile compilare il questionario dal plugin QUESTIONARI.<br>
+Una volta effettuato l’accesso, è possibile compilare il sondaggio dal plugin SONDAGGI.<br>
 <br>
 Grazie per aver scelto i nostri servizi.',
     '#invito_organization_subject' => 'Invito a compilazione sondaggio',
-    '#invito_organization_message' => '{ente}, sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> questionario sulla piattaforma Fabbisogni Online.<br>
+    '#invito_organization_message' => '{ente}, sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma Fabbisogni Online.<br>
 <br>
-Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invitare un proprio operatore a candidarsi come responsabile ente per poter compilare il questionario.<br>
+Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invitare un proprio operatore a candidarsi come responsabile ente per poter compilare il sondaggio.<br>
 <br>
 Grazie per aver scelto i nostri servizi.',
     '#duplicate_poll_dialog' => 'Confermi di voler duplicare questo sondaggio?',
@@ -330,7 +331,7 @@ Grazie per aver scelto i nostri servizi.',
     '#cannot_compile_poll_completed' => 'Non è possibile compilare un sondaggio già terminato.',
     '#open_polls' => 'Sondaggi in corso',
     '#closed_polls' => 'Sondaggi terminati',
-    '#publish_poll_dialog_invitations' => 'Sei sicuro di voler rendere attivo il sondaggio corrente? Le liste attive per l’invito sono:<ul>{list}</ul>',
+    '#publish_poll_dialog_invitations' => '<br>Le liste attive per l’invito sono:<ul>{list}</ul>',
     '#cannot_publish' => 'Impossibile pubblicare il sondaggio poiché non sono presenti domande (o non sono state definite risposte per le domande chiuse)',
     '#cannot_publish_no_list' => 'Impossibile pubblicare il sondaggio poiché non sono presenti domande (o non sono state definite risposte per le domande chiuse), oppure perché non sono state attivate liste inviti',
     '#compile_poll' => 'Compila il sondaggio',
@@ -347,13 +348,13 @@ Grazie per aver scelto i nostri servizi.',
     '#import' => 'Importa',
     '#delete_all_default_answers' => 'Elimina tutto',
     '#email_poll_published' => 'È stato pubblicato il sondaggio <a href="{link}">{title}</a> da {firstName} {lastName}.',
-    '#email_poll_published_subject' => 'Sondaggio {title} pubblicato',
+    '#email_poll_published_subject' => 'Sondaggio "{title}" pubblicato',
     '#compilazioniStatus' => 'Stato compilazione',
     '#all' => 'Tutto',
     '#email_closed_poll_subject' => 'Sondaggio {title} terminato',
     '#email_closed_poll_close_date' => '<strong>Data di chiusura: {closeDate}</strong>',
     '#email_closed_poll_participations' => '<p>Organizzazioni invitate: {invited}<br>Compilazioni effettuate: {compiled}</p>',
-    '#email_closed_poll' => '<img src="{imageUrl}" style:="width:50%"><h1>{title}</h1><p>{description}</p>{closeDateMessage}<p>Per vedere i risultati, clicca <a href="{manageLink}">qui</a>.</p>{participations}',
+    '#email_closed_poll' => '<img src="{imageUrl}" style="width:50%"><h1>{title}</h1><p>{description}</p>{closeDateMessage}<p>Per vedere i risultati, clicca <a href="{manageLink}">qui</a>.</p>{participations}',
     '#page_number' => 'Numero pagina',
     '#poll_questions' => 'Domande del sondaggio',
     '#clone' => 'Duplica',
@@ -372,21 +373,21 @@ Grazie per aver scelto i nostri servizi.',
     '#poll_info' => 'Informazioni sondaggio',
     '#on_poll_compiled_send_email' => 'Al termine della compilazione sondaggio, invia il pdf compilato alle email indicate nel campo seguente',
     '#on_poll_compiled_send_email_compiler' => 'Al termine della compilazione sondaggio, invia il pdf compilato al compilatore',
-    '#on_poll_closed_send_email' => 'Alla chiusura del sondaggio, invia il pdf compilato alle email indicate nel campo seguente',
+    '#on_poll_closed_send_email' => 'Alla chiusura del sondaggio, invia i risultati agli indirizzi e-mail del campo seguente',
     '#poll_pages' => 'Pagine del sondaggio',
     '#polls_pages' => 'Pagine dei sondaggi',
     '#add_poll_page' => 'Aggiungi pagina al sondaggio',
     '#send_communication_to_organizations_confirm' => 'Stai per inviare la comunicazione alle organizzazioni. Vuoi procedere?',
-    '#all_organizations_poll_sent' => 'Tutte le organizzazioni a cui è stato spedito un questionario',
-    '#organizations_poll_compiled' => 'Solo le organizzazioni che hanno compilato il questionario',
-    '#organizations_poll_not_compiled' => 'Solo le organizzazioni a cui è stato spedito il questionario che ancora non l’hanno compilato',
+    '#all_organizations_invited_to_poll' => 'Tutte le organizzazioni invitate alla compilazione del sondaggio',
+    '#organizations_poll_compiled' => 'Solo le organizzazioni che hanno compilato il sondaggio',
+    '#organizations_invited_to_poll_not_compiled' => 'Solo le organizzazioni invitate ma che ancora non hanno compilato il sondaggio',
     '#poll' => 'Sondaggio',
     '#select_poll' => 'Seleziona sondaggio ...',
     '#is_parent' => 'Imposta come domanda contenitore',
     '#parent_question' => 'Appartiene a domanda contenitore',
     '#no_role_to_activate_pool_message' => 'Non hai il permesso per attivare il sondaggio',
     '#no_role_to_deactivate_pool_message' => 'Non hai il permesso per disattivare il sondaggio',
-    'Gestisci questionari' => 'Gestisci questionari',
+    'Gestisci sondaggi' => 'Gestisci sondaggi',
     '#select_parent_id' => 'Seleziona una domanda contenitore',
     '#add_columns' => 'Aggiungi colonne...',
     '#multi_columns' => 'Colonne per domande multiple',
@@ -426,6 +427,7 @@ Grazie per aver scelto i nostri servizi.',
     'sondaggio_gia_compilato'=>'IL SONDAGGIO {0} E\' GIA\' STATO COMPILATO',
     '#field' => 'Campo',
     '#value' => 'Valore',
-    'invitation_message' => 'Gentile {nomeCognome},<br>sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>Si ricorda di completare il questionario entro la data di scadenza {data}.<br><a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br><br>Grazie per aver scelto i nostri servizi.',
-    'invitation_organization_message' => '{ente}, sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> questionario sulla piattaforma {platformName} entro la data {data}.<br><br>Si segnala che l’Ente è sprovvisto di un REFERENTE OPERATIVO, si prega di invitare un proprio operatore a candidarsi come referente operativo per poter compilare il questionario.<br><br>Grazie per aver scelto i nostri servizi.',
+    'invitation_message' => 'Gentile {nomeCognome},<br>sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>Si ricorda di completare il sondaggio entro la data di scadenza {data}.<br><a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br><br>Grazie per aver scelto i nostri servizi.',
+    'invitation_organization_message' => '{ente}, sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName} entro la data {data}.<br><br>Si segnala che l’Ente è sprovvisto di un REFERENTE OPERATIVO, si prega di invitare un proprio operatore a candidarsi come referente operativo per poter compilare il sondaggio.<br><br>Grazie per aver scelto i nostri servizi.',
+
 ];

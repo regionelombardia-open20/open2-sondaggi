@@ -255,7 +255,8 @@ class DashboardDomandeController extends CrudController
             $this->model->setOrdinamento($ordinamento, $ordinaDopo,
                 (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
 
-            $this->model->setValidazione($this->model->validazione);
+            $validazione = [Yii::$app->request->post()['SondaggiDomande']['validazione']];
+            $this->model->setValidazione($validazione);
 
             if ($this->model->domanda_condizionata) {
                 foreach ($condizioneNecessaria as $cond) {
@@ -305,8 +306,9 @@ class DashboardDomandeController extends CrudController
                 return $this->redirect(['index', 'idSondaggio' => $idSondaggio, 'url' => $url]);
             }
 
-        $validazioni = [];
         $this->setMenuSidebar(Sondaggi::findOne($idSondaggio), $this->model->id);
+
+        $validazioni = [];
         foreach ((array)$this->model->sondaggiDomandeRuleMms as $v) {
             $validazioni[] = $v->sondaggi_domande_rule_id;
         }
@@ -339,7 +341,8 @@ class DashboardDomandeController extends CrudController
                 $this->model->setOrdinamento($ordinamento, $ordinaDopo,
                     (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
             }
-            $this->model->setValidazione($this->model->validazione);
+            $validazione = [Yii::$app->request->post()['SondaggiDomande']['validazione']];
+            $this->model->setValidazione($validazione);
             \open20\amos\sondaggi\models\SondaggiDomandeCondizionate::deleteAll(['sondaggi_domande_id' => $id]);
             if ($this->model->domanda_condizionata) {
                 foreach ($condizioneNecessaria as $cond) {
@@ -454,10 +457,23 @@ class DashboardDomandeController extends CrudController
         $newDomanda->domanda                    = $domanda->domanda . AmosSondaggi::t('amossondaggi', '#clone_append');
         $newDomanda->sondaggi_id                = $domanda->sondaggi_id;
         $newDomanda->domanda_condizionata       = $domanda->domanda_condizionata;
+        $newDomanda->ordinamento                = $domanda->ordinamento + 1;
         $newDomanda->sondaggi_domande_pagine_id = $domanda->sondaggi_domande_pagine_id;
         $newDomanda->created_by                 = $created_by;
         $newDomanda->updated_by                 = $created_by;
         $okDom                                  = $newDomanda->save();
+        // Per tutte le domande nella stessa pagina diverse da quella nuova, da quella clonata
+        // e da quelle precedenti aumenta l'ordinamento di 1
+        if (!$domanda->is_parent) {
+            SondaggiDomande::updateAllCounters(['ordinamento' => 1], [
+                'and',
+                ['!=', 'id', $domanda->id],
+                ['!=', 'id', $newDomanda->id],
+                ['sondaggi_id' => $domanda->sondaggi_id],
+                ['sondaggi_domande_pagine_id' => $domanda->sondaggi_domande_pagine_id],
+                ['>', 'ordinamento', $domanda->ordinamento]
+            ]);
+        }
 
         foreach($domanda->getFiles() as $file) {
             FileModule::instance()->attachFile($file->path, $newDomanda, 'file', false);
@@ -527,7 +543,11 @@ class DashboardDomandeController extends CrudController
         }
         if ($okDom) {
             \Yii::$app->session->addFlash('success', AmosSondaggi::t('amossondaggi', '#clone_question_success'));
-            return $this->redirect(['index', 'idSondaggio' => $domanda->sondaggi_id]);
+            $idPagina = null;
+            if (Yii::$app->request->get('idPagina')) {
+                $idPagina = $domanda->sondaggi_domande_pagine_id;
+            }
+            return $this->redirect(['index', 'idSondaggio' => $domanda->sondaggi_id, 'idPagina' => $idPagina]);
         } else {
             \Yii::$app->session->addFlash('danger',
                 AmosSondaggi::t('amossondaggi', '#clone_question_error'));

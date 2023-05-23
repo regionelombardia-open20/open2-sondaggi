@@ -1,7 +1,9 @@
 <?php
 
+use open20\amos\layout\assets\SpinnerWaitAsset;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use yii\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\models\Sondaggi;
@@ -13,10 +15,14 @@ use kartik\dropdown\DropdownX;
  * @var Sondaggi $model
  */
 
+ModuleSondaggiAsset::register($this);
+SpinnerWaitAsset::register($this);
+
+
 $isStatusValidato = $model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO;
 $js = <<<JS
     // Se lo stato è validato mostra il modale
-    var isStatusValidato = $isStatusValidato;
+    var isStatusValidato = '{$isStatusValidato}';
     if (isStatusValidato) {
         $('#delete-poll').on('click', function(e) {
             e.stopImmediatePropagation();
@@ -24,14 +30,46 @@ $js = <<<JS
             $('#delete-modal').modal('show');
         });
     }
+    
+    // copy to survey frontend url to clipboard
+    $('#copy-link-btn').on('click', function (e) {
+        var url = $('#frontend-url').text();
+        var tempElement = $("<input>");
+        $("body").append(tempElement);
+        tempElement.val(url).select();
+        if (document.execCommand("Copy")) {
+            tempElement.remove();
+            $("#copied-link-container").show().fadeOut(1000);
+        }
+    });
+    
+    // show loading spinner on activate poll button
+    $('#publish-poll-btn').on('click', function () {
+        var dataConfirm = $('body .modal.bootstrap-dialog.krajee-amos-modal.type-warning.fade.size-normal.in');
+        if (dataConfirm) {
+            $('body').on('click', '.bootstrap-dialog-footer-buttons .btn.btn-warning', function () {
+                $('.loading').show();
+            });
+        } else {
+            $('.loading').show();
+        }
+    });
+    
 JS;
 
 $this->registerJs($js);
 
+?>
 
-ModuleSondaggiAsset::register($this);
+<!-- Loader -->
+<span class="loading" style="display: none; z-index: 3000"></span>
 
-$this->title = $model->getTitle();
+<?php
+if (strlen($model->getTitle()) > 75) {
+    $this->title = substr($model->getTitle(), 0, 75) . '...';
+} else {
+    $this->title = $model->getTitle();
+}
 
 $numberListTag = \Yii::$app->controller->sondaggiModule->numberListTag;
 
@@ -73,7 +111,8 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
             $this->params['titleButtons'][] = '<span data-toggle="tooltip" data-placement="bottom" class="m-l-5" title="' . AmosSondaggi::t('amossondaggi', '#no_role_to_activate_pool_message') . '">' . Html::a(AmosIcons::show('check-circle') . '&nbsp;' . AmosSondaggi::t('amossondaggi',
                         '#publish_poll'), '#',
                     [
-                        'class' => 'btn btn-default disabled'
+                        'class' => 'btn btn-default disabled',
+                        'id' => 'publish-poll-btn',
                     ]) . '</span>';
         } else {
             $this->params['titleButtons'][] = '<span data-toggle="tooltip" data-placement="bottom" class="m-l-5" title="' . AmosSondaggi::t('amossondaggi', '#no_role_to_deactivate_pool_message') . '">' . Html::a(AmosIcons::show('minus-circle') . '&nbsp;' . AmosSondaggi::t('amossondaggi',
@@ -90,6 +129,14 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
             $list .= '<ul>'.$item->name.'</ul>';
         }
 
+        $dataConfirmMessage = AmosSondaggi::t('amossondaggi', '#publish_poll_dialog');
+        if (AmosSondaggi::instance()->hasInvitation) {
+            if (empty($list)) {
+                $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_empty_list');
+            } else {
+                $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_invitations', ['list' => $list]);
+            }
+        }
         $this->params['titleButtons'][] = Html::a(AmosIcons::show('check-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
                     '#publish_poll'),
                 Yii::$app->urlManager->createUrl([
@@ -98,14 +145,14 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                     'url' => $url,
                 ]),
                 [
-                'title' => AmosSondaggi::t('amossondaggi', '#publish_poll'),
-                'class' => 'btn btn-success',
-                'data' => [
-                    'confirm' => (empty($list))?
-                        AmosSondaggi::t('amossondaggi', '#publish_poll_dialog'):
-                        AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_invitations', ['list' => $list])
+                    'title' => AmosSondaggi::t('amossondaggi', '#publish_poll'),
+                    'class' => 'btn btn-success',
+                    'id' => 'publish-poll-btn',
+                    'data' => [
+                        'confirm' => $dataConfirmMessage
+                    ],
                 ]
-        ]);
+        );
     } else if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
         $this->params['titleButtons'][] = Html::a(AmosIcons::show('minus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
                     '#depublish_poll'),
@@ -125,8 +172,10 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
         $this->params['titleButtons'][] = '<span data-toggle="tooltip" data-placement="bottom" title="'.AmosSondaggi::t('amossondaggi', AmosSondaggi::instance()->enableInvitationList ? '#cannot_publish_no_list' : '#cannot_publish').'">'.Html::a(AmosIcons::show('check-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
                     '#publish_poll'), '#',
                 [
-                'class' => 'btn btn-default disabled'
-        ]).'</span>';
+                    'class' => 'btn btn-default disabled',
+                    'id' => 'publish-poll-btn'
+                ]
+            ).'</span>';
     }
 }
 ?>
@@ -156,8 +205,8 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
         </div>
     </div>
     <div class="m-t-20 p-t-20 p-b-20 p-l-20 p-r-20 bg-light">
-        <div class="row">
-            <div class="col-lg-8">
+        <div class="row d-flex">
+            <div class="col-lg-8 content-info-sondaggio">
                 <!-- <div class="mr-1">
                     <svg class="icon">
                         <use xlink:href="<?= $spriteAsset->baseUrl ?>/material-sprite.svg#ic_web"></use>
@@ -179,10 +228,29 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 </div>
                 <p class="mt-0"><?=
                 AmosSondaggi::t(
-                    'amossondaggi', '<strong>Questionario {type}</strong>',
+                    'amossondaggi', '<strong>Sondaggio {type}</strong>',
                     ['type' => \open20\amos\sondaggi\models\base\SondaggiTypes::getLabels()[$model->sondaggio_type]]
                 )
                 ?></p> -->
+
+                <?php if (AmosSondaggi::instance()->enableFrontendCompilation || AmosSondaggi::instance()->forceOnlyFrontend) { ?>
+                    <?php if ($model->frontend) { ?>
+                        <!-- Copy to clipboard -->
+                        <div class="mt-auto p-t-20">
+                            <?= Html::button('<span class="mdi mdi-content-copy"></span><small class="text-uppercase m-l-5">' . AmosSondaggi::t('amossondaggi', 'Copia link sondaggio per guest') . '</small>', [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Copia link'),
+                                'data-toggle' => 'tooltip',
+                                'data-placement' => 'top',
+                                
+                                'id' => 'copy-link-btn',
+                                'class' => 'btn btn-default btn-xs'
+                            ]); ?>
+<!--                            <small class="text-uppercase">--><?php //= AmosSondaggi::t('amossondaggi', 'Copia link sondaggio per guest'); ?><!--</small>-->
+                            <span class="m-l-10" id="copied-link-container" style="display: none"><small class="text-uppercase"><strong><?= AmosSondaggi::t('amossondaggi', 'Link copiato') ?></strong></small></span>
+                            <span class="hidden" id="frontend-url"><?= \Yii::$app->params['platform']['frontendUrl'] . '/sondaggi/frontend/compila?id=' . $model->id; ?></span>
+                        </div>
+                    <?php } ?>
+                <?php } ?>
             </div>
             <div class="col-lg-4">
                 <a class="btn btn-secondary btn-block m-t-5" href="/sondaggi/sondaggi/risultati?id=<?= $model->id ?>" target="_blank"><?=
@@ -241,37 +309,46 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                         ]);
                 }
                 ?>
-                <?php echo Html::tag('a', Amosicons::show('table', [], 'dash').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#download_participants'), [
-                   'id' => 'downloadMenuButton',
-                   'title' => AmosSondaggi::t('amossondaggi', '#download_participants'),
-                   'class' => 'btn btn-secondary btn-block dropdown-toggle m-t-5',
-                   'data-toggle' => 'dropdown',
-                   'aria-haspopup' => 'true',
-                   'aria-expanded' => 'false'
-                ]);
-                echo DropdownX::widget([
-                    'items' => [
-                        [
-                            'label' => 'Excel',
+                <?php
+                if (!empty(AmosSondaggi::instance()->enabledResultsDownloadOptions)) {
+                    if (count(AmosSondaggi::instance()->enabledResultsDownloadOptions) > 1) {
+                        echo Html::tag('a', Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'), [
+                            'id' => 'downloadMenuButton',
+                            'title' => AmosSondaggi::t('amossondaggi', 'Scarica i risultati del sondaggio'),
+                            'class' => 'btn btn-secondary btn-block dropdown-toggle m-t-5',
+                            'data-toggle' => 'dropdown',
+                            'aria-haspopup' => 'true',
+                            'aria-expanded' => 'false'
+                        ]);
+                        $items = [];
+                        foreach (AmosSondaggi::instance()->enabledResultsDownloadOptions as $type) {
+                            $items[] = [
+                                'label' => SondaggiUtility::getFileExtensionLabel()[$type],
                                 'url' => Yii::$app->urlManager->createUrl([
-                                '/'.$this->context->module->id.'/sondaggi/extract-sondaggi',
-                                'type' => 'xls',
+                                    '/' . $this->context->module->id . '/sondaggi/extract-sondaggi',
+                                    'type' => $type,
+                                    'id' => $model->id,
+                                    'url' => $url,
+                                ]),
+                            ];
+                        }
+                        echo DropdownX::widget(['items' => $items]);
+                    } else {
+                        $type = AmosSondaggi::instance()->enabledResultsDownloadOptions[0];
+                        echo Html::a(Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'),
+                            Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/sondaggi/extract-sondaggi',
+                                'type' => $type,
                                 'id' => $model->id,
                                 'url' => $url,
-                            ])
-                        ],
-                        [
-                            'label' => 'PDF',
-                                'url' => Yii::$app->urlManager->createUrl([
-                                '/'.$this->context->module->id.'/sondaggi/extract-sondaggi',
-                                'type' => 'pdf',
-                                'id' => $model->id,
-                                'url' => $url,
-                            ])
-                        ]
-                    ]
-                ]);
-            ?>
+                            ]),
+                            [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Scarica i risultati del sondaggio in formato .{type}', ['type' => $type]),
+                                'class' => 'btn btn-secondary btn-block m-t-5'
+                            ]);
+                    }
+                }
+                ?>
 
             </div>
         </div>
@@ -284,7 +361,7 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
     </div> -->
     <div class="sondaggi-report-container">
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <?php
                 if (\Yii::$app->controller->sondaggiModule->forceOnlyFrontend) {
                     $partecipazioni = $model->getNumeroPartecipazioni();
@@ -295,30 +372,42 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 ?>
                 <h4 class="m-t-20 p-t-20"><?= AmosSondaggi::t('amossondaggi', 'Report') ?></h4>
                 <?php
-                if (AmosSondaggi::instance()->hasInvitation) :
-                    if (AmosSondaggi::instance()->compilationToOrganization) :
-                        ?>
-                        <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero enti invitati') ?> </strong><?= $model->getEntiInvitati()->count() ?></p>
-                        <?php
-                    else:
-                        ?>
-                        <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero persone invitate') ?> </strong><?= $model->getElementsInvitated()->count() ?></p>
-                        <?php
-                    endif;
-                endif;
-                ?>
+                if (AmosSondaggi::instance()->hasInvitation) {
+                    if (AmosSondaggi::instance()->compilationToOrganization) {
+                        $invited = $model->getEntiInvitati()->count(); ?>
+                        <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero di organizzazioni invitate') ?> </strong><?= $invited ?></p>
+                    <?php
+                    } else {
+                        if ($isCommunitySurvey) {
+                            $invited = $model->getUsersInvited()->count();
+                        }
+                        else if (AmosSondaggi::instance()->enableInvitationsForOrganizations && !AmosSondaggi::instance()->enableInvitationsForPlatformUsers) {
+                            $invitedOrgs = $model->getElementsInvitated()->count();
+                        }
+                        else if (!AmosSondaggi::instance()->enableInvitationsForOrganizations && AmosSondaggi::instance()->enableInvitationsForPlatformUsers) {
+                            $invited = $model->getUsersInvited()->count();
+                        }
+                        else if (AmosSondaggi::instance()->enableInvitationsForOrganizations && AmosSondaggi::instance()->enableInvitationsForPlatformUsers) {
+                            $invited = $model->getUsersInvited()->count();
+                            $invitedOrgs = $model->getElementsInvitated()->count();
+                        } ?>
+
+                        <?php if (isset($invitedOrgs)) { ?>
+                            <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero di organizzazioni invitate') ?> </strong><?= $invitedOrgs ?></p>
+                        <?php } ?>
+
+                        <?php if (isset($invited)) { ?>
+                            <p><strong><?= !$isCommunitySurvey ? AmosSondaggi::t('amossondaggi', 'Numero di persone invitate') : AmosSondaggi::t('amossondaggi', 'Numero di partecipanti della community invitati') ?> </strong><?= $invited ?></p>
+                        <?php } ?>
+                    <?php }
+                } ?>
 
                 <?php
-                if (AmosSondaggi::instance()->compilationToOrganization) :
-                    ?>
-                    <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero enti che hanno compilato') ?> </strong><?= $partecipazioni ?></p>
-                    <?php
-                else:
-                    ?>
-                    <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero di persone che hanno compilato') ?> </strong><?= $partecipazioni ?></p>
-                    <?php
-                endif;
-                ?>
+                if (AmosSondaggi::instance()->compilationToOrganization) { ?>
+                    <p><strong><?= AmosSondaggi::t('amossondaggi', 'Numero di organizzazioni che hanno compilato') ?> </strong><?= $partecipazioni ?></p>
+                <?php } else { ?>
+                    <p><strong><?= !$isCommunitySurvey ? AmosSondaggi::t('amossondaggi', 'Numero di compilazioni') : AmosSondaggi::t('amossondaggi', 'Numero di partecipanti della community che hanno compilato') ?> </strong><?= $partecipazioni ?></p>
+                <?php } ?>
 
                 <?php
                 if (AmosSondaggi::instance()->enableCompilationWorkflow) :

@@ -199,7 +199,7 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $forceOnlyFrontend = false;
 
     /**
-     * enable the field "SONDAGGIO COMPILABILE IN FRONTEND"
+     * enable the field "Sondaggio compilabile da utente Guest"
      * if forceOnlyFrontend is set to false.
      * @var boolean
      */
@@ -330,6 +330,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     ];
 
     /**
+     * Specifies enabled results download options in dashboard
+     * @var string[] $enabledResultsDownloadOptions
+     */
+    public $enabledResultsDownloadOptions = ['xls', 'pdf'];
+
+    /**
      * @var bool  $resetGdpr
      * If true, user data older than 2 years will not be shown in reports
      */
@@ -339,6 +345,34 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * @var bool $additionalButtonsInAnswerCreation
      */
     public $additionalButtonsInAnswerCreation = true;
+
+    /**
+     * Download results from dashboard even if the survey is not closed
+     * @var bool $forceDownloadResults
+     */
+    public $forceDownloadResults = false;
+
+    /**
+     * Filter types showed for organizations in invitations
+     * @var bool $enableInvitationsOrganizationsFilterTypes
+     */
+    public $invitationsOrganizationsFilterTypes = [
+        'groups' => true,
+        'invited_tag' => true,
+        'compiled_tag' => true,
+    ];
+
+    /**
+     * Enable the possibility to invite organizations (amos-organizzazioni)
+     * @var bool $enableInvitationsForOrganizations
+     */
+    public $enableInvitationsForOrganizations = false;
+
+    /**
+     * Enable the possibility to invite platform users
+     * @var bool $enableInvitationsForPlatformUsers
+     */
+    public $enableInvitationsForPlatformUsers = true;
 
     /**
      * @inheritdoc
@@ -461,6 +495,7 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
             'pubblicazione' => '/sondaggi/pubblicazione/own-interest',
             'dashboard-domande' => '/sondaggi/sondaggi/manage',
             'dashboard-domande-pagine' => '/sondaggi/sondaggi/manage',
+            'dashboard-invitations' => '/sondaggi/sondaggi/manage',
         ];
     }
 

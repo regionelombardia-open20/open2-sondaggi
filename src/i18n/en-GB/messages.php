@@ -97,7 +97,8 @@ return [
     'Impossibile cancellare la pagina per la presenza di domande.' => 'Unable to delete the page for the presence of questions.',
     'Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA.' => 'The response can not be deleted because the survey it is connected to is not in the DRAFT state.',
     'Impossibile cancellare la risposta in quanto sono presenti domande condizionate da questa risposta.' => 'The answer can not be deleted because there are questions that are conditioned by this response.',
-    'Info questionario' => 'Pool info',
+    'Gestione sondaggio' => 'Manage poll',
+    'Gestione comunicazioni' => 'Manage communications',
     'Inizio compilazione' => 'Inizio compilazione',
     'Inserisci' => 'Add',
     'Inserisci domanda' => 'Add a question',
@@ -234,9 +235,9 @@ return [
     '#readMore' => 'Read more',
     'Crea nuovo' => 'Create new',
     'Importa risposte predefinite' => 'Import default answers',
-    'Sondaggio compilabile in frontend' => 'Compilable survey in frontend',
+    'Sondaggio compilabile da utente Guest' => 'Compilable survey by guests',
     'campi obbligatori' => 'required fields',
-    'Grazie per aver compilato il questionario.' => 'Thank you for completing the questionnaire.',
+    'Grazie per aver compilato il sondaggio.' => 'Thank you for completing the poll.',
 
     '#thankyoumessage' => 'Thank you for completing the questionnaire.',
     '#CONGRATULAZIONI' => 'CONGRATULATIONS',
@@ -254,6 +255,8 @@ return [
     '#delete_poll_dialog' => 'Are you sure you want to delete this poll?',
     '#publish_poll' => 'Publish poll',
     '#publish_poll_dialog' => 'Are you sure you want to publish this poll?',
+    '#publish_poll_dialog_empty_list' => '<br>WARNING: No invitations list is active',
+    '#publish_poll_dialog_invitations' => '<br>Active lists for invitations:<ul>{list}</ul>',
     '#depublish_poll' => 'Deactivate poll',
     '#depublish_poll_dialog' => 'Are you sure you want to deactivate this poll?',
     '#publication_date' => 'Publication date',
@@ -276,23 +279,23 @@ return [
     '#activate_list' => 'Activate_list',
     '#deactivate_list' => 'Deactivate_list',
     '#invito_referenteOperativo_message' => 'Gentile {nomeCognome},<br>
-sei stato invitato alla compilazione del questionario {titolo} questionario sulla piattaforma {platformName}.<br>
+sei stato invitato alla compilazione del sondaggio {titolo} sulla piattaforma {platformName}.<br>
 
-Si ricorda di completare il questionario entro la data di scadenza {data}.<br>
+Si ricorda di completare il sondaggio entro la data di scadenza {data}.<br>
 Clicca qui per accedere alla piattaforma {platformName}.<br>
 <br>
-Una volta effettuato l’accesso, è possibile compilare il questionario dal plugin QUESTIONARI.<br>
+Una volta effettuato l’accesso, è possibile compilare il sondaggio dal plugin SONDAGGI.<br>
 <br>
 Grazie per aver scelto i nostri servizi',
     '#invito_organization_subject' => 'Invito',
     '#invito_organization_message' => '{ente} sei stato invitato alla compilazione del questionario {titolo} questionario sulla piattaforma Fabbisogni Online.<br>
 <br>
-Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invitare un proprio operatore a candidarsi come responsabile ente per poter compilare il questionario.<br>
+Si segnala che l’Ente è sprovvisto di un RESPONSABILE ENTE, si prega di invitare un proprio operatore a candidarsi come responsabile ente per poter compilare il sondaggio.<br>
 <br>
 Grazie per aver scelto i nostri servizi',
     '#no_role_to_activate_pool_message' => 'You are not allowed to activate the survey',
     '#no_role_to_deactivate_pool_message' => 'You are not allowed to deactivate the survey',
-    'Gestisci questionari' => 'Pools setup',
+    'Gestisci sondaggi' => 'Manage polls',
     'Non ci sono sondaggi che corrispondono ai tuoi interessi!' => 'There are no surveys that match your interests!',
     'Clicca e scopri tutti i sondaggi della piattaforma' => 'Click and discover all polls of the platform',
     'e scopri ora tutti i sondaggi di' => 'and discover now all the polls of',
@@ -301,9 +304,21 @@ Grazie per aver scelto i nostri servizi',
     '#value' => 'Value',
     'Per partecipare alla creazione di nuovi sondaggi, {ctaLoginRegister}' => 'To participate in the creation of new polls, {ctaLoginRegister}',
     'Selezionare una risposta' => 'Select an answer',
-    'invitation_message' => 'Gentile {nomeCognome},<br>sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>Si ricorda di completare il questionario entro la data di scadenza {data}.<br><a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br><br>Grazie per aver scelto i nostri servizi.',
-    'invitation_organization_message' => '{ente}, sei stato invitato alla compilazione del questionario <a href="{urlPollCompilation}">{titolo}</a> questionario sulla piattaforma {platformName} entro la data {data}.<br><br>Si segnala che l’Ente è sprovvisto di un REFERENTE OPERATIVO, si prega di invitare un proprio operatore a candidarsi come referente operativo per poter compilare il questionario.<br><br>Grazie per aver scelto i nostri servizi.',
+    'invitation_message' => 'Gentile {nomeCognome},<br>sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName}.<br>Si ricorda di completare il sondaggio entro la data di scadenza {data}.<br><a href="{urlPlatform}">Clicca qui</a> per accedere alla piattaforma {platformName}.<br><br>Grazie per aver scelto i nostri servizi.',
+    'invitation_organization_message' => '{ente}, sei stato invitato alla compilazione del sondaggio <a href="{urlPollCompilation}">{titolo}</a> sulla piattaforma {platformName} entro la data {data}.<br><br>Si segnala che l’Ente è sprovvisto di un REFERENTE OPERATIVO, si prega di invitare un proprio operatore a candidarsi come referente operativo per poter compilare il sondaggio.<br><br>Grazie per aver scelto i nostri servizi.',
     'Eliminazione sondaggio' => 'Delete survey',
     'E\' necessario disattivare il sondaggio per procedere con l\'eliminazione. Procedere con la disattivazione del sondaggio?' => 'You must deactivate the survey to proceed with the deletion. Proceed with the deactivation of the survey?',
     'Annulla' => 'Back',
+    'Comunicazione inviata correttamente' => 'Communication sent correctly',
+    "Errore nell'invio della comunicazione a {organization}, nessuna email trovata." => "Error sending communication to {organization}, no email found.",
+    'CONCLUSO' => 'CONCLUDED',
+    'BOZZA' => 'DRAFT',
+    'PUBBLICATO' => 'PUBLISHED',
+    'Concluso' => 'Concluded',
+    'Max {x} caratteri' => 'Max {x} characters',
+    'Scarica i risultati del sondaggio' => 'Download the results of the survey',
+    'Scarica i risultati del sondaggio in formato .{type}' => 'Download the results of the survey in .{type} format',
+    'Numero di organizzazioni invitate' => 'Number of organizations invited',
+    'Numero di organizzazioni che hanno compilato' => 'Number of organizations that have compiled',
+
 ];

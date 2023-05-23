@@ -1,6 +1,7 @@
 <?php
 
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\utility\SondaggiUtility;
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use open20\amos\sondaggi\models\Sondaggi;
@@ -27,14 +28,8 @@ use open20\amos\sondaggi\models\Sondaggi;
     <div class="col-xs-12 col-sm-4"><?php echo $form->field($model, 'titolo') ?></div>
     <div class="col-xs-12 col-sm-4"><?php echo $form->field($model, 'descrizione') ?></div>
 
-    <div class="col-xs-12 col-sm-4"><?php
-        echo $form->field($model, 'status')
-            ->dropdownList([
-                null => AmosSondaggi::t('amossondaggi', '#all'),
-                Sondaggi::WORKFLOW_STATUS_BOZZA => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_BOZZA),
-                Sondaggi::WORKFLOW_STATUS_VALIDATO => AmosSondaggi::t('amossondaggi', Sondaggi::WORKFLOW_STATUS_VALIDATO),
-            ]);
-        ?>
+    <div class="col-xs-12 col-sm-4">
+        <?= $form->field($model, 'status')->dropdownList(SondaggiUtility::getSearchStatuses()); ?>
     </div>
    
     <div class="col-xs-12 col-sm-6"><?php echo $form->field($model, 'date_from')->widget(\kartik\datecontrol\DateControl::className(), [

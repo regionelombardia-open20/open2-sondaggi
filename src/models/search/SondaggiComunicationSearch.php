@@ -2,6 +2,9 @@
 
 namespace open20\amos\sondaggi\models\search;
 
+use open20\amos\organizzazioni\models\Profilo;
+use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\sondaggi\models\SondaggiInvitations;
 use Yii;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
@@ -89,4 +92,47 @@ class SondaggiComunicationSearch extends SondaggiComunication
         ]);
         return $dataProvider;
     }
+
+    /**
+     * @param $target integer
+     * @return array
+     */
+    public static function getCommunicationFilterValues($target) {
+        $data = [];
+        if ($target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
+            $data = [
+                0 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO,
+                    'name' => AmosSondaggi::t('amossondaggi', '#all_organizations_invited_to_poll')
+                ],
+                1 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO,
+                    'name' => AmosSondaggi::t('amossondaggi', '#organizations_poll_compiled')
+                ],
+                2 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO,
+                    'name' => AmosSondaggi::t('amossondaggi', '#organizations_invited_to_poll_not_compiled')
+                ]
+            ];
+        }
+        else if ($target == SondaggiInvitations::TARGET_USERS) {
+            $data = [
+                0 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO,
+                    'name' => AmosSondaggi::t('amossondaggi', 'Tutti gli utenti invitati alla compilazione del sondaggio')
+                ],
+                1 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO,
+                    'name' => AmosSondaggi::t('amossondaggi', 'Solo gli utenti che hanno compilato il sondaggio')
+                ],
+                2 => [
+                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO,
+                    'name' => AmosSondaggi::t('amossondaggi', 'Solo gli utenti invitati ma che ancora non hanno compilato il sondaggio')
+                ]
+            ];
+        }
+
+        return $data;
+    }
+
 }
