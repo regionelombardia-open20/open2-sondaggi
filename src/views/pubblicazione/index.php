@@ -8,7 +8,6 @@
  * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
-
 use open20\amos\community\models\Community;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\core\views\DataProviderView;
@@ -34,6 +33,7 @@ $js = <<<JS
   });
 JS;
 $this->registerJs($js);
+$module = AmosSondaggi::getInstance();
 
 /**
  * @var yii\web\View $this
@@ -42,7 +42,7 @@ $this->registerJs($js);
  */
 ?>
 <div class="sondaggi-index">
-    <?php // echo $this->render('_search', ['model' => $model]); ?>
+    <?php // echo $this->render('_search', ['model' => $model]);  ?>
 
     <p>
         <?php /* echo         Html::a(AmosSondaggi::t('amossondaggi', 'Nuovo {modelClass}', [
@@ -51,7 +51,7 @@ $this->registerJs($js);
     </p>
 
     <?php
-    Pjax::begin(['id'=>'pubblicazione-view']);
+    Pjax::begin(['id' => 'pubblicazione-view']);
     echo DataProviderView::widget([
         'dataProvider' => $dataProvider,
         //'filterModel' => $model,
@@ -62,50 +62,56 @@ $this->registerJs($js);
                 //'id',
                 'filemanager_mediafile_id' => [
                     'label' => AmosSondaggi::t('amossondaggi', 'Immagine'),
-                    'format' => 'html',
+                    'format' => 'raw',
                     'value' => function ($model) {
                         /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                        $mediafile = \pendalf89\filemanager\models\Mediafile::findOne($model->filemanager_mediafile_id);
-                        $url       = '/img/img_default.jpg';
-                        if ($mediafile) {
-                            $url = $model->getAvatarUrl('medium');
+                        $url = '/img/img_default.jpg';
+                        if ($model->file) {
+                            $url = $model->file->getUrl('table_small');
                         }
                         return Html::img($url,
                                 [
-                                'class' => 'gridview-image'
+                                    'class' => 'gridview-image'
                         ]);
                     }
                 ],
                 'titolo:ntext',
                 'descrizione:ntext',
-                'publish_date:date',
-                'close_date:date',
                 [
-                  'label' => AmosSondaggi::t('amossondaggi', '#sentDate'),
-                  'value' => function($model) {
-                    if ($model->getNumeroPartecipazioni(1) <= 0) return '';
-                    return \Yii::$app->formatter->asDate($model->lastSondaggiRisposteSessioniByEntity->updated_at);
-                  }
+                    'attribute' => 'publish_date',
+                    'format' => 'datetime',
+                    'label' => AmosSondaggi::t('amossondaggi', 'Data pubblicazione'),
                 ],
-                'status' => [
-                  'label' => AmosSondaggi::t('amossondaggi', '#compilazioniStatus'),
-                  'value' => function($model, $id) {
-                    return AmosSondaggi::t('amossondaggi', $model->getSondaggiRisposteSessionisByEntity()->one()->status);
-                  },
+                [
+                    'attribute' => 'close_date',
+                    'format' => 'datetime',
+                    'label' => AmosSondaggi::t('amossondaggi', 'Data chiusura'),
                 ],
-                'contesto' => [
-                    'label' => AmosSondaggi::t('amossondaggi', 'Contesto'),
+                [
+                    'attribute' => 'altro',
+                    'label' => AmosSondaggi::t('amossondaggi', 'Altre info'),
+                    'format' => 'html',
                     'value' => function ($model) {
-                        /** @var Sondaggi $model */
+                        $text = "";
+                        $entityLast = $model->lastSondaggiRisposteSessioniByEntity;
+                        $entity = $model->getSondaggiRisposteSessionisByEntity()->one();
+                        if ($model->getNumeroPartecipazioni(1) > 0 && !empty($entityLast)) {
+                            $text .= "<strong>" . AmosSondaggi::t('amossondaggi', '#sentDate') . "</strong>:<br>" . \Yii::$app->formatter->asDate($entityLast->updated_at) . "<br>";
+                        }
+                        if (!empty($entity) && !empty($entity->status)) {
+                            $text .= "<strong>" . AmosSondaggi::t('amossondaggi', '#compilazioniStatus') . "</strong>:<br>" . AmosSondaggi::t('amossondaggi', $entity->status) . "<br>";
+                        }
+                        $context = AmosSondaggi::t('amossondaggi', 'Piattaforma');
                         if ($model->isCommunitySurvey()) {
                             /** @var Community $community */
                             $community = Community::findOne($model->community_id);
                             if ($community) {
-                                return AmosSondaggi::t('amossondaggi', 'Community') . ' ' . $community->name;
+                                $context = AmosSondaggi::t('amossondaggi', 'Community') . ' ' . $community->name;
                             }
                         }
-                        return AmosSondaggi::t('amossondaggi', 'Piattaforma');
-                    },
+                        $text .= "<strong>" . AmosSondaggi::t('amossondaggi', 'Contesto') . "</strong>:<br>" . $context;
+                        return $text;
+                    }
                 ],
                 //['attribute'=>'created_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
 //            ['attribute'=>'updated_at','format'=>['datetime',(isset(Yii::$app->modules['datecontrol']['displaySettings']['datetime'])) ? Yii::$app->modules['datecontrol']['displaySettings']['datetime'] : 'd-m-Y H:i:s A']],
@@ -116,23 +122,23 @@ $this->registerJs($js);
 //            'version',
                 [
                     'class' => 'open20\amos\core\views\grid\ActionColumn',
-                    'template' => '{anteprima} {compila}',
+                    'template' => '{anteprima} {compila} {risultati}',
                     'buttons' => [
                         'anteprima' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                             $url = \yii\helpers\Url::current();
                             if ($model->getNumeroPartecipazioni(1) > 0) {
-                              return Html::a(AmosIcons::show('eye'),
-                                      Yii::$app->urlManager->createUrl([
-                                          '/'.$this->context->module->id.'/pubblicazione/compila',
-                                          'id' => $model->id,
-                                          'url' => $url,
-                                          'read' => true
-                                      ]),
-                                      [
-                                      'class' => 'btn btn-tool-secondary',
-                                      'title' => AmosSondaggi::t('amossondaggi', '#view_compilation'),
-                                      ]);
+                                return Html::a(AmosIcons::show('eye'),
+                                                Yii::$app->urlManager->createUrl([
+                                                    '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                    'id' => $model->id,
+                                                    'url' => $url,
+                                                    'read' => true
+                                                ]),
+                                                [
+                                                    'class' => 'btn btn-tool-secondary',
+                                                    'title' => AmosSondaggi::t('amossondaggi', '#view_compilation'),
+                                ]);
                             } else {
                                 return '';
                             }
@@ -142,37 +148,34 @@ $this->registerJs($js);
                             $url = \yii\helpers\Url::current();
                             //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
 
-                            if (!$model->hasCompilazioniSuperate() && $model->isCompilable()) {
+                            if (!$model->hasCompilazioniSuperate() && $model->isCompilable() && !\Yii::$app->getUser()->can('SONDAGGI_LETTORE_RISULTATI')) {
                                 $compilazioni = $model->getNumeroPartecipazioni(1);
-                                $module       = AmosSondaggi::instance();
-                                if ($compilazioni > 0 && $module->enableSingleCompilation == true && $module->enableRecompile
-                                    == true) {
+                                $module = AmosSondaggi::instance();
+                                if ($compilazioni > 0 && $module->enableSingleCompilation == true && $module->enableRecompile == true) {
                                     $stato = $model->getSondaggiRisposteSessionis()->one()->status;
 
                                     return Html::a(AmosIcons::show('spellcheck'),
-                                            Yii::$app->urlManager->createUrl([
-                                                '/'.$this->context->module->id.'/pubblicazione/compila',
-                                                'id' => $model->id,
-                                                'url' => $url
-                                            ]),
-                                            [
-                                            'data-confirm' => (($stato != \open20\amos\sondaggi\models\SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA
-                                            && $stato != null) ? AmosSondaggi::t('amossondaggi',
-                                                'Attenzione! La ri-compilazione rimetterà il sondaggio in stato Bozza')
-                                                : null),
-                                            'title' => AmosSondaggi::t('amossondaggi', '#recompile_poll'),
-                                            'class' => 'btn btn-tool-secondary'
+                                                    Yii::$app->urlManager->createUrl([
+                                                        '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                        'id' => $model->id,
+                                                        'url' => $url
+                                                    ]),
+                                                    [
+                                                        'data-confirm' => (($stato != \open20\amos\sondaggi\models\SondaggiRisposteSessioni::WORKFLOW_STATUS_BOZZA && $stato != null) ? AmosSondaggi::t('amossondaggi',
+                                                                'Attenzione! La ri-compilazione rimetterà il sondaggio in stato Bozza') : null),
+                                                        'title' => AmosSondaggi::t('amossondaggi', '#recompile_poll'),
+                                                        'class' => 'btn btn-tool-secondary'
                                     ]);
                                 } else {
                                     return Html::a(AmosIcons::show('spellcheck'),
-                                            Yii::$app->urlManager->createUrl([
-                                                '/'.$this->context->module->id.'/pubblicazione/compila',
-                                                'id' => $model->id,
-                                                'url' => $url
-                                            ]),
-                                            [
-                                            'title' => AmosSondaggi::t('amossondaggi', '#compile_poll'),
-                                            'class' => 'btn btn-tool-secondary'
+                                                    Yii::$app->urlManager->createUrl([
+                                                        '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                        'id' => $model->id,
+                                                        'url' => $url
+                                                    ]),
+                                                    [
+                                                        'title' => AmosSondaggi::t('amossondaggi', '#compile_poll'),
+                                                        'class' => 'btn btn-tool-secondary'
                                     ]);
                                 }
                             } else {
@@ -180,24 +183,44 @@ $this->registerJs($js);
                             }
                         },
                         'visualizza' => function ($url, $model) {
-                          /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
-                          $url = \yii\helpers\Url::current();
-                          //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                            $url = \yii\helpers\Url::current();
+                            //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
 
-                          if (!$model->getNumeroPartecipazioni(1) > 0) {
-                                  return Html::a(AmosIcons::show('file'),
-                                          Yii::$app->urlManager->createUrl([
-                                              '/'.$this->context->module->id.'/pubblicazione/compila',
-                                              'id' => $model->id,
-                                              'url' => $url,
-                                              'read' => true
-                                          ]),
-                                          [
-                                          'title' => AmosSondaggi::t('amossondaggi', '#view_compilation'),
-                                          'class' => 'btn btn-tool-secondary'
-                                  ]);
-                          }
-                      }
+                            if (!$model->getNumeroPartecipazioni(1) > 0) {
+                                return Html::a(AmosIcons::show('file'),
+                                                Yii::$app->urlManager->createUrl([
+                                                    '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                    'id' => $model->id,
+                                                    'url' => $url,
+                                                    'read' => true
+                                                ]),
+                                                [
+                                                    'title' => AmosSondaggi::t('amossondaggi', '#view_compilation'),
+                                                    'class' => 'btn btn-tool-secondary'
+                                ]);
+                            }
+                        },
+                        'risultati' => function ($url, $model) {
+                            /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
+                            $url = \yii\helpers\Url::current();
+                            //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
+
+                            if(\Yii::$app->getUser()->can('SONDAGGI_LETTORE_RISULTATI')) {
+                                return Html::a(AmosIcons::show('file'),
+                                    Yii::$app->urlManager->createUrl([
+                                        '/' . $this->context->module->id . '/dashboard/dashboard',
+                                        'id' => $model->id,
+                                        'url' => $url,
+                                    ]),
+                                    [
+                                        'title' => AmosSondaggi::t('amossondaggi', 'View results'),
+                                        'class' => 'btn btn-tool-secondary'
+                                    ]);
+                            } else {
+                                return '';
+                            }
+                        }
                     ]
                 ],
             ],
@@ -205,33 +228,33 @@ $this->registerJs($js);
         'listView' => [
             'itemView' => '_item',
             'viewParams' => [
-                'hideStatusPoll' => true,
+                'hideStatusPoll' => $module->hideStatusPoll,
                 'hideDateEnd' => true
             ],
         ], /*
-          'iconView' => [
-          'itemView' => '_icon'
-          ],
-          'mapView' => [
-          'itemView' => '_map',
-          'markerConfig' => [
-          'lat' => 'domicilio_lat',
-          'lng' => 'domicilio_lon',
-          ]
-          ],
-          'calendarView' => [
-          'itemView' => '_calendar',
-          'clientOptions' => [
-          //'lang'=> 'de'
-          ],
-          'eventConfig' => [
-          //'title' => 'titoloEvento',
-          //'start' => 'data_inizio',
-          //'end' => 'data_fine',
-          //'color' => 'coloreEvento',
-          //'url' => 'urlEvento'
-          ],
-          ] */
+              'iconView' => [
+              'itemView' => '_icon'
+              ],
+              'mapView' => [
+              'itemView' => '_map',
+              'markerConfig' => [
+              'lat' => 'domicilio_lat',
+              'lng' => 'domicilio_lon',
+              ]
+              ],
+              'calendarView' => [
+              'itemView' => '_calendar',
+              'clientOptions' => [
+              //'lang'=> 'de'
+              ],
+              'eventConfig' => [
+              //'title' => 'titoloEvento',
+              //'start' => 'data_inizio',
+              //'end' => 'data_fine',
+              //'color' => 'coloreEvento',
+              //'url' => 'urlEvento'
+              ],
+              ] */
     ]);
     Pjax::end();
     ?>
@@ -240,7 +263,7 @@ $this->registerJs($js);
 echo ModalUtility::amosModal([
     'id' => 'modal_users_list',
     'headerClass' => 'modal-utility-confirm',
-    'headerText' => AmosIcons::show('user').AmosSondaggi::t('AmosSondaggi', '#assign_compiler'),
+    'headerText' => AmosIcons::show('user') . AmosSondaggi::t('AmosSondaggi', '#assign_compiler'),
     'modalBodyContent' => '<div id="modal_users_content"></div>',
     'modalClassSize' => 'modal-lg'
 ]);

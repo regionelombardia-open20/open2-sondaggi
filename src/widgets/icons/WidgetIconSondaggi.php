@@ -35,13 +35,17 @@ class WidgetIconSondaggi extends WidgetIcon
         $this->setLabel(AmosSondaggi::tHtml('amossondaggi', 'Gestione sondaggi'));
         $this->setDescription(AmosSondaggi::t('amossondaggi', 'Gestisce i sondaggi'));
 
-        if (!empty(Yii::$app->params['dashboardEngine']) && Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
+        if(!empty(Yii::$app->params['twoColorIcons'])){
+            $this->setIconFramework(AmosIcons::TWOTONES);
+            $this->setIcon('poll');
+        }else if (!empty(Yii::$app->params['dashboardEngine']) && Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
             $this->setIconFramework(AmosIcons::IC);
             $this->setIcon('sondaggi');
             $paramsClassSpan = [];
         } else {
             $this->setIcon('quote-right');
         }
+
 
         $this->setUrl(['/sondaggi/sondaggi/index']);
         $this->setCode('SONDAGGI');

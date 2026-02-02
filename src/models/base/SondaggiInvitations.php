@@ -115,8 +115,21 @@ abstract class SondaggiInvitations extends \open20\amos\core\record\Record
             'active' => AmosSondaggi::t('amossondaggi', 'Attiva'),
             'invited' => AmosSondaggi::t('amossondaggi', 'Invitati'),
             'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Poll ID'),
-            'invitation_class' => AmosSondaggi::t('amossondaggi', 'Classe To'),
-            'invitation_id' => AmosSondaggi::t('amossondaggi', 'ID To')
+            'type' => AmosSondaggi::t('amossondaggi', 'Tipo'),
+            'filter_type' => AmosSondaggi::t('amossondaggi', 'Tipo di filtro'),
+            'search_users' => AmosSondaggi::t('amossondaggi', 'Utenti per la ricerca'),
+            'search_groups' => AmosSondaggi::t('amossondaggi', 'Gruppi per la ricerca'),
+            'search_tags' => AmosSondaggi::t('amossondaggi', 'Tag per la ricerca'),
+            'field' => AmosSondaggi::t('amossondaggi', 'Campo'),
+            'value' => AmosSondaggi::t('amossondaggi', 'Valore'),
+            'include_exclude' => AmosSondaggi::t('amossondaggi', 'Include Esclude'),
+            'query' => AmosSondaggi::t('amossondaggi', 'Query'),
+            'created_at' => AmosSondaggi::t('amossondaggi', 'Creato il'),
+            'updated_at' => AmosSondaggi::t('amossondaggi', 'Aggiornato il'),
+            'deleted_at' => AmosSondaggi::t('amossondaggi', 'Cancellato il'),
+            'created_by' => AmosSondaggi::t('amossondaggi', 'Creato da'),
+            'updated_by' => AmosSondaggi::t('amossondaggi', 'Aggiornato da'),
+            'deleted_by' => AmosSondaggi::t('amossondaggi', 'Cancellato da'),
         ];
     }
 

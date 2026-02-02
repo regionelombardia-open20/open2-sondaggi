@@ -279,4 +279,5 @@ class SondaggiDomandePagineController extends CrudController
             return $this->redirect(['index', 'idSondaggio' => $idSondaggio, 'url' => $url]);
         }
     }
+       
 }

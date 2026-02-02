@@ -1,53 +1,110 @@
 <?php
 
+use \yii\web\View;
 use open20\amos\core\helpers\Html;
 use open20\amos\sondaggi\AmosSondaggi;
+use open20\amos\core\forms\TextEditorWidget;
+
+/** @var open20\amos\sondaggi\models\Sondaggi $model */
+/** @var yii\widgets\ActiveForm $form */
+/** @var AmosSondaggi $sondaggiModule */
+$sondaggiModule = AmosSondaggi::instance();
+
+$js = <<<JS
+    var selPdfComp = $("#sondaggi-send_pdf_to_compiler").is(":checked");
+    
+    setVisibilityMailMap = function(value){        
+        if(value){
+            $('#mail-map-no-reg').show();
+        } else {
+            $('#mail-map-no-reg').hide();
+        }
+    }
+        
+    setVisibilityMailMap(selPdfComp);
+    
+    $("#sondaggi-send_pdf_to_compiler").on("change", function() {
+        var selPdfComp2 = $("#sondaggi-send_pdf_to_compiler").is(":checked");
+        setVisibilityMailMap(selPdfComp2);
+    });
+JS;
+$this->registerJs($js, View::POS_READY);
 ?>
 <div class="row">
     <div>
         <?php
+        if (!$sondaggiModule->enableAnonimousPoll) {
+
+            echo Html::tag(
+                    'div', $form->field($model, 'send_pdf_to_compiler')->checkbox(), ['class' => 'col-sm-12']
+            );
+            ?>
+            <div id="mail-map-no-reg">
+                <div class="col-md-12">          
+                    <?= $form->field($model, 'mail_subject_send_pdf_guest')->textinput() ?>
+                </div>
+                <div class="col-lg-12">
+                    <?=
+                    $form->field($model, 'mail_send_pdf_guest')->widget(TextEditorWidget::className(),
+                            [
+                                'clientOptions' => [
+                                    'placeholder' => AmosSondaggi::t('amossondaggi', '#insert_text'),
+                                    'lang' => substr(Yii::$app->language, 0, 2)
+                                ]
+                            ])
+                    ?>
+                </div>          
+            </div><?php
+        }
+
         echo Html::tag(
-            'div', $form->field($model, 'send_pdf_to_compiler')->checkbox(), ['class' => 'col-sm-12']
+                'div', $form->field($model, 'send_pdf_via_email')->checkbox(), ['class' => 'col-sm-12']
         );
 
         echo Html::tag(
-            'div', $form->field($model, 'send_pdf_via_email')->checkbox(), ['class' => 'col-sm-12']
+                'div', $form->field($model, 'send_pdf_via_email_closed')->checkbox(), ['class' => 'col-sm-12']
         );
 
         echo Html::tag(
-            'div', $form->field($model, 'send_pdf_via_email_closed')->checkbox(), ['class' => 'col-sm-12']
+                'div',
+                $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
+                        ->label(AmosSondaggi::t('amossondaggi', '#compiled_poll_emails_option')), ['class' => 'col-sm-12']
         );
 
-        echo Html::tag(
-            'div',
-            $form->field($model, 'additional_emails')->textarea(['placeholder' => 'email1@example.it; email2@example.it; email3@example.it'])
-                ->label(AmosSondaggi::t('amossondaggi', '#compiled_poll_emails_option')), ['class' => 'col-sm-12']
-        );
-
-        if (AmosSondaggi::instance()->enableRedirectionUrl) { ?>
+        if (AmosSondaggi::instance()->enableRedirectionUrl) {
+            ?>
             <div class="col-md-12">
                 <hr/>
                 <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
             </div>
-        <?php }
+            <?php
+        }
 
-
-        if (empty($model->compilazioni_disponibili)) $model->compilazioni_disponibili = 1;
-
-        echo Html::tag(
-            'div', $form->field($model, 'compilazioni_disponibili')->textInput(['disabled' => true])->label(false),
-            ['class' => 'col-sm-12 hidden']
-        );
+        if (is_null($model->compilazioni_disponibili)) {
+            $model->compilazioni_disponibili = $sondaggiModule->defaultCompilazioniDisponibili;
+        }
+        if (empty($sondaggiModule->enableChooseNumberOfCompilations)) {
+            echo Html::activeHiddenInput($model, 'compilazioni_disponibili');
+        } else {
+            echo Html::tag('div', $form->field($model, 'compilazioni_disponibili')
+                            ->input('number', [
+                                'min' => 0,
+                                'step' => 1,
+                            ])
+                            ->hint(AmosSondaggi::t('amossondaggi', '#compilazioni_disponibili_hint')),
+                    ['class' => 'col-sm-12']
+            );
+        }
         ?>
     </div>
     <?php
     if (!$sondaggiModule->forceOnlyFrontend) { // Se non è settata l'intenzione di forzare il campo frontend forzatamente a 1
-        if ($sondaggiModule->enableFrontendCompilation && !$model->isCommunitySurvey()) {
+        if ($sondaggiModule->forceEnableFrontendCompilation || ($sondaggiModule->enableFrontendCompilation && !$model->isCommunitySurvey())) {
             ?>
             <div class="col-md-12"><hr/>
                 <?=
                 $form->field($model, 'frontend')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'), 1 => AmosSondaggi::t('amossondaggi',
-                        'Si')]);
+                            'Si')]);
                 ?>
             </div>
             <?php
@@ -68,10 +125,14 @@ use open20\amos\sondaggi\AmosSondaggi;
     </div>
     <div class="col-md-12">
         <?=
-        $form->field($model, 'abilita_registrazione')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
-            1 => AmosSondaggi::t('amossondaggi', 'Si')])
+                $form->field($model, 'abilita_registrazione')->dropDownlist([
+                    //1 => AmosSondaggi::t('amossondaggi', 'Abilita registrazione automatica dell\'utente al termine del sondaggio'),
+                    2 => AmosSondaggi::t('amossondaggi', 'Abilita mappatura campi senza registrazione')
+                        ],
+                        ['prompt' => AmosSondaggi::t('amossondaggi', 'Seleziona...')])
+                ->label(AmosSondaggi::t('amossondaggi', 'Funzioni speciali'))
         ?>
-    </div>
+    </div>    
     <div class="col-md-12">
         <?php
         $moduleTranslation = \Yii::$app->getModule('translation');
@@ -79,7 +140,7 @@ use open20\amos\sondaggi\AmosSondaggi;
 
         if (!empty($moduleTranslation)) {
             $arrLanguage = (new \yii\db\Query())->from('language')->andWhere(['=', 'status', 1])->select(['language_id',
-                    'name'])->all();
+                        'name'])->all();
             foreach ($arrLanguage as $k => $v) {
                 $languages[$v['language_id']] = $v['name'];
             }
@@ -87,25 +148,25 @@ use open20\amos\sondaggi\AmosSondaggi;
         ?>
         <?=
         $form->field($model, 'forza_lingua')->dropDownlist($languages,
-            ['prompt' => AmosSondaggi::t('amossondaggi', 'Non forzare. Usa quella dell\'utente')]);
+                ['prompt' => AmosSondaggi::t('amossondaggi', 'Non forzare. Usa quella dell\'utente')]);
         ?>
     </div>
-     <?php if ($sondaggiModule->enableForceLanguageByGet) { ?>
+    <?php if ($sondaggiModule->enableForceLanguageByGet) { ?>
         <div class="col-md-12">
-        <?=
+            <?=
             $form->field($model, 'use_get_language')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
                 1 => AmosSondaggi::t('amossondaggi', 'Si')])
             ?>
         </div>
-        <?php } ?>
-        <?php if ($sondaggiModule->enableExtraFieldByGet) { ?>
+    <?php } ?>
+    <?php if ($sondaggiModule->enableExtraFieldByGet) { ?>
         <div class="col-md-12">
             <?=
             $form->field($model, 'field_extra')->dropDownlist([0 => AmosSondaggi::t('amossondaggi', 'No'),
                 1 => AmosSondaggi::t('amossondaggi', 'Si')])
             ?>
         </div>
-        <?php } ?>
+    <?php } ?>
 </div>
 
 <?php if ($sondaggiModule->enableCriteriValutazione) { ?>

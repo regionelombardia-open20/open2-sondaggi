@@ -382,7 +382,7 @@ class SondaggiDomande extends \open20\amos\sondaggi\models\base\SondaggiDomande
             if ($domande->count() > 0) {
                 if ($ordine > $domande->one()['ordinamento']) {
                     $domanda = SondaggiDomande::findOne(['ordinamento' => $domande->one()['ordinamento'], 'sondaggi_domande_pagine_id' => $this->sondaggi_domande_pagine_id]);
-                    if (count($domanda) == 1) {
+                    if (!empty($domanda)) {
                         return $domanda->id;
                     }
                 }

@@ -36,7 +36,10 @@ class WidgetIconCompilaSondaggiOwnInterest extends WidgetIcon
         $this->setLabel(AmosSondaggi::tHtml('amossondaggi', 'Sondaggi di mio interesse'));
         $this->setDescription(AmosSondaggi::t('amossondaggi', 'Permette di compilare e completare i sondaggi di tuo interesse'));
 
-        if (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
+        if(!empty(Yii::$app->params['twoColorIcons'])){
+            $this->setIconFramework(AmosIcons::TWOTONES);
+            $this->setIcon('poll');
+        }else if  (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
             $this->setIconFramework(AmosIcons::IC);
             $this->setIcon('sondaggi');
             $paramsClassSpan = [];

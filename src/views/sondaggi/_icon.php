@@ -58,7 +58,7 @@ if (isset($dateEnd)) {
                         <?= ContextMenuWidget::widget([
                             'model' => $model,
                             'actionModify' => "/sondaggi/dashboard/dashboard?id=" . $model->id,
-                            'actionDelete' => "/sondaggi/sondaggi/delete?id=" . $model->id,
+                            'actionDelete' => "/sondaggi/sondaggi/delete?id=" . $model->id.'&url='.\yii\helpers\Url::current(),
                             'labelModify' => \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ? AmosSondaggi::t('amossondaggi', 'Modifica') : AmosSondaggi::t('amossondaggi', 'Gestisci'),
                             'mainDivClasses' => ''
                         ]) ?>
@@ -134,20 +134,23 @@ if (isset($dateEnd)) {
                 $url = \yii\helpers\Url::current();
                 //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
 
-                if (!$model->isCompilable() && \Yii::$app->user->can('COMPILA_SONDAGGIO', ['model' => $model])) {
-                    echo Html::a(
-                        AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
-                        Yii::$app->urlManager->createUrl([
-                            '/' . $this->context->module->id . '/pubblicazione/compila',
-                            'id' => $model->id,
-                            'url' => $url,
-                        ]),
-                        [
-                            'class' => 'read-more m-t-10',
-                            'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
-                        ]
-                    );
-                }
+                if (!$model->isCompilable() && \Yii::$app->user->can('COMPILA_SONDAGGIO', ['model' => $model])) { ?>
+                    <div class="read-more-container">
+                    
+                        <?php echo Html::a(
+                            AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
+                            Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/pubblicazione/compila',
+                                'id' => $model->id,
+                                'url' => $url,
+                            ]),
+                            [
+                                'class' => 'read-more m-t-10',
+                                'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
+                            ]
+                        ); ?>
+                    </div>
+                <?php }
                 ?>
             </div>
 

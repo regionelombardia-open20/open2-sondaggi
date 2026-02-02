@@ -5,8 +5,8 @@ IMPORT AMOS-LAYOUT VARIABLES
 @import (optional) "../../vendor/open20/amos-layout/src/assets/resources/base/less/v2/utility.less";
 
 /**
-  IMPORT STYLE-CUSTOM
-   */
+   IMPORT STYLE-CUSTOM
+    */
 @import (optional) "../../frontend/web/less/style_custom.less";
 
 .sondaggi-item-list-wrapper {
@@ -30,43 +30,64 @@ IMPORT AMOS-LAYOUT VARIABLES
         border-bottom: 1px solid #e9e6f2;
         padding: 24px 0;
 
-        .content-date-img {
-            display: flex;
-            text-align: center;
-            line-height: 1;
-            height: 100%;
-            position: relative;
+        .date-list {
+            min-width: 95px;
 
-            .date-start {
-                border-left: 10px solid @primary-color;
-                padding: 0 6px;
+            .content-date {
                 display: flex;
-                flex-direction: column;
-                justify-content: center;
-                text-transform: uppercase;
+                text-align: center;
+                line-height: 1;
+                height: 100%;
+                position: relative;
 
-                .lead {
-                    margin: 0;
+                .date-start {
+                    border-left: 10px solid @primary-color;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    text-transform: uppercase;
+                    width: 100%;
+
+                    .lead {
+                        margin: 0;
+                    }
+
+                    span {
+                        padding: 0 2px;
+                        line-height: 1;
+
+                    }
                 }
 
-                span {
-                    padding: 0 2px;
-                    line-height: 1;
 
-                }
             }
+        }
+
+
+
+        .image-list {
+            // min-width: 230px;
+            max-width: 230px;
 
             .img-sondaggio {
                 width: 100%;
+                height: 100%;
 
                 img {
                     object-fit: cover;
                     min-height: 100%;
                     width: 100%;
-                    max-height: 130px;
+                    // max-height: 130px;
+                    // aspect-ratio: 16 / 9;
                 }
             }
         }
+
+        .description-list {
+            flex-grow: 1;
+            padding-left: 16px;
+        }
+
 
         .content-text-sondaggi {
             display: flex;
@@ -167,14 +188,22 @@ IMPORT AMOS-LAYOUT VARIABLES
 
 
 
-    a.read-more {
-        position: relative;
-        bottom: 0;
-        text-transform: uppercase;
-        font-weight: bold;
-        letter-spacing: 0.9px;
-        font-size: 0.7777777778rem;
+    .read-more-container {
+        display: flex;
+        justify-content: flex-end;
+        flex-grow: 1;
+
+        a.read-more {
+            position: relative;
+            bottom: 0;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 0.9px;
+            font-size: 0.7777777778rem;
+
+        }
     }
+
 
     a.assign-compiler-menu {
         text-transform: uppercase;
@@ -240,7 +269,6 @@ IMPORT AMOS-LAYOUT VARIABLES
 
             .date-start {
                 border: 0;
-                padding: 5px 0;
                 flex-direction: row;
                 align-items: baseline;
             }
@@ -415,7 +443,7 @@ IMPORT AMOS-LAYOUT VARIABLES
             background: @light-background-primary-color;
             border-left: 15px solid @brand-primary-color;
             font-weight: normal;
-            margin-top: 25px;
+            margin-top: 12px;
         }
 
         div[class*='col-']>div[class*='col-'] {
@@ -495,6 +523,14 @@ IMPORT AMOS-LAYOUT VARIABLES
                 flex-direction: row;
                 align-items: center;
                 padding-left: 10px;
+            }
+            &.date {
+                .input-group-addon {
+                    width: 45px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
             }
         }
 

@@ -242,28 +242,28 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
     {
         if (!empty($this->status)) {
             if ($this->status == self::STATUS_CONCLUSO) {
-                $query->andWhere(['<', new Expression('DATE(close_date)'), date('Y-m-d')])
+                $query->andWhere(['<', new Expression('close_date'), date('Y-m-d H:i:s')])
                     ->andWhere(['status' => self::WORKFLOW_STATUS_VALIDATO]);
             } else {
                 $query->andFilterWhere(['status' => $this->status]);
                 if ($this->status == self::WORKFLOW_STATUS_VALIDATO) {
-                    $query->andWhere(['>=', new Expression('DATE(close_date)'), date('Y-m-d')]);
+                    $query->andWhere(['>=', new Expression('close_date'), date('Y-m-d H:i:s')]);
                 }
             }
         }
         if (! empty($this->date_from)) {
             $query->andFilterWhere([
                 '>=',
-                new Expression("DATE(publish_date)"),
-                new Expression("DATE('{$this->date_from}')")
+                'publish_date',
+                $this->date_from
             ]);
         }
 
         if (! empty($this->date_to)) {
             $query->andFilterWhere([
                 '<=',
-                new Expression("DATE(publish_date)"),
-                new Expression("DATE('{$this->date_to}')")
+                'publish_date',
+                $this->date_to
             ]);
         }
 
@@ -288,11 +288,15 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
      */
     public function searchOwnInterest($params, $limit = null)
     {
-        if (empty(Yii::$app->getUser()->getId())) return null;
+        if (Yii::$app->user->isGuest) {
+            return $this->cmsSearch($params, $limit);
+        }
         $dataProvider = parent::searchOwnInterest($params, $limit);
         $dataProvider->query->orderBy([
             'created_at' => SORT_DESC
         ]);
+        $this->hideSondaggiWithContext($dataProvider);
+
         return $dataProvider;
     }
 
@@ -366,7 +370,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
             ->andWhere([
             '<=',
             'sondaggi.publish_date',
-            new Expression('curdate()')
+            new Expression('now()')
         ]);
         $dataProvider->sort->defaultOrder = [
             'publish_date' => SORT_DESC
@@ -382,7 +386,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
         $dataProvider->query = $dataProvider->query->andWhere([
             '>=',
             'sondaggi.close_date',
-            new Expression('curdate()')
+            new Expression('now()')
         ]);
         return $dataProvider;
     }
@@ -393,7 +397,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
         $dataProvider->query = $dataProvider->query->andWhere([
             '<',
             'sondaggi.close_date',
-            new Expression('curdate()')
+            new Expression('now()')
         ]);
         return $dataProvider;
     }
@@ -528,10 +532,26 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
      */
     public function searchAll($params, $limit = null)
     {
-        return $this->search($params, "all", $limit);
+        $dataProvider = $this->search($params, 'all', $limit);
+        $this->hideSondaggiWithContext($dataProvider);
+
+        return $dataProvider;
     }
 
-    public function cmsIsVisible($id): boolean
+    /**
+     * @param $dataProvider
+     * @return ActiveDataProvider
+     */
+    protected function hideSondaggiWithContext($dataProvider)
+    {
+        // Hide sondaggi with context
+        $dataProvider->query->leftJoin('sondaggi_context', 'sondaggi.id = sondaggi_context.sondaggi_id')
+            ->andWhere(['sondaggi_context.context_id' => null]);
+
+        return $dataProvider;
+    }
+
+    public function cmsIsVisible($id): bool
     {
         $retValue = true;
         return $retValue;
@@ -666,7 +686,7 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
             $dataProvider->query->andWhere([
                 '>=',
                 'close_date',
-                new Expression('curdate()')
+                new Expression('now()')
             ]);
         return $dataProvider;
     }
@@ -680,5 +700,18 @@ class SondaggiSearch extends Sondaggi implements CmsModelInterface
     public function searchCreatedByMe($params)
     {
         return $this->search($params, 'created-by');
+    }
+
+    /**
+     * Method that searches all sondaggi to be validated.
+     *
+     * @param array $params
+     * @param int $limit
+     * @return ActiveDataProvider
+     */
+    public function searchToValidateSondaggi($params, $limit = null)
+    {
+        $this->modelClassName = get_class(new Sondaggi());
+        return $this->search($params, "to-validate", $limit);
     }
 }

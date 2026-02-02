@@ -12,36 +12,27 @@ use yii\widgets\Pjax;
  * @var yii\data\ActiveDataProvider $dataProvider
  * @var open20\amos\sondaggi\models\search\SondaggiDomandeSearch $searchModel
  */
+$js = <<<JS
 
-$this->params['forceBreadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/sondaggi/sondaggi/manage']];
-$this->params['forceBreadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Liste inviti')];
-
- $js = <<<JS
-  $('#dashboard-invitations-view').on('click', '.activate-list', function(e){
-      e.preventDefault();
-      var id = $(this).data('id');
-      var button = this;
-        $.ajax({
+	activate = function(id){
+		  $.ajax({
             url: '/sondaggi/dashboard-invitations/activate?id='+id,
             type: 'get',
             success: function () {
                 $.pjax.reload({container: '#dashboard-invitations-view', timeout: 5000});
             }
         });
-  });
-
-  $('#dashboard-invitations-view').on('click', '.deactivate-list', function(e){
-        e.preventDefault();
-        var id = $(this).data('id');
-        var button = this;
-          $.ajax({
+	}
+	
+	deactivate = function(id){
+		 $.ajax({
               url: '/sondaggi/dashboard-invitations/deactivate?id='+id,
               type: 'get',
               success: function () {
                   $.pjax.reload({container: '#dashboard-invitations-view', timeout: 5000});
               }
           });
-    });
+	}
 
 
 JS;
@@ -49,17 +40,18 @@ $this->registerJs($js);
 
 $this->title = AmosSondaggi::t('amossondaggi', '#invitation_lists');
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['/' . $this->context->module->id . '/sondaggi/manage']];
-if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
-$this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#new_f'),
-Yii::$app->urlManager->createUrl([
-    '/'.$this->context->module->id.'/dashboard-invitations/create',
-    'idSondaggio' => filter_input(INPUT_GET, 'idSondaggio'),
-    'url' => $url,
-]),
-[
-'title' => AmosSondaggi::t('amossondaggi', '#new_f'),
-'class' => 'btn btn-primary'
-]);
+if (!AmosSondaggi::instance()->enableBreadcrumbs)
+    $this->params['breadcrumbs'] = [];
+$this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#new_f'),
+                Yii::$app->urlManager->createUrl([
+                    '/' . $this->context->module->id . '/dashboard-invitations/create',
+                    'idSondaggio' => filter_input(INPUT_GET, 'idSondaggio'),
+                    'url' => $url,
+                ]),
+                [
+                    'title' => AmosSondaggi::t('amossondaggi', '#new_f'),
+                    'class' => 'btn btn-primary'
+        ]);
 ?>
 <div class="sondaggi-invitations-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
@@ -71,7 +63,7 @@ Yii::$app->urlManager->createUrl([
     </p>
 
     <?php
-    Pjax::begin(['id'=>'dashboard-invitations-view']);
+    Pjax::begin(['id' => 'dashboard-invitations-view']);
     echo DataProviderView::widget([
         'dataProvider' => $dataProvider,
         //'filterModel' => $model,
@@ -82,12 +74,6 @@ Yii::$app->urlManager->createUrl([
                 // 'id',
                 'name:ntext',
                 'count',
-                [
-                    'attribute' => 'target',
-                    'value' => function ($model) {
-                        return $model->getTargetLabel()[$model->target];
-                    }
-                ],
                 'active:statosino',
                 'invited:statosino',
                 [
@@ -95,22 +81,25 @@ Yii::$app->urlManager->createUrl([
                     'template' => '{enable}{update}{delete}',
                     'buttons' => [
                         'enable' => function ($url, $model) {
-                            if (AmosSondaggi::instance()->disableInvitationsDeletionAfterSent && $model->invited) return '';
+                            if (AmosSondaggi::instance()->disableInvitationsDeletionAfterSent && $model->invited)
+                                return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('minus-circle'), '#', [
-                                    'title' => AmosSondaggi::t('amossondaggi', '#deactivate_list'),
-                                    'class' => 'btn btn-danger deactivate-list',
-                                    'style' => $model->active ? null : 'display:none !important',
-                                    'data' => [
-                                        'id' => $model->id
-                                    ]
-                                ]).Html::a(AmosIcons::show('check-circle'), '#', [
-                                    'title' => AmosSondaggi::t('amossondaggi', '#activate_list'),
-                                    'class' => 'btn btn-success activate-list',
-                                    'style' => $model->active ? 'display:none !important' : null,
-                                    'data' => [
-                                        'id' => $model->id
-                                    ]
+                                            'title' => AmosSondaggi::t('amossondaggi', '#deactivate_list'),
+                                            'class' => 'btn btn-danger deactivate-list',
+                                            'style' => $model->active ? null : 'display:none !important',
+                                            'data' => [
+                                                'id' => $model->id
+                                            ],
+                                            'onclick' => "deactivate(" . $model->id . ")",
+                                        ]) . Html::a(AmosIcons::show('check-circle'), '#', [
+                                            'title' => AmosSondaggi::t('amossondaggi', '#activate_list'),
+                                            'class' => 'btn btn-success activate-list',
+                                            'style' => $model->active ? 'display:none !important' : null,
+                                            'data' => [
+                                                'id' => $model->id
+                                            ],
+                                            'onclick' => "activate(" . $model->id . ")",
                                 ]);
                             } else {
                                 return '';
@@ -118,16 +107,17 @@ Yii::$app->urlManager->createUrl([
                         },
                         'update' => function ($url, $model) {
                             $url = \yii\helpers\Url::current();
-                            if ($model->invited) return '';
+                            if ($model->invited)
+                                return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('edit'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/dashboard-invitations/update',
-                                    'id' => $model->id,
-                                    'idSondaggio' => $model->sondaggi_id,
-                                    'url' => $url,
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', 'Modifica'),
-                                    'class' => 'btn btn-tool-secondary'
+                                                    '/' . $this->context->module->id . '/dashboard-invitations/update',
+                                                    'id' => $model->id,
+                                                    'idSondaggio' => $model->sondaggi_id,
+                                                    'url' => $url,
+                                                ]), [
+                                            'title' => AmosSondaggi::t('amossondaggi', 'Modifica'),
+                                            'class' => 'btn btn-tool-secondary'
                                 ]);
                             } else {
                                 return '';
@@ -136,16 +126,17 @@ Yii::$app->urlManager->createUrl([
                         'delete' => function ($url, $model) {
                             /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
                             $url = \yii\helpers\Url::current();
-                              if ($model->invited) return '';
+                            if ($model->invited)
+                                return '';
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                                 return Html::a(AmosIcons::show('delete'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/dashboard-invitations/delete',
-                                    'id' => $model->id,
-                                    'idSondaggio' => $model->sondaggi_id,
-                                    'url' => $url,
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', 'Cancella'),
-                                    'class' => 'btn btn-danger-inverse'
+                                                    '/' . $this->context->module->id . '/dashboard-invitations/delete',
+                                                    'id' => $model->id,
+                                                    'idSondaggio' => $model->sondaggi_id,
+                                                    'url' => $url,
+                                                ]), [
+                                            'title' => AmosSondaggi::t('amossondaggi', 'Cancella'),
+                                            'class' => 'btn btn-danger-inverse',
                                 ]);
                             } else {
                                 return '';
@@ -166,3 +157,4 @@ Yii::$app->urlManager->createUrl([
         ?>
     </p>
 </div>
+

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Aria S.p.A.
  * OPEN 2.0
@@ -26,6 +27,8 @@ use open20\amos\sondaggi\AmosSondaggi;
  * @property string $titolo
  * @property string $descrizione
  * @property integer $send_pdf_via_email
+ * @property string $mail_subject_send_pdf_guest
+ * @property string $mail_send_pdf_guest
  * @property integer $additional_emails
  * @property integer $compilazioni_disponibili
  * @property integer $sondaggi_stato_id
@@ -58,33 +61,39 @@ use open20\amos\sondaggi\AmosSondaggi;
  *
  * @package open20\amos\sondaggi\models\base
  */
-abstract class Sondaggi extends ContentModel
-{
+abstract class Sondaggi extends ContentModel {
+
     const SCENARIO_CREATE = 'create';
     const SCENARIO_UPDATE = 'update';
 
     /**
      * @inheritdoc
      */
-    public static function tableName()
-    {
+    public static function tableName() {
         return 'sondaggi';
     }
 
     /**
      * @inheritdoc
      */
-    public function rules()
-    {
+    public function rules() {
         return [
             [['titolo', 'sondaggio_type', 'descrizione', 'publish_date', 'close_date'], 'required'],
-            [['descrizione', 'additional_emails', 'thank_you_page', 'url_sondaggio_non_compilabile', 'url_chiudi_sondaggio', 'link_landing_page', 'testo_sondaggio_non_compilabile_front', 'titolo_fine_sondaggio_front', 'testo_fine_sondaggio_front', 'mail_mittente_nuovo_utente', 'mail_soggetto_nuovo_utente', 'mail_contenuto_nuovo_utente', 'mail_mittente_utente_presente', 'mail_soggetto_utente_presente', 'mail_contenuto_utente_presente', 'mail_registrazione_mittente', 'mail_registrazione_soggetto', 'mail_registrazione_corpo', 'mail_conf_community_mittente', 'mail_conf_community_soggetto', 'mail_conf_community_corpo', 'forza_lingua', 'thank_you_page_sondaggio_chiuso'], 'string'],
+            [['descrizione', 'additional_emails', 'thank_you_page', 'url_sondaggio_non_compilabile',
+            'link_landing_page', 'testo_sondaggio_non_compilabile_front', 'titolo_fine_sondaggio_front',
+            'testo_fine_sondaggio_front', 'mail_mittente_nuovo_utente', 'mail_soggetto_nuovo_utente',
+            'mail_contenuto_nuovo_utente', 'mail_mittente_utente_presente', 'mail_soggetto_utente_presente',
+            'mail_contenuto_utente_presente', 'mail_registrazione_mittente', 'mail_registrazione_soggetto',
+            'mail_registrazione_corpo', 'mail_conf_community_mittente', 'mail_conf_community_soggetto',
+            'mail_conf_community_corpo', 'forza_lingua', 'thank_you_page_sondaggio_chiuso', 'mail_subject_send_pdf_guest'], 'string'],
+            ['mail_send_pdf_guest', \open20\amos\core\validators\StringHtmlValidator::className()],
+            [['url_chiudi_sondaggio'], 'url', 'defaultScheme' => 'http'],
             [['status', 'titolo', 'sottotitolo'], 'string', 'max' => 255],
-            [['publish_date', 'close_date'], 'date', 'format' => 'php:Y-m-d'],
-            ['publish_date', 'compare', 'compareValue' => date('Y-m-d'), 'operator' => '>=', 'on' => self::SCENARIO_CREATE],
+            [['publish_date', 'close_date'], 'date', 'format' => 'php:Y-m-d H:i:s'],
+            ['publish_date', 'compare', 'compareValue' => date('Y-m-d H:i:00'), 'operator' => '>=', 'on' => self::SCENARIO_CREATE],
             ['close_date', 'compare', 'compareAttribute' => 'publish_date', 'operator' => '>'],
             [['compilazioni_disponibili', 'send_pdf_via_email', 'send_pdf_via_email_closed', 'send_pdf_to_compiler', 'sondaggi_stato_id', 'filemanager_mediafile_id', 'sondaggi_temi_id', 'created_by',
-                'updated_by', 'deleted_by', 'version', 'send_pdf_via_email', 'frontend', 'abilita_registrazione', 'mail_registrazione_custom', 'mail_conf_community', 'mail_conf_community_id', 'abilita_criteri_valutazione', 'n_max_valutatori', 'sondaggio_chiuso_frontend', 'visualizza_solo_titolo', 'sondaggio_type', 'sondaggio_live_community_id', 'use_get_language', 'field_extra', 'community_id'], 'integer'],
+            'updated_by', 'deleted_by', 'version', 'send_pdf_via_email', 'frontend', 'abilita_registrazione', 'mail_registrazione_custom', 'mail_conf_community', 'mail_conf_community_id', 'abilita_criteri_valutazione', 'n_max_valutatori', 'sondaggio_chiuso_frontend', 'anonimous_poll', 'visualizza_solo_titolo', 'sondaggio_type', 'sondaggio_live_community_id', 'use_get_language', 'field_extra', 'community_id'], 'integer'],
             [['created_at', 'updated_at', 'deleted_at', 'begin_date_hour_live', 'end_date_hour_live', 'graphics_live', 'how_show_live', 'customTags', 'customTagsDefault'], 'safe']
         ];
     }
@@ -92,8 +101,7 @@ abstract class Sondaggi extends ContentModel
     /**
      * @inheritdoc
      */
-    public function attributeLabels()
-    {
+    public function attributeLabels() {
         return [
             'id' => AmosSondaggi::t('amossondaggi', 'ID'),
             'status' => AmosSondaggi::t('amossondaggi', 'Status'),
@@ -108,18 +116,19 @@ abstract class Sondaggi extends ContentModel
             'thank_you_page' => AmosSondaggi::t('amossondaggi', 'Url della "Thank you page"'),
             'url_chiudi_sondaggio' => AmosSondaggi::t('amossondaggi', 'Url a cui redirigere al click su "Chiudi"'),
             'visualizza_solo_titolo' => AmosSondaggi::t('amossondaggi', 'Nella compilazione visualizzare solo il titolo'),
+            'anonimous_poll' => AmosSondaggi::t('amossondaggi', 'Crea un sondaggio anonimo'),
             'url_sondaggio_non_compilabile' => AmosSondaggi::t('amossondaggi',
-                'Url della pagina di avviso di "Sondaggio non compilabile"'),
+                    'Url della pagina di avviso di "Sondaggio non compilabile"'),
             'abilita_registrazione' => AmosSondaggi::t('amossondaggi',
-                'Abilita registrazione automatica al termine del sondaggio'),
+                    'Abilita registrazione automatica al termine del sondaggio'),
             'compilazioni_disponibili' => AmosSondaggi::t('amossondaggi', 'Compilazioni disponibili'),
             'additional_emails' => AmosSondaggi::t('amossondaggi', 'Altre email'),
             'send_pdf_via_email' => AmosSondaggi::t('amossondaggi',
-                '#on_poll_compiled_send_email'),
+                    '#on_poll_compiled_send_email'),
             'send_pdf_to_compiler' => AmosSondaggi::t('amossondaggi',
-            '#on_poll_compiled_send_email_compiler'),
+                    '#on_poll_compiled_send_email_compiler') . ' ' . AmosSondaggi::t('amossondaggi', 'con la seguente mail:'),
             'send_pdf_via_email_closed' => AmosSondaggi::t('amossondaggi',
-                '#on_poll_closed_send_email'),
+                    '#on_poll_closed_send_email'),
             'publish_date' => AmosSondaggi::t('amossondaggi', 'Data di pubblicazione sondaggio'),
             'close_date' => AmosSondaggi::t('amossondaggi', 'Data di chiusura sondaggio'),
             'sondaggi_stato_id' => AmosSondaggi::t('amossondaggi', 'Stato'),
@@ -155,33 +164,32 @@ abstract class Sondaggi extends ContentModel
             'version' => AmosSondaggi::t('amossondaggi', 'Versione'),
             'abilita_criteri_valutazione' => AmosSondaggi::t('amossondaggi', 'Abilita criteri di valutazione'),
             'n_max_valutatori' => AmosSondaggi::t('amossondaggi', 'N. max di valutatori (0 = senza limiti)'),
-            'begin_date_hour_live' =>  AmosSondaggi::t('amossondaggi', 'Data inizio live'),
-            'end_date_hour_live' =>  AmosSondaggi::t('amossondaggi', 'Data fine live')
+            'begin_date_hour_live' => AmosSondaggi::t('amossondaggi', 'Data inizio live'),
+            'end_date_hour_live' => AmosSondaggi::t('amossondaggi', 'Data fine live'),
+            'mail_subject_send_pdf_guest' => AmosSondaggi::t('amossondaggi', 'Soggetto'),
+            'mail_send_pdf_guest' => AmosSondaggi::t('amossondaggi', 'Messaggio della mail (variabili disponibili: {{{nome}}} - {{{cognome}}})'),
         ];
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getFilemanagerMediafile()
-    {
+    public function getFilemanagerMediafile() {
         return $this->hasOne(\open20\amos\upload\models\FilemanagerMediafile::className(),
-            ['id' => 'filemanager_mediafile_id']);
+                        ['id' => 'filemanager_mediafile_id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiStato()
-    {
+    public function getSondaggiStato() {
         return $this->hasOne(\open20\amos\sondaggi\models\SondaggiStato::className(), ['id' => 'sondaggi_stato_id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiTemi()
-    {
+    public function getSondaggiTemi() {
         return null;
 //        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiTemi::className(), ['id' => 'sondaggi_temi_id']);
     }
@@ -189,55 +197,56 @@ abstract class Sondaggi extends ContentModel
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiDomandes()
-    {
+    public function getSondaggiDomandes() {
         return $this->hasMany(\open20\amos\sondaggi\models\SondaggiDomande::className(), ['sondaggi_id' => 'id'])->andWhere([
-            \open20\amos\sondaggi\models\SondaggiDomande::tableName() . '.deleted_at' => null]);
+                    \open20\amos\sondaggi\models\SondaggiDomande::tableName() . '.deleted_at' => null]);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiDomandesWithFiles()
-    {
+    public function getSondaggiDomandesWithFiles() {
         return $this->hasMany(\open20\amos\sondaggi\models\SondaggiDomande::className(), ['sondaggi_id' => 'id'])->andWhere([
-            'OR', ['sondaggi_domande_tipologie_id' => 10], ['sondaggi_domande_tipologie_id' => 11]]);
+                    'OR', ['sondaggi_domande_tipologie_id' => 10], ['sondaggi_domande_tipologie_id' => 11]]);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiDomandePagines()
-    {
+    public function getSondaggiDomandePagines() {
         return $this->hasMany(\open20\amos\sondaggi\models\SondaggiDomandePagine::className(),
-            ['sondaggi_id' => 'id'])
-            ->andWhere([\open20\amos\sondaggi\models\SondaggiDomandePagine::tableName() . '.deleted_at' => null]);
+                                ['sondaggi_id' => 'id'])
+                        ->andWhere([\open20\amos\sondaggi\models\SondaggiDomandePagine::tableName() . '.deleted_at' => null]);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiRisposteSessionis()
-    {
+    public function getSondaggiRisposteSessionis() {
         return $this->hasMany(\open20\amos\sondaggi\models\SondaggiRisposteSessioni::className(),
-            ['sondaggi_id' => 'id']);
+                        ['sondaggi_id' => 'id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getSondaggiPubblicaziones()
-    {
+    public function getSondaggiPubblicaziones() {
         return $this->hasMany(\open20\amos\sondaggi\models\SondaggiPubblicazione::className(),
-            ['sondaggi_id' => 'id']);
+                        ['sondaggi_id' => 'id']);
     }
 
     /**
      * @return \yii\db\ActiveQuery
      */
-    public function getPeiAttivitaFormatives()
-    {
+    public function getPeiAttivitaFormatives() {
         return $this->hasMany(\frontend\modules\attivitaformative\models\PeiAttivitaFormative::className(),
-            ['id' => 'entita_id'])->via('sondaggiPubblicaziones');
+                        ['id' => 'entita_id'])->via('sondaggiPubblicaziones');
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getSondaggiContext() {
+        return $this->hasOne(\open20\amos\sondaggi\models\SondaggiContext::className(), ['sondaggi_id' => 'id']);
     }
 }

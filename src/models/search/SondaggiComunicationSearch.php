@@ -94,44 +94,33 @@ class SondaggiComunicationSearch extends SondaggiComunication
     }
 
     /**
-     * @param $target integer
-     * @return array
+     * Restituisce i dati relativi alle tipologie possibili di destinatari della
+     * comunicazione il cui target e' passato al metodo
+     * @param integer $target Target della comunicazione. I valori possibili per
+     * questo parametro sono SondaggiInvitations::TARGET_USERS e
+     * SondaggiInvitations::TARGET_ORGANIZATIONS
+     * @return array Restituisce un array nel formato necessario per popolare un
+     * DepDrop di Kartik
      */
     public static function getCommunicationFilterValues($target) {
+        if (is_null($target)) {
+            return [];
+        }
+        /*
+         * per come e' fatto questo metodo (e come viene usato), non e'
+         * possibile distinguere se il target sono utenti di community o no,
+         * quindi, in questo caso, vengono impostati gli utenti non di community
+         * in quanto piu' 'generici'
+         */
+        $model = new SondaggiComunication();
+        $model->target = $target;
         $data = [];
-        if ($target == SondaggiInvitations::TARGET_ORGANIZATIONS) {
-            $data = [
-                0 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO,
-                    'name' => AmosSondaggi::t('amossondaggi', '#all_organizations_invited_to_poll')
-                ],
-                1 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO,
-                    'name' => AmosSondaggi::t('amossondaggi', '#organizations_poll_compiled')
-                ],
-                2 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO,
-                    'name' => AmosSondaggi::t('amossondaggi', '#organizations_invited_to_poll_not_compiled')
-                ]
+        foreach ($model->getFilterData($target, false) as $key => $value) {
+            $data[] = [
+                'id' => $key,
+                'name' => $value
             ];
         }
-        else if ($target == SondaggiInvitations::TARGET_USERS) {
-            $data = [
-                0 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITO_SPEDITO,
-                    'name' => AmosSondaggi::t('amossondaggi', 'Tutti gli utenti invitati alla compilazione del sondaggio')
-                ],
-                1 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_COMPILATO,
-                    'name' => AmosSondaggi::t('amossondaggi', 'Solo gli utenti che hanno compilato il sondaggio')
-                ],
-                2 => [
-                    'id' => SondaggiComunication::TUTTI_GLI_ENTI_INVITATI_NON_COMPILATO,
-                    'name' => AmosSondaggi::t('amossondaggi', 'Solo gli utenti invitati ma che ancora non hanno compilato il sondaggio')
-                ]
-            ];
-        }
-
         return $data;
     }
 

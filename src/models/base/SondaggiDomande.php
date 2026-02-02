@@ -10,6 +10,7 @@
 
 namespace open20\amos\sondaggi\models\base;
 
+use open20\amos\core\validators\StringHtmlValidator;
 use Yii;
 use open20\amos\sondaggi\AmosSondaggi;
 
@@ -80,10 +81,11 @@ class SondaggiDomande extends \open20\amos\core\record\Record
             [['code'], 'string'],
             [['code'], 'unique', 'targetAttribute' => ['code', 'sondaggi_id'], 'message' => AmosSondaggi::t('amossondaggi',
                     '#duplicate_question_code')],
-            [['domanda', 'tooltip', 'introduzione', 'introduzione_condizionata'], 'string'],
+            [['domanda', 'tooltip'], 'string'],
             [['nome_classe_validazione'], 'string', 'max' => 255],
             [['domanda', 'sondaggi_id', 'sondaggi_domande_pagine_id', 'sondaggi_domande_tipologie_id'], 'required'],
-            [['created_at', 'updated_at', 'deleted_at'], 'safe']
+            [['created_at', 'updated_at', 'deleted_at'], 'safe'],
+            [['introduzione', 'introduzione_condizionata', 'domanda'], StringHtmlValidator::class],
         ];
     }
 

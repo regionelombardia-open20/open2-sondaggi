@@ -8,6 +8,7 @@
  * @package    open20\amos\sondaggi\views\sondaggi
  * @category   CategoryName
  */
+
 use open20\amos\core\forms\ActiveForm;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleRisultatiAsset;
@@ -25,20 +26,28 @@ ModuleRisultatiAsset::register($this);
  * @var yii\data\ActiveDataProvider $dataProvider
  * @var open20\amos\sondaggi\models\search\SondaggiSearch $searchModel
  */
-$this->title                   = AmosSondaggi::t('amossondaggi', 'Risultati').': '.$model->titolo;
+$this->title = AmosSondaggi::t('amossondaggi', 'Risultati') . ': ' . $model->titolo;
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['index']];
 $this->params['breadcrumbs'][] = $this->title;
 if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
 
 $funcResize = "";
-for ($i = 0; $i < count($risposte); $i++) {
-    $funcResize .= 'drawChartw'.$i.'();';
+$countRisposte = 0;
+if($risposte instanceof ArrayDataProvider){
+    $countRisposte  = $risposte->totalCount;
+    // pr($countRisposte,'1'); die;
+}else{
+    $countRisposte = count($risposte);
+
 }
+    for ($i = 0; $i < $countRisposte; $i++) {
+        $funcResize .= 'drawChartw' . $i . '();';
+    }
 
 $this->registerJs('
     jQuery(document).ready(function() {
     $(window).resize(function(){
-           '.$funcResize.'
+           ' . $funcResize . '
     });
   });
     ', yii\web\View::POS_END);
@@ -51,15 +60,15 @@ $this->registerJs('
                 <?=
                 Html::a(AmosSondaggi::t('amossondaggi', '&nbsp;&nbsp;<strong><<</strong>&nbsp;&nbsp;'),
                     (($idPagina != -1) ? ['risultati', 'id' => $model->id, 'idPagina' => -1, 'filter' => $filter] : null),
-                    ['class' => 'btn btn-success', 'disabled' => (($idPagina != -1) ? false : true)])."&nbsp;&nbsp;&nbsp;".
+                    ['class' => 'btn btn-success', 'disabled' => (($idPagina != -1) ? false : true)]) . "&nbsp;&nbsp;&nbsp;" .
                 Html::a(AmosSondaggi::t('amossondaggi', '&nbsp;&nbsp;<strong><</strong>&nbsp;&nbsp;'),
                     (($idPagina != -1) ? ['risultati', 'id' => $model->id, 'idPagina' => $paginaPrecedente, 'filter' => $filter]
-                            : null), ['class' => 'btn btn-success', 'disabled' => (($idPagina != -1) ? false : true)])."&nbsp;&nbsp;&nbsp;".
+                        : null), ['class' => 'btn btn-success', 'disabled' => (($idPagina != -1) ? false : true)]) . "&nbsp;&nbsp;&nbsp;" .
                 Html::a(AmosSondaggi::t('amossondaggi', '&nbsp;&nbsp;<strong>></strong>&nbsp;&nbsp;'),
                     (($idPagina != 0) ? ['risultati', 'id' => $model->id, 'idPagina' => $prossimaPagina, 'filter' => $filter]
-                            : null),
+                        : null),
                     ['class' => 'btn btn-success', 'disabled' => (($idPagina != 0) ? (!is_null($prossimaPagina) ? false : true)
-                            : true)])."&nbsp;&nbsp;&nbsp;".
+                        : true)]) . "&nbsp;&nbsp;&nbsp;" .
                 Html::a(AmosSondaggi::t('amossondaggi', '&nbsp;&nbsp;<strong>>></strong>&nbsp;&nbsp;'),
                     (($idPagina != 0) ? ['risultati', 'id' => $model->id, 'idPagina' => 0, 'filter' => $filter] : null),
                     ['class' => 'btn btn-success', 'disabled' => (($idPagina != 0) ? false : true)]);
@@ -132,7 +141,8 @@ $this->registerJs('
                                     'vAxis' => ['title' => null, 'slantedText' => false],
                                 ]
                             ]);
-                        } elseif ($tipo == 3 || $tipo == 4):
+                        }
+                    elseif ($tipo == 3 || $tipo == 4):
                         ?>
                         <h3><?= $model->titolo ?></h3>
                         <h4><?= $model->descrizione ?></h4>
@@ -180,11 +190,11 @@ $this->registerJs('
                                                   1 => ['color' => '#ff33bb'],
                                                   ], */
                                                 'height' => 700,
-                                            /* 'hAxis' => ['title' => 'Numero partecipanti',
-                                              'gridlines' => [
-                                              'color' => null, //set grid line transparent
-                                              ]],
-                                              'vAxis' => ['title' => null, 'slantedText' => false], */
+                                                /* 'hAxis' => ['title' => 'Numero partecipanti',
+                                                  'gridlines' => [
+                                                  'color' => null, //set grid line transparent
+                                                  ]],
+                                                  'vAxis' => ['title' => null, 'slantedText' => false], */
                                             ]
                                         ]);
                                     }
@@ -194,13 +204,13 @@ $this->registerJs('
                                     echo \kartik\grid\GridView::widget([
                                         'dataProvider' => new ArrayDataProvider([
                                             'allModels' => $arrRisposta,
-                                            ]),
+                                        ]),
                                         'showPageSummary' => true,
                                         'pjax' => true,
                                         'striped' => true,
                                         'hover' => true,
                                         'panel' => ['type' => 'info', 'heading' => AmosSondaggi::t('amossondaggi',
-                                                'Report sui partecipanti al sondaggio')],
+                                            'Report sui partecipanti al sondaggio')],
                                         'toggleDataOptions' => [
                                             'all' => [
                                                 'label' => 'Tutto'
@@ -212,7 +222,7 @@ $this->registerJs('
                                                 'attribute' => 'cognome',
                                                 'label' => AmosSondaggi::t('amossondaggi', 'Partecipante'),
                                                 'value' => function ($model) {
-                                                    return $model['cognome'].' '.$model['nome'];
+                                                    return $model['cognome'] . ' ' . $model['nome'];
                                                 },
                                             ],
                                             'begin_date' => [
@@ -237,10 +247,10 @@ $this->registerJs('
                                                 'label' => AmosSondaggi::t('amossondaggi', 'Dati'),
                                                 'format' => 'html',
                                                 'value' => function ($model) {
-                                                    return '<strong>'.AmosSondaggi::t('amossondaggi', 'E-mail').': </strong>'.$model['email'].'<br>'.
-                                                        '<strong>'.AmosSondaggi::t('amossondaggi', 'Username').': </strong>'.$model['username'].'<br>'.
-                                                        '<strong>'.AmosSondaggi::t('amossondaggi', 'Telefono').': </strong>'.$model['telefono'].'<br>'.
-                                                        '<strong>'.AmosSondaggi::t('amossondaggi', 'Ruolo').': </strong>'.$model['role'].'<br>';
+                                                    return '<strong>' . AmosSondaggi::t('amossondaggi', 'E-mail') . ': </strong>' . $model['email'] . '<br>' .
+                                                        '<strong>' . AmosSondaggi::t('amossondaggi', 'Username') . ': </strong>' . $model['username'] . '<br>' .
+                                                        '<strong>' . AmosSondaggi::t('amossondaggi', 'Telefono') . ': </strong>' . $model['telefono'] . '<br>' .
+                                                        '<strong>' . AmosSondaggi::t('amossondaggi', 'Ruolo') . ': </strong>' . $model['role'] . '<br>';
                                                 },
                                             ],
                                             'stato' => [
@@ -313,6 +323,9 @@ $this->registerJs('
                                     'attribute' => 'pagina',
                                     'label' => AmosSondaggi::t('amossondaggi', 'Pagine'),
                                     'value' => function ($model) {
+                                        if (empty($model['pagina'])) {
+                                            return AmosSondaggi::t('amossondaggi', 'nessun valore');
+                                        }
                                         return $model['pagina'];
                                     },
                                     'group' => true,
@@ -394,7 +407,7 @@ $this->registerJs('
                                           ], */
                                         'height' => 500,
                                         'legend' => [
-                                        // 'position' => 'none',
+                                            // 'position' => 'none',
                                         ],
                                         'vAxis' => [
                                             'title' => AmosSondaggi::t('amossondaggi', 'Numero occorrenze'),
@@ -423,46 +436,46 @@ $this->registerJs('
                         <div class="col-lg-12">
                             <?php
                             if (!empty($risposte['criteri']) && count($risposte['criteri'] > 0)):
-                                echo '<div class="col-xs-12">'.GraficiGoogle::widget([
-                                    'visualization' => 'ColumnChart',
-                                    'data' => $risposte['grafico_criteri'],
-                                    'options' => [
-                                        'title' => strip_tags($criteri->one()->introduzione),
-                                        //'subtitle' => 'Tutti i partecipanti, iscritti al primo giorno',
-                                        //'titleTextStyle' => ['color' => 'red', 'fontSize' => 45],
-                                        'is3D' => true,
-                                        'showTip' => true,
-                                        'sliceVisibilityThreshold' => 0,
-                                        //'isStacked' => false,
-                                        /* 'slices' => [
-                                          0 => ['color' => '#8ec44e'],
-                                          1 => ['color' => '#3aa060'],
-                                          2 => ['color' => '#ea5c6f'],
-                                          3 => ['color' => '#0dc988'],
-                                          4 => ['color' => '#53cfc4'],
-                                          ], */
-                                        'height' => 500,
-                                        'legend' => [
-                                        // 'position' => 'none',
-                                        ],
-                                        'vAxis' => [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Punteggi'),
-                                            'gridlines' => [
-                                                'color' => null  //set grid line transparent
-                                            ]],
-                                        'hAxis' => ['title' => strip_tags($criteri->one()->introduzione)],
-                                    ]
-                                ]).'</div>';
+                                echo '<div class="col-xs-12">' . GraficiGoogle::widget([
+                                        'visualization' => 'ColumnChart',
+                                        'data' => $risposte['grafico_criteri'],
+                                        'options' => [
+                                            'title' => strip_tags($criteri->one()->introduzione),
+                                            //'subtitle' => 'Tutti i partecipanti, iscritti al primo giorno',
+                                            //'titleTextStyle' => ['color' => 'red', 'fontSize' => 45],
+                                            'is3D' => true,
+                                            'showTip' => true,
+                                            'sliceVisibilityThreshold' => 0,
+                                            //'isStacked' => false,
+                                            /* 'slices' => [
+                                              0 => ['color' => '#8ec44e'],
+                                              1 => ['color' => '#3aa060'],
+                                              2 => ['color' => '#ea5c6f'],
+                                              3 => ['color' => '#0dc988'],
+                                              4 => ['color' => '#53cfc4'],
+                                              ], */
+                                            'height' => 500,
+                                            'legend' => [
+                                                // 'position' => 'none',
+                                            ],
+                                            'vAxis' => [
+                                                'title' => AmosSondaggi::t('amossondaggi', 'Punteggi'),
+                                                'gridlines' => [
+                                                    'color' => null  //set grid line transparent
+                                                ]],
+                                            'hAxis' => ['title' => strip_tags($criteri->one()->introduzione)],
+                                        ]
+                                    ]) . '</div>';
                                 echo \kartik\grid\GridView::widget([
                                     'dataProvider' => new ArrayDataProvider([
                                         'allModels' => $risposte['criteri'],
-                                        ]),
+                                    ]),
                                     'showPageSummary' => true,
                                     'pjax' => true,
                                     'striped' => true,
                                     'hover' => true,
                                     'panel' => ['type' => 'info', 'heading' => AmosSondaggi::t('amossondaggi',
-                                            'Report delle valutazioni')],
+                                        'Report delle valutazioni')],
                                     'toggleDataOptions' => [
                                         'all' => [
                                             'label' => 'Tutto'
@@ -527,7 +540,7 @@ $this->registerJs('
                                     'visualization' => ($isParent ? 'ColumnChart' : 'PieChart'),
                                     'data' => $risposte[$Domanda->id],
                                     'options' => [
-                                        'title' => $Domanda->domanda,
+                                        'title' => strip_tags($Domanda->domanda),
                                         //'subtitle' => 'Tutti i partecipanti, iscritti al primo giorno',
                                         //'titleTextStyle' => ['color' => 'red', 'fontSize' => 45],
                                         'is3D' => true,
@@ -551,7 +564,7 @@ $this->registerJs('
                                                 'color' => null  //set grid line transparent
                                             ]],
                                         'hAxis' => ['title' => ($isParent ? AmosSondaggi::t('amossondaggi', 'Domande') : AmosSondaggi::t('amossondaggi',
-                                                    'Risposte'))],
+                                            'Risposte'))],
                                     ]
                                 ]);
                             else :
@@ -567,33 +580,33 @@ $this->registerJs('
             <?php endif; ?>
         </div>
         <?php $form = ActiveForm::begin(); ?>
-            <div class="col-xs-12 col-sm-4"><?=
-                $form->field($filter, 'data_inizio')->widget(DateControl::className(),
-                    [
+        <div class="col-xs-12 col-sm-4"><?=
+            $form->field($filter, 'data_inizio')->widget(DateControl::className(),
+                [
                     'type' => DateControl::FORMAT_DATE,
                     'options' => [
                         'layout' => '{remove}{input}'
                     ]
                 ])->label(AmosSondaggi::t('amossondaggi', 'Data inizio'))
-                ?>
-            </div>
-            <div class="col-xs-12 col-sm-4"><?=
-                $form->field($filter, 'data_fine')->widget(DateControl::className(),
-                    [
+            ?>
+        </div>
+        <div class="col-xs-12 col-sm-4"><?=
+            $form->field($filter, 'data_fine')->widget(DateControl::className(),
+                [
                     'type' => DateControl::FORMAT_DATE,
                     'options' => [
                         'layout' => '{remove}{input}'
                     ]
                 ])->label(AmosSondaggi::t('amossondaggi', 'Data fine'))
-                ?>
-            </div>
+            ?>
+        </div>
 
-            <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0): ?>
-                <div class="col-xs-12 col-sm-4"><?=
-                    $form->field($filter, 'area_formativa')->widget(Select2::classname(),
-                        [
+        <?php if ($model->getSondaggiPubblicaziones()->one()['tipologie_entita'] > 0): ?>
+            <div class="col-xs-12 col-sm-4"><?=
+                $form->field($filter, 'area_formativa')->widget(Select2::classname(),
+                    [
                         'data' => ArrayHelper::map(\open20\amos\tag\models\Tag::find()->andWhere(['root' => 1])->andWhere([
-                                'lvl' => 1])->asArray()->all(), 'id', 'nome'),
+                            'lvl' => 1])->asArray()->all(), 'id', 'nome'),
                         //'showToggleAll' => false,
                         'options' => [
                             'placeholder' => AmosSondaggi::t('amossondaggi', 'Digita il nome dell\'Area formativa ...'),
@@ -603,19 +616,19 @@ $this->registerJs('
                             'allowClear' => true,
                         ],
                     ]);
-                    ?>
-                </div>
-                <div class="col-xs-12 col-sm-4">
-                    <?php $nomeAtt = new \yii\db\Expression("concat('[', pei_entita_formative.codice_entita, '] ', pei_entita_formative.titolo) as titolo"); ?>
-                    <?=
-                    $form->field($filter, 'attivita')->widget(Select2::classname(),
-                        [
+                ?>
+            </div>
+            <div class="col-xs-12 col-sm-4">
+                <?php $nomeAtt = new \yii\db\Expression("concat('[', pei_entita_formative.codice_entita, '] ', pei_entita_formative.titolo) as titolo"); ?>
+                <?=
+                $form->field($filter, 'attivita')->widget(Select2::classname(),
+                    [
                         'data' => ArrayHelper::map(frontend\modules\attivitaformative\models\PeiAttivitaFormative::find()
-                                ->innerJoin('pei_point_sedi as S', 'S.id = pei_entita_formative.pei_point_sedi_id')
-                                ->leftJoin('pei_point as PP', 'S.pei_point_id = PP.id')
-                                ->select(['pei_entita_formative.id as id', $nomeAtt])
-                                ->orderBy('titolo')
-                                ->asArray()->all(), 'id', 'titolo'),
+                            ->innerJoin('pei_point_sedi as S', 'S.id = pei_entita_formative.pei_point_sedi_id')
+                            ->leftJoin('pei_point as PP', 'S.pei_point_id = PP.id')
+                            ->select(['pei_entita_formative.id as id', $nomeAtt])
+                            ->orderBy('titolo')
+                            ->asArray()->all(), 'id', 'titolo'),
                         'showToggleAll' => false,
                         'options' => [
                             'placeholder' => AmosSondaggi::t('amossondaggi',
@@ -626,17 +639,17 @@ $this->registerJs('
                             'allowClear' => true,
                         ],
                     ]);
-                    ?>
-                </div>
-                <div class="col-xs-12 col-sm-8">
-                    <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
-                </div>
-            <?php else: ?>
-                <div class="col-xs-12 col-sm-4">
-                    <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
-                </div>
-            <?php endif; ?>
-        
+                ?>
+            </div>
+            <div class="col-xs-12 col-sm-8">
+                <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
+            </div>
+        <?php else: ?>
+            <div class="col-xs-12 col-sm-4">
+                <?= Html::submitButton('Cerca', ['class' => 'cerca btn btn-success']); ?>
+            </div>
+        <?php endif; ?>
+
         <?php ActiveForm::end(); ?>
 
     </div>

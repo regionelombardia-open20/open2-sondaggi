@@ -13,6 +13,11 @@ class ModuleSondaggiRisposteAsset extends AssetBundle
     public $js = [
         'js/condizioneRisposteSondaggio.js'
     ];
+    
+    public $jsOptions = [
+        'data-cookieconsent' => "ignore"
+    ];
+    
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset'

@@ -34,9 +34,9 @@ $listaModels = $lista->getModels();
 
 $modelLabel = 'sondaggi';
 
-$labelLinkAll = AmosSondaggi::t('amossondaggi', 'Pubblica i sondaggi');
-$urlLinkAll = '/sondaggi/pubblicazione/pubblicazione';
-$titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista dei sondaggi pubblicabili o ri-pubblicabili');
+$labelLinkAll = AmosSondaggi::t('amossondaggi', 'Tutti i sondaggi');
+$urlLinkAll = '/sondaggi/pubblicazione/all';
+$titleLinkAll = AmosSondaggi::t('amossondaggi', 'Visualizza la lista di tutti i sondaggi');
 
 $subTitleSection = Html::tag('p', AmosSondaggi::t('amossondaggi', ''));
 
@@ -55,7 +55,7 @@ if (isset($moduleCwh) && !empty($moduleCwh->getCwhScope())) {
     $isSetScope = (!empty($scope)) ? true : false;
 }
 
-$hideCreate = !\Yii::$app->user->can('SONDAGGI_CREATE');
+$hideCreate = false;
 ?>
 
 <div class="widget-graphic-cms-bi-less card-<?= $modelLabel ?> container">
@@ -78,61 +78,27 @@ $hideCreate = !\Yii::$app->user->can('SONDAGGI_CREATE');
                 'titleManage' => $titleManage,
                 'urlCreate' => $urlCreate,
                 'manageLinks' => $manageLinks,
+                'canCreate' => \Yii::$app->user->can('SONDAGGI_CREATE', ['model' => AmosSondaggi::instance()->createModel('Sondaggi')]),
             ]
         );
         ?>
     </div>
-    
+
     <?php if ($listaModels) { ?>
         <div class="list-view">
             <div>
                 <div class="" role="listbox" data-role="list-view">
                     <?php foreach ($listaModels as $sondaggio) : ?>
-                        <div class="widget-listbox-option" role="option">
-                            <article class="wrap-item-box">
-                                <div>
-                                    <div class="container-img">
-                                        <?php
-                                        $url = '/img/img_default.jpg';
-                                        if (!is_null($sondaggio->file)) {
-                                            $url = $sondaggio->file->getUrl('dashboard_sondaggi', false, true);
-                                        }
-                                        ?>
-                                        <?= Html::img($url, ['class' => 'img-responsive', 'alt' => AmosSondaggi::t('amossondaggi', 'Immagine del sondaggio')]); ?>
-                                    </div>
-                                </div>
-
-                                <div class="container-text">
-                                    <div class="h3 box-widget-subtitle">
-                                        <?php
-                                        if (strlen($sondaggio->titolo) > 55) {
-                                            $stringCut = substr($sondaggio->titolo, 0, 55);
-                                            echo substr($stringCut, 0, strrpos($stringCut, ' ')) . '... ';
-                                        } else {
-                                            echo $sondaggio->titolo;
-                                        }
-                                        ?>
-                                    </div>
-                                    <p class="box-widget-text">
-                                        <?php
-                                        if (strlen($sondaggio->descrizione) > 80) {
-                                            $stringCut = substr($sondaggio->descrizione, 0, 80);
-                                            echo substr($stringCut, 0, strrpos($stringCut, ' ')) . '... ';
-                                        } else {
-                                            echo $sondaggio->descrizione;
-                                        }
-                                        ?>
-                                    </p>
-                                </div>
-                                <div class="footer-listbox m-t-10">
-                                    <?= Html::a(AmosSondaggi::t('amossondaggi', '#readMore'), ['/sondaggi/pubblicazione/compila', 'id' => $sondaggio->id], ['class' => 'btn btn-navigation-primary']); ?>
-                                </div>
-                            </article>
+                        <div>
+                            <?= $this->render('@vendor/open20/amos-sondaggi/src/views/pubblicazione/_item', [
+                                'model' => $sondaggio,
+                                'moduleName' => 'sondaggi'
+                            ]) ?>
                         </div>
                     <?php endforeach ?>
                 </div>
             </div>
         </div>
-    
+
     <?php } ?>
 </div>

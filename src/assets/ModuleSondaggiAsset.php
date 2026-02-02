@@ -15,11 +15,17 @@ class ModuleSondaggiAsset extends AssetBundle
     public $js = [
         'js/condizioneSondaggio.js'
     ];
+    
+    public $jsOptions = [
+        'data-cookieconsent' => "ignore"
+    ];
+    
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset',
         'kartik\depdrop\DepDropExtAsset'
     ];
+    
 
     public function init()
     {

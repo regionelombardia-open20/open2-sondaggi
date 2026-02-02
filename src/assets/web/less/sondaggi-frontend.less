@@ -88,8 +88,8 @@ html {
     padding: 6px 12px;
 }
 
-.input-group.date{
-    .kv-date-picker{
+.input-group.date {
+    .kv-date-picker {
         background: @brand-primary-color;
         color: contrast(@brand-primary-color);
         border-radius: 0;
@@ -125,7 +125,7 @@ textarea {
 }
 
 .select2-container--krajee .select2-selection--single .select2-selection__arrow b {
-    border-top-color: @black-color  !important;
+    border-top-color: @black-color !important;
 }
 
 .select2-container--krajee .select2-selection--single .select2-selection__rendered {
@@ -141,7 +141,7 @@ textarea {
 }
 
 .select2-container--krajee .select2-selection--multiple .select2-selection__choice {
-    background: @light-background-primary-color  !important;
+    background: @light-background-primary-color !important;
     color: contrast(@light-background-primary-color) !important;
     border-radius: 0 !important;
     margin: 0;
@@ -190,13 +190,13 @@ textarea {
 }
 
 .select2-container--krajee .select2-results__option[aria-selected="true"] {
-    background: @light-background-primary-color  !important;
+    background: @light-background-primary-color !important;
     color: contrast(@light-background-primary-color) !important;
 }
 
 .select2-container--krajee .select2-results__option--highlighted[aria-selected] {
-    border-color: @brand-primary-color  !important;
-    background: @brand-primary-color  !important;
+    border-color: @brand-primary-color !important;
+    background: @brand-primary-color !important;
     color: contrast(@brand-primary-color) !important;
     box-shadow: none !important;
     border-radius: 0 !important;
@@ -257,8 +257,28 @@ textarea {
     background-color: #f5f5f5;
     padding: 15px !important;
     margin-bottom: 30px;
+
 }
+
 .sondaggi-compilazione {
+
+    .form-control,
+    input {
+        border-radius: 0;
+        border: 1px solid #c0bdbd;
+    }
+
+    input {
+        width: 100% !important;
+        background-color: white !important;
+        min-height: 18px;
+    }
+
+    .attachments-list {
+        padding: 0 !important;
+        margin: 10px -15px !important;
+    }
+
     .radio {
         margin-right: 20px;
     }
@@ -268,29 +288,43 @@ textarea {
 
     }
 
+    ul li {
+        width: 100%;
+    }
+
     .sondaggi-form {
-        div[class*='col-'] > div[class*='col-'] {
+        div[class*='col-']>div[class*='col-'] {
             padding: 0 !important;
         }
+
         .row.flex-column {
             flex-direction: column;
         }
-        fieldset {
-            .checkbox {
+
+        div {
+
+            .checkbox,
+            .radio {
                 label {
                     display: flex;
-                    align-items: center;
+                    align-items: baseline;
                 }
             }
+
             label {
                 input {
                     margin-right: 6px;
+                    margin-left: 0 !important;
+                    width: inherit !important;
+                    left: 0 !important;
                 }
-                + label {
+
+                +label {
                     margin-left: @margin-default;
                 }
             }
         }
+
         h3 {
             font-size: 2em;
             font-weight: bold;
@@ -304,16 +338,19 @@ textarea {
                 padding: 0;
             }
         }
-        
+
         .control-label {
-            
+
             width: 100%;
             font-size: 24px;
+
             +div {
                 margin-top: 10px;
-                > div > label{
+
+                >div>label {
                     font-weight: normal;
-                    + label{
+
+                    +label {
                         margin-left: @margin-default;
                     }
                 }
@@ -380,6 +417,7 @@ textarea {
     //border-top: 1px solid darken(@light-background-color, 10%);
     float: left;
     width: 100%;
+
     *:not(:first-child) {
         margin-left: auto;
     }
@@ -443,6 +481,7 @@ textarea {
                 padding-bottom: 10px;
             }
         }
+
         .simple-progressbar {
             margin: 30px 0;
         }
@@ -457,8 +496,9 @@ textarea {
     .testo-introduttivo {
         background: transparent !important;
         border-left: none !important;
-        
+
         padding-top: 14px;
+
         &.testo-vincolato {
             margin-top: 0;
             border: none;
@@ -513,10 +553,46 @@ textarea {
         }
     }
 }
+
 .input-group-btn .btn {
     margin: 0 !important;
 }
 
 .modal-always-hamburger-menu.modal.fade.show {
     opacity: 1;
+}
+
+.file-caption .input-group {
+    flex-wrap: nowrap;
+}
+
+.input-group .input-group-append {
+    align-items: center;
+    width: 100%;
+}
+
+.input-group {
+    .form-control {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding-left: 10px;
+    }
+
+    &.date {
+        .input-group-addon {
+            width: 45px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        input {
+            width: auto !important;
+        }
+    }
+}
+
+.file-input .input-group-btn .btn {
+    align-items: center;
+    display: flex;
 }

@@ -13,6 +13,11 @@ class ModuleSondaggiPublicAsset extends AssetBundle
     public $js = [
         'js/sondaggioPubblico.js'
     ];
+    
+    public $jsOptions = [
+        'data-cookieconsent' => "ignore"
+    ];
+    
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset'

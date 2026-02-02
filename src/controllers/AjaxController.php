@@ -116,7 +116,7 @@ class AjaxController extends Controller
                 $selected = '';
                 foreach ($pagine as $i => $pagina) {
 
-                    $out[] = ['id' => $pagina['id'], 'name' => $pagina['domanda']];
+                    $out[] = ['id' => $pagina['id'], 'name' => html_entity_decode(strip_tags($pagina['domanda']))];
 
                     if ($id_selected) {
                         $selected = $id_selected;

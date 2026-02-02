@@ -45,7 +45,10 @@ class WidgetIconCompilaSondaggi extends WidgetIcon
 
         $this->setDescription(AmosSondaggi::t('amossondaggi', 'Permette di compilare e completare i sondaggi'));
 
-        if (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
+        if(!empty(\Yii::$app->params['twoColorIcons'])){
+            $this->setIconFramework(AmosIcons::TWOTONES);
+            $this->setIcon('poll');
+        }else if  (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
             $this->setIconFramework(AmosIcons::IC);
             $this->setIcon('sondaggi');
             $paramsClassSpan = [];

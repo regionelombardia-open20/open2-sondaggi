@@ -36,6 +36,179 @@ Yii::$app->urlManager->createUrl([
 'title' => AmosSondaggi::t('amossondaggi', '#new_page'),
 'class' => 'btn btn-primary'
 ]);
+
+
+$contextMenuVisibile = true;
+if (Yii::$app->user->can('CREATORE_SONDAGGI')) {
+    $sondaggio = \open20\amos\sondaggi\models\Sondaggi::findOne(['id' => Yii::$app->request->get('idSondaggio')]);
+    if(!empty($sondaggio)) {
+        if($sondaggio->status !== \open20\amos\sondaggi\models\Sondaggi::WORKFLOW_STATUS_BOZZA) {
+            $contextMenuVisibile = false;
+            $this->registerCss(<<<CSS
+.page-header .w-100 {
+display: none !important;
+}
+CSS
+            );
+        }
+    }
+}
+
+$contextMenuOptions = [];
+if($contextMenuVisibile) {
+    $contextMenuOptions[] = [
+        'class' => 'open20\amos\core\views\grid\ActionColumn',
+        'template' => '{update} {risposte} {aggdomanda} {aggrisposta} {clone} {delete}',
+        'buttons' => [
+            'update' => function ($url, $model) {
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_UPDATE', ['model' => $model])) {
+                    return Html::a(AmosIcons::show('edit'), Yii::$app->urlManager->createUrl([
+                        '/' . $this->context->module->id . '/dashboard-domande/update',
+                        'id' => $model->id,
+                        'url' => $url,
+                    ]), [
+                        'title' => AmosSondaggi::t('amossondaggi', 'Modifica'),
+                        'class' => 'btn btn-tool-secondary'
+                    ]);
+                } else {
+                    return '';
+                }
+            },
+            'risposte' => function ($url, $model) {
+                /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ||
+                    \Yii::$app->getUser()->can('SONDAGGIRISPOSTEPREDEFINITE_READ', ['model' => $model]) ||
+                    Yii::$app->getUser()->can('CREATORE_SONDAGGI', ['model' => $model])) {
+                    if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8, 14])) {
+                        if ($model->getSondaggiRispostePredefinites()->count()) {
+                            if ($model->min_int_multipla > 0) {
+                                $numRisp = $model->min_int_multipla;
+                                if ($numRisp >=$model->getSondaggiRispostePredefinites()->count()) {
+                                    return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
+                                        '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
+                                        'idDomanda' => $model->id,
+                                        'url' => $url,
+                                    ]), [
+                                        'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - Il numero di risposte presenti deve essere maggiore del numero di risposte minime'),
+                                        'class' => 'btn btn-tool-secondary btn-danger'
+                                    ]);
+                                }
+                            }
+                            return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
+                                'idDomanda' => $model->id,
+                                'url' => $url,
+                            ]), [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte'),
+                                'class' => 'btn btn-tool-secondary'
+                            ]);
+                        } else {
+                            return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
+                                'idDomanda' => $model->id,
+                                'url' => $url,
+                            ]), [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - E\' necessario aggiungere delle risposte per la tipologia di domanda scelta'),
+                                'class' => 'btn btn-tool-secondary btn-danger'
+                            ]);
+                        }
+                    } else {
+                        return '';
+                    }
+                } else {
+                    return '';
+                }
+            },
+            'aggdomanda' => function ($url, $model) {
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
+                    if (!$model->is_parent) {
+
+                    }
+                }
+            },
+            'aggrisposta' => function ($url, $model) {
+                /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIRISPOSTEPREDEFINITE_CREATE', ['model' => $model])) {
+                    if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4])) {
+                        if ($model->getSondaggiRispostePredefinites()->count()) {
+                            return Html::a(AmosIcons::show('plus'), Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/dashboard-risposte-predefinite/create',
+                                'idDomanda' => $model->id,
+                                'url' => $url,
+                            ]), [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi risposta'),
+                                'class' => 'btn btn-tool-secondary'
+                            ]);
+                        } else {
+                            return Html::a(AmosIcons::show('plus'), Yii::$app->urlManager->createUrl([
+                                '/' . $this->context->module->id . '/dashboard-risposte-predefinite/create',
+                                'idDomanda' => $model->id,
+                                'url' => $url,
+                            ]), [
+                                'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi risposta - E\' necessario aggiungere delle risposte per la tipologia di domanda scelta'),
+                                'class' => 'btn btn-tool-secondary btn-danger'
+                            ]);
+                        }
+                    } else {
+                        return '';
+                    }
+                } else {
+                    return '';
+                }
+            },
+            'delete' => function ($url, $model) {
+                /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
+
+                if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8, 14])) {
+                    $confDeleteMessage = 'Stai per cancellare la domanda comprese le  risposte contenute al suo interno';
+                } else {
+                    $confDeleteMessage = 'Sei sicuro di voler eliminare questo elemento?';
+                }
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_DELETE', ['model' => $model])) {
+                    return Html::a(AmosIcons::show('delete'), Yii::$app->urlManager->createUrl([
+                        '/' . $this->context->module->id . '/dashboard-domande/delete',
+                        'id' => $model->id,
+                        'idSondaggio' => $model->sondaggi_id,
+                        'url' => $url,
+                    ]), [
+                        'title' => AmosSondaggi::t('amossondaggi', 'Cancella'),
+                        'class' => 'btn btn-danger-inverse',
+                        'data-confirm' => $confDeleteMessage
+                    ]);
+                } else {
+                    return '';
+                }
+            },
+            'clone' => function ($url, $model) {
+                /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
+                $url = \yii\helpers\Url::current();
+                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
+                    $idPagina = null;
+                    if (Yii::$app->request->get('idPagina')) {
+                        $idPagina = $model->sondaggi_domande_pagine_id;
+                    }
+                    return Html::a(AmosIcons::show('copy'), Yii::$app->urlManager->createUrl([
+                        '/' . $this->context->module->id . '/dashboard-domande/clone',
+                        'id' => $model->id,
+                        'idSondaggio' => $model->sondaggi_id,
+                        'idPagina' => $idPagina,
+                        'url' => $url
+                    ]), [
+                        'title' => AmosSondaggi::t('amossondaggi', '#clone'),
+                        'class' => 'btn btn-tool-secondary'
+                    ]);
+                } else {
+                    return '';
+                }
+            },
+        ]
+    ];
+}
 ?>
 <div class="sondaggi-domande-pagine-index">
     <?php // echo $this->render('_search', ['model' => $searchModel]);  ?>
@@ -52,10 +225,20 @@ Yii::$app->urlManager->createUrl([
         //'filterModel' => $model,
         'currentView' => $currentView,
         'gridView' => [
-            'columns' => [
+            'columns' => array_merge([
                 //['class' => 'yii\grid\SerialColumn'],
                 //'id',
-                'domanda:ntext',
+                [
+                    'attribute' => 'domanda',
+                    'format' => 'raw',
+                    'value' => function ($model) {
+                        if (preg_match('/<p>(.*?)<\/p>/', $model->domanda, $matches)) {
+                            return $matches[1]; // Restituisce il contenuto del primo paragrafo
+                        } else {
+                            return Yii::$app->formatter->asNtext($model->domanda);
+                        }
+                    }
+                ],
                 [
                     'attribute' => 'sondaggi_domande_tipologie_id',
                     'value' => function ($model) {
@@ -102,157 +285,7 @@ Yii::$app->urlManager->createUrl([
                     'expandOneOnly' => false,
                     'detailRowCssClass' => '',
                 ],
-                [
-                    'class' => 'open20\amos\core\views\grid\ActionColumn',
-                    'template' => '{update} {risposte} {aggdomanda} {aggrisposta} {clone} {delete}',
-                    'buttons' => [
-                        'update' => function ($url, $model) {
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_UPDATE', ['model' => $model])) {
-                                return Html::a(AmosIcons::show('edit'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/dashboard-domande/update',
-                                    'id' => $model->id,
-                                    'url' => $url,
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', 'Modifica'),
-                                    'class' => 'btn btn-tool-secondary'
-                                ]);
-                            } else {
-                                return '';
-                            }
-                        },
-                        'risposte' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIRISPOSTEPREDEFINITE_READ', ['model' => $model])) {
-                                if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8, 14])) {
-                                    if ($model->getSondaggiRispostePredefinites()->count()) {
-                                        if ($model->min_int_multipla > 0) {
-                                            $numRisp = $model->min_int_multipla;
-                                            if ($numRisp >=$model->getSondaggiRispostePredefinites()->count()) {
-                                                return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
-                                                    '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
-                                                    'idDomanda' => $model->id,
-                                                    'url' => $url,
-                                                ]), [
-                                                    'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - Il numero di risposte presenti deve essere maggiore del numero d risposte minime'),
-                                                    'class' => 'btn btn-tool-secondary btn-danger'
-                                                ]);
-                                            }
-                                        }
-                                        return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
-                                            'idDomanda' => $model->id,
-                                            'url' => $url,
-                                        ]), [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte'),
-                                            'class' => 'btn btn-tool-secondary'
-                                        ]);
-                                    } else {
-                                        return Html::a(AmosIcons::show('collection-plus'), Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/dashboard-risposte-predefinite/index',
-                                            'idDomanda' => $model->id,
-                                            'url' => $url,
-                                        ]), [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - E\' necessario aggiungere delle risposte per la tipologia di domanda scelta'),
-                                            'class' => 'btn btn-tool-secondary btn-danger'
-                                        ]);
-                                    }
-                                } else {
-                                    return '';
-                                }
-                            } else {
-                                return '';
-                            }
-                        },
-                        'aggdomanda' => function ($url, $model) {
-                            $url = \yii\helpers\Url::current();
-                                if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
-                                    if (!$model->is_parent) {
-
-                                    }
-                                }
-                        },
-                        'aggrisposta' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIRISPOSTEPREDEFINITE_CREATE', ['model' => $model])) {
-                                if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4])) {
-                                    if ($model->getSondaggiRispostePredefinites()->count()) {
-                                        return Html::a(AmosIcons::show('plus'), Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/dashboard-risposte-predefinite/create',
-                                            'idDomanda' => $model->id,
-                                            'url' => $url,
-                                        ]), [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Aggiunti risposta'),
-                                            'class' => 'btn btn-tool-secondary'
-                                        ]);
-                                    } else {
-                                        return Html::a(AmosIcons::show('plus'), Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/dashboard-risposte-predefinite/create',
-                                            'idDomanda' => $model->id,
-                                            'url' => $url,
-                                        ]), [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi risposta - E\' necessario aggiungere delle risposte per la tipologia di domanda scelta'),
-                                            'class' => 'btn btn-tool-secondary btn-danger'
-                                        ]);
-                                    }
-                                } else {
-                                    return '';
-                                }
-                            } else {
-                                return '';
-                            }
-                        },
-                        'delete' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
-
-                            if (in_array($model->getSondaggiDomandeTipologie()->one()['id'], [1, 2, 3, 4, 7, 8, 14])) {
-                                $confDeleteMessage = 'Stai per cancellare la domanda comprese le  risposte contenute al suo interno';
-                            } else {
-                                $confDeleteMessage = 'Sei sicuro di voler eliminare questo elemento?';
-                            }
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_DELETE', ['model' => $model])) {
-                                return Html::a(AmosIcons::show('delete'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/dashboard-domande/delete',
-                                    'id' => $model->id,
-                                    'idSondaggio' => $model->sondaggi_id,
-                                    'url' => $url,
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', 'Cancella'),
-                                    'class' => 'btn btn-danger-inverse',
-                                    'data-confirm' => $confDeleteMessage
-                                ]);
-                            } else {
-                                return '';
-                            }
-                        },
-                        'clone' => function ($url, $model) {
-                            /** @var \open20\amos\sondaggi\models\search\SondaggiDomandeSearch $model */
-                            $url = \yii\helpers\Url::current();
-                            if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGIDOMANDE_CREATE', ['model' => $model])) {
-                                $idPagina = null;
-                                if (Yii::$app->request->get('idPagina')) {
-                                    $idPagina = $model->sondaggi_domande_pagine_id;
-                                }
-                                return Html::a(AmosIcons::show('copy'), Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/dashboard-domande/clone',
-                                    'id' => $model->id,
-                                    'idSondaggio' => $model->sondaggi_id,
-                                    'idPagina' => $idPagina,
-                                    'url' => $url
-                                ]), [
-                                    'title' => AmosSondaggi::t('amossondaggi', '#clone'),
-                                    'class' => 'btn btn-tool-secondary'
-                                ]);
-                            } else {
-                                return '';
-                            }
-                        },
-                    ]
-                ],
-            ],
+            ], $contextMenuOptions),
         ],
         /* 'listView' => [
           'itemView' => '_item'

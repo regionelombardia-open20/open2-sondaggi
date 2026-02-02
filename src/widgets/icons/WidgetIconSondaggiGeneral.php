@@ -32,7 +32,10 @@ class WidgetIconSondaggiGeneral extends WidgetIcon
         $this->setLabel(AmosSondaggi::tHtml('amossondaggi', 'Sondaggi'));
         $this->setDescription(AmosSondaggi::t('amossondaggi', 'Modulo Sondaggi'));
 
-        if (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
+        if(!empty(Yii::$app->params['twoColorIcons'])){
+            $this->setIconFramework(AmosIcons::TWOTONES);
+            $this->setIcon('poll');
+        }else if  (!empty(\Yii::$app->params['dashboardEngine']) && \Yii::$app->params['dashboardEngine'] == WidgetAbstract::ENGINE_ROWS) {
             $this->setIconFramework(AmosIcons::IC);
             $this->setIcon('sondaggi');
             $paramsClassSpan = [];

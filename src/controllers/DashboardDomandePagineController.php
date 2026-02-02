@@ -19,6 +19,7 @@ use open20\amos\sondaggi\models\base\SondaggiTypes;
 use open20\amos\sondaggi\models\search\SondaggiDomandePagineSearch;
 use open20\amos\sondaggi\models\Sondaggi;
 use open20\amos\sondaggi\models\SondaggiDomandePagine;
+use open20\amos\sondaggi\rules\UpdateOwnSondaggiRule;
 use open20\amos\sondaggi\utility\SondaggiUtility;
 use open20\amos\upload\models\FilemanagerMediafile;
 use Yii;
@@ -26,6 +27,7 @@ use yii\helpers\Url;
 use yii\helpers\ArrayHelper;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\UploadedFile;
 
@@ -38,57 +40,111 @@ use yii\web\UploadedFile;
  *
  * @package open20\amos\sondaggi\controllers
  */
-class DashboardDomandePagineController extends CrudController
-{
+class DashboardDomandePagineController extends CrudController {
+
     /**
      * @var string $layout
      */
     public $layout = 'form';
-
     public $sondaggiModule = null;
 
-    public function behaviors()
-    {
+    public function behaviors() {
         return ArrayHelper::merge([],
-            [
-                'access' => [
-                    'class' => AccessControl::className(),
-                    'rules' => [
                         [
-                            'allow' => true,
-                            'actions' => [
-                                'index',
-                                'create',
-                                'view',
-                                'update',
-                                'delete',
-                                'order'
+                            'access' => [
+                                'class' => AccessControl::className(),
+                                'rules' => [
+                                    [
+                                        'allow' => true,
+                                        'actions' => [
+                                            'index',
+                                            'create',
+                                            'view',
+                                            'update',
+                                            'delete',
+                                            'order',
+                                            'rules',
+                                            'create-rule',
+                                            'update-rule',
+                                            'delete-rule',
+                                        ],
+                                        'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_MANAGE']
+                                    ],
+                                    [
+                                        'allow' => true,
+                                        'actions' => [
+                                            'index',
+                                            'view',
+                                            'rules',
+                                        ],
+                                        'roles' => ['CREATORE_SONDAGGI'],
+                                        'roleParams' => function () {
+                                            $sondaggio = null;
+                                            if(!empty(Yii::$app->request->get('id'))) {
+                                                $model = SondaggiDomandePagine::findOne(Yii::$app->request->get('id'));
+                                                $sondaggio = Sondaggi::find()->andWhere(['id' => $model->sondaggi_id])->asArray()->one();
+                                            }
+                                            if(!empty(Yii::$app->request->get('idSondaggio'))) {
+                                                $sondaggio = Sondaggi::find()->andWhere(['id' => Yii::$app->request->get('idSondaggio')])->asArray()->one();
+                                            }
+
+                                            if($sondaggio['created_by'] !== \Yii::$app->user->id) {
+                                                throw new ForbiddenHttpException('User isn\'t the selected sondaggio creator');
+                                            }
+                                        }
+                                    ],
+                                    [
+                                        'allow' => true,
+                                        'actions' => [
+                                            'create',
+                                            'update',
+                                            'delete',
+                                            'order',
+                                            'create-rule',
+                                            'update-rule',
+                                            'delete-rule',
+                                        ],
+                                        'roles' => ['CREATORE_SONDAGGI'],
+                                        'roleParams' => function () {
+                                            $sondaggio = null;
+                                            if(!empty(Yii::$app->request->get('id'))) {
+                                                $model = SondaggiDomandePagine::findOne(Yii::$app->request->get('id'));
+                                                $sondaggio = Sondaggi::find()->andWhere(['id' => $model->sondaggi_id])->asArray()->one();
+                                            }
+                                            if(!empty(Yii::$app->request->get('idSondaggio'))) {
+                                                $sondaggio = Sondaggi::find()->andWhere(['id' => Yii::$app->request->get('idSondaggio')])->asArray()->one();
+                                            }
+
+                                            if($sondaggio['created_by'] !== \Yii::$app->user->id) {
+                                                throw new ForbiddenHttpException('User isn\'t the selected sondaggio creator');
+                                            }
+
+                                            if($sondaggio['status'] !== Sondaggi::WORKFLOW_STATUS_BOZZA) {
+                                                throw new ForbiddenHttpException('Cannot execute current action as sondaggio is not in BOZZA status');
+                                            }
+                                        }
+                                    ]
+                                ]
                             ],
-                            'roles' => ['AMMINISTRAZIONE_SONDAGGI']
-                        ]
-                    ]
-                ],
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['post', 'get']
-                    ]
-                ]
+                            'verbs' => [
+                                'class' => VerbFilter::className(),
+                                'actions' => [
+                                    'delete' => ['post', 'get']
+                                ]
+                            ]
         ]);
     }
 
     /**
      * @inheritdoc
      */
-    public function init()
-    {
+    public function init() {
         $this->sondaggiModule = AmosSondaggi::instance();
 
         $this->setModelObj(new SondaggiDomandePagine());
         $this->setModelSearch(new SondaggiDomandePagineSearch());
 
 //        EventsAsset::register(\Yii::$app->view);
-
 //         $this->scope     = null;
 //         $this->moduleCwh = \Yii::$app->getModule('cwh');
 //
@@ -100,28 +156,27 @@ class DashboardDomandePagineController extends CrudController
             'grid' => [
                 'name' => 'grid',
                 'label' => AmosSondaggi::t('amossondaggi',
-                    '{tableIcon}'.Html::tag('p', AmosSondaggi::t('amossondaggi', 'Table')),
-                    [
-                    'tableIcon' => AmosIcons::show('view-list-alt')
-                ]),
+                        '{tableIcon}' . Html::tag('p', AmosSondaggi::t('amossondaggi', 'Table')),
+                        [
+                            'tableIcon' => AmosIcons::show('view-list-alt')
+                        ]),
                 'url' => '?currentView=grid'
             ]
         ]);
 
         parent::init();
+      //  \Yii::$app->view->params['containerFullWidth'] = true;
 
         //    \Yii::$app->params['bsVersion']                    = '4.x';
         \Yii::$app->view->params['customClassMainContent'] = 'box-container sidebar-setting';
-        \Yii::$app->view->params['showSidebarForm']        = true;
+        \Yii::$app->view->params['showSidebarForm'] = true;
         $this->setUpLayout('form');
-
     }
 
     /**
      * Set a view param used in \open20\amos\core\forms\CreateNewButtonWidget
      */
-    protected function setCreateNewBtnParams()
-    {
+    protected function setCreateNewBtnParams() {
         $get = Yii::$app->request->get();
         $buttonLabel = AmosSondaggi::t('amossondaggi', 'Aggiungi pagina');
         $sondaggio = Sondaggi::findOne(filter_input(INPUT_GET, 'idSondaggio'));
@@ -132,7 +187,6 @@ class DashboardDomandePagineController extends CrudController
                 if ($sondaggio->hasAlreadyPage()) {
                     $canCreate = false;
                 }
-
             }
         }
 
@@ -146,7 +200,7 @@ class DashboardDomandePagineController extends CrudController
         if (isset($get['url'])) {
             $urlCreateNew['url'] = $get['url'];
         }
-        if($canCreate) {
+        if ($canCreate) {
             Yii::$app->view->params['createNewBtnParams'] = [
                 'urlCreateNew' => $urlCreateNew,
                 'createNewBtnLabel' => $buttonLabel
@@ -154,10 +208,10 @@ class DashboardDomandePagineController extends CrudController
         }
         if (!empty($get['idSondaggio'])) {
             $backButton = Html::a(AmosIcons::show('long-arrow-return', ['class' => 'm-r-5']) . AmosSondaggi::t('amossondaggi', "Torna ai sondaggi"),
-                ['/sondaggi/sondaggi/manage'], [
-                    'class' => 'btn btn-secondary',
-                    'title' => AmosSondaggi::t('amossondaggi', "Torna ai sondaggi")
-                ]);
+                            ['/sondaggi/sondaggi/manage'], [
+                        'class' => 'btn btn-secondary',
+                        'title' => AmosSondaggi::t('amossondaggi', "Torna ai sondaggi")
+            ]);
             Yii::$app->view->params['additionalButtons'] = [
                 'htmlButtons' => [$backButton]
             ];
@@ -167,8 +221,7 @@ class DashboardDomandePagineController extends CrudController
     /**
      * This method is useful to set all common params for all list views.
      */
-    protected function setListViewsParams()
-    {
+    protected function setListViewsParams() {
         $this->setCreateNewBtnParams();
         $this->setUpLayout('form');
         Yii::$app->session->set(AmosSondaggi::beginCreateNewSessionKey(), Url::previous());
@@ -179,8 +232,7 @@ class DashboardDomandePagineController extends CrudController
      * Lists all SondaggiDomandePagine models.
      * @return mixed
      */
-    public function actionIndex($idSondaggio, $url = null)
-    {
+    public function actionIndex($layout = null, $idSondaggio = null, $url = null) {
         Url::remember();
         $this->setUrl($url);
         $this->setDataProvider($this->getModelSearch()->search(Yii::$app->request->getQueryParams()));
@@ -196,8 +248,7 @@ class DashboardDomandePagineController extends CrudController
      * @param integer $id
      * @return mixed
      */
-    public function actionView($id)
-    {
+    public function actionView($id) {
         $this->model = $this->findModel($id);
         $this->setMenuSidebar($this->model);
         if ($this->model->load(Yii::$app->request->post()) && $this->model->save()) {
@@ -214,8 +265,7 @@ class DashboardDomandePagineController extends CrudController
      * @param string|null $url
      * @return string|\yii\web\Response
      */
-    public function actionCreate($idSondaggio, $url = null)
-    {
+    public function actionCreate($idSondaggio, $url = null) {
         $this->setUpLayout('form');
         $this->model = new SondaggiDomandePagine();
         $this->model->sondaggi_id = $idSondaggio;
@@ -224,7 +274,7 @@ class DashboardDomandePagineController extends CrudController
         $sondaggio = Sondaggi::findOne($idSondaggio);
         if ($sondaggio->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
             Yii::$app->getSession()->addFlash('danger',
-            AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
+                    AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
             return $this->redirect(['index', 'idSondaggio' => $idSondaggio, 'url' => $url]);
         }
 
@@ -255,10 +305,79 @@ class DashboardDomandePagineController extends CrudController
             // }
         } else {
             return $this->render('create', [
-                'model' => $this->model,
-                'url' => $url
+                        'model' => $this->model,
+                        'url' => $url
             ]);
         }
+    }
+
+    public function actionCreateRule($idSondaggio, $url = null) {
+        $this->setUpLayout('form');
+        $this->model = new \open20\amos\sondaggi\models\SondaggiDomandePagineRule();
+        $this->setMenuSidebar(Sondaggi::findOne($idSondaggio));
+
+        $sondaggio = Sondaggi::findOne($idSondaggio);
+        if ($sondaggio->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+            Yii::$app->getSession()->addFlash('danger',
+                    AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
+            return $this->redirect(['rules', 'idSondaggio' => $idSondaggio, 'url' => $url]);
+        }
+
+        if (\Yii::$app->request->isPost && $this->model->load(Yii::$app->request->post())) {
+            $idPag = null;
+            $this->model->fields = json_encode($this->model->fields2);
+            foreach ($this->model->fields2 as $v) {
+                if (empty($idPag)) {
+                    $idPag = \open20\amos\sondaggi\models\SondaggiDomande::findOne($v)->sondaggi_domande_pagine_id;
+                }
+            }
+            $this->model->sondaggi_domande_pagine_id = $idPag;
+            if ($this->model->validate()) {
+                $this->model->save();
+                return $this->redirect(['rules', 'idSondaggio' => $idSondaggio, 'url' => $url]);
+            }
+        }
+
+        return $this->render('create_rule', [
+                    'model' => $this->model,
+                    'url' => $url,
+                    'idSondaggio' => $idSondaggio
+        ]);
+    }
+
+    public function actionUpdateRule($idSondaggio, $id, $url = null) {
+        $this->setUpLayout('form');
+        $this->model = \open20\amos\sondaggi\models\SondaggiDomandePagineRule::findOne($id);
+        $this->setMenuSidebar(Sondaggi::findOne($idSondaggio));
+
+        $sondaggio = Sondaggi::findOne($idSondaggio);
+        if ($sondaggio->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+            Yii::$app->getSession()->addFlash('danger',
+                    AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
+            return $this->redirect(['rules', 'idSondaggio' => $idSondaggio, 'url' => $url]);
+        }
+
+        if (\Yii::$app->request->isPost && $this->model->load(Yii::$app->request->post())) {
+            $idPag = null;
+            $this->model->fields = json_encode($this->model->fields2);
+            foreach ($this->model->fields2 as $v) {
+                if (empty($idPag)) {
+                    $idPag = \open20\amos\sondaggi\models\SondaggiDomande::findOne($v)->sondaggi_domande_pagine_id;
+                }
+            }
+            $this->model->sondaggi_domande_pagine_id = $idPag;
+            if ($this->model->validate()) {
+                $this->model->save();
+                return $this->redirect(['rules', 'idSondaggio' => $idSondaggio, 'url' => $url]);
+            }
+        }
+        $this->model->fields2 = json_decode($this->model->fields, true);
+
+        return $this->render('create_rule', [
+                    'model' => $this->model,
+                    'url' => $url,
+                    'idSondaggio' => $idSondaggio
+        ]);
     }
 
     /**
@@ -268,8 +387,7 @@ class DashboardDomandePagineController extends CrudController
      * @param string|null $url
      * @return string|\yii\web\Response
      */
-    public function actionUpdate($id, $url = null)
-    {
+    public function actionUpdate($id, $url = null) {
         $this->setUpLayout('form');
         $this->model = $this->findModel($id);
         $this->setMenuSidebar(Sondaggi::findOne($this->model->sondaggi_id));
@@ -277,7 +395,7 @@ class DashboardDomandePagineController extends CrudController
         $sondaggio = Sondaggi::findOne($this->model->sondaggi_id);
         if ($sondaggio->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
             Yii::$app->getSession()->addFlash('danger',
-            AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
+                    AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
             return $this->redirect(['index', 'idSondaggio' => $this->model->sondaggi_id, 'url' => $url]);
         }
 
@@ -302,8 +420,8 @@ class DashboardDomandePagineController extends CrudController
             }
         } else {
             return $this->render('update', [
-                'model' => $this->model,
-                'url' => ($url) ? $url : null
+                        'model' => $this->model,
+                        'url' => ($url) ? $url : null
             ]);
         }
     }
@@ -317,8 +435,7 @@ class DashboardDomandePagineController extends CrudController
      * @return \yii\web\Response
      * @throws \yii\db\StaleObjectException
      */
-    public function actionDelete($id, $idSondaggio, $url = null)
-    {
+    public function actionDelete($id, $idSondaggio, $url = null) {
 
         $retMessage = SondaggiUtility::deletePage($id);
 
@@ -326,32 +443,32 @@ class DashboardDomandePagineController extends CrudController
             Yii::$app->getSession()->addFlash('danger', $retMessage);
         } else {
             Yii::$app->getSession()->addFlash('success',
-                AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
+                    AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
         }
 
         /*
-        try {
-            $this->model = $this->findModel($id);
+          try {
+          $this->model = $this->findModel($id);
 
-            $domande = $this->model->getSondaggiDomandes()->count();
-            if ($domande) {
-                Yii::$app->getSession()->addFlash('danger',
-                    AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la pagina per la presenza di domande."));
-            } else {
-                if ($this->model->sondaggi->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
-                    Yii::$app->getSession()->addFlash('danger',
-                        AmosSondaggi::tHtml('amossondaggi',
-                            "Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA."));
-                } else {
-                    $this->model->delete();
-                    Yii::$app->getSession()->addFlash('success',
-                        AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
-                }
-            }
-        } catch (NotFoundHttpException $e) {
+          $domande = $this->model->getSondaggiDomandes()->count();
+          if ($domande) {
+          Yii::$app->getSession()->addFlash('danger',
+          AmosSondaggi::tHtml('amossondaggi', "Impossibile cancellare la pagina per la presenza di domande."));
+          } else {
+          if ($this->model->sondaggi->status != Sondaggi::WORKFLOW_STATUS_BOZZA) {
+          Yii::$app->getSession()->addFlash('danger',
+          AmosSondaggi::tHtml('amossondaggi',
+          "Impossibile cancellare la risposta in quanto il sondaggio a cui è collegata non è in stato BOZZA."));
+          } else {
+          $this->model->delete();
+          Yii::$app->getSession()->addFlash('success',
+          AmosSondaggi::tHtml('amossondaggi', "Pagina cancellata correttamente."));
+          }
+          }
+          } catch (NotFoundHttpException $e) {
 
-        }
-        */
+          }
+         */
 
         if ($url) {
             return $this->redirect($url);
@@ -360,11 +477,34 @@ class DashboardDomandePagineController extends CrudController
         }
     }
 
+    public function actionDeleteRule($idSondaggio, $id, $url = null) {
+
+        $model = \open20\amos\sondaggi\models\SondaggiDomandePagineRule::findOne($id);
+        $sondaggio = Sondaggi::findOne($idSondaggio);
+        if ($sondaggio->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+            Yii::$app->getSession()->addFlash('danger',
+                    AmosSondaggi::tHtml('amossondaggi', '#cannot_edit_published'));
+            return $this->redirect(['rules', 'idSondaggio' => $this->model->sondaggi_id, 'url' => $url]);
+        }
+        if ($model) {
+            $model->delete();
+            Yii::$app->getSession()->addFlash('success',
+                    AmosSondaggi::t('amossondaggi', "Regola cancellata correttamente."));
+        } else {
+            Yii::$app->getSession()->addFlash('danger',
+                    AmosSondaggi::t('amossondaggi', "Regola non trovata."));
+        }
+        if ($url) {
+            return $this->redirect($url);
+        } else {
+            return $this->redirect(['rules', 'idSondaggio' => $idSondaggio, 'url' => $url]);
+        }
+    }
+
     /**
      * @param $model
      */
-    public function setMenuSidebar($model)
-    {
+    public function setMenuSidebar($model) {
         \Yii::$app->getView()->params['showSidebarForm'] = true;
         \Yii::$app->getView()->params['bi-menu-sidebar'] = SondaggiUtility::getSidebarPages($model);
     }
@@ -375,5 +515,24 @@ class DashboardDomandePagineController extends CrudController
         $result = $sondaggio->setOrdinamento($order);
         Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
         return [$result];
+    }
+
+    public function actionRules($idSondaggio, $url = null) {
+        $this->setUpLayout('form');
+        Url::remember();
+        $this->setUrl($url);
+        $allPagine = SondaggiDomandePagine::find()->andWhere(['sondaggi_id' => $idSondaggio])->select('id');
+        $dataProvider = new \yii\data\ActiveDataProvider([
+            'query' => \open20\amos\sondaggi\models\SondaggiDomandePagineRule::find()
+                    ->andWhere(['sondaggi_domande_pagine_id' => $allPagine]),
+        ]);
+        \Yii::$app->getView()->params['showSidebarForm'] = true;
+        $this->setMenuSidebar(Sondaggi::findOne($idSondaggio));
+
+        return $this->render('rules', [
+                    'dataProvider' => $dataProvider,
+                    'currentView' => $this->getCurrentView(),
+                    'idSondaggio' => $idSondaggio,
+        ]);
     }
 }

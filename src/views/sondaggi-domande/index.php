@@ -98,7 +98,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                                                     'idDomanda' => $model->id,
                                                     'url' => $url,
                                                 ]), [
-                                                    'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - Il numero di risposte presenti deve essere maggiore del numero d risposte minime'),
+                                                    'title' => AmosSondaggi::t('amossondaggi', 'Gestisci risposte - Il numero di risposte presenti deve essere maggiore del numero di risposte minime'),
                                                     'class' => 'btn btn-tool-secondary btn-danger'
                                                 ]);
                                             }
@@ -139,7 +139,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                                             'idDomanda' => $model->id,
                                             'url' => $url,
                                         ]), [
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Aggiunti risposta'),
+                                            'title' => AmosSondaggi::t('amossondaggi', 'Aggiungi risposta'),
                                             'class' => 'btn btn-tool-secondary'
                                         ]);
                                     } else {

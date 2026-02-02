@@ -13,6 +13,11 @@ class ModuleRisultatiAsset extends AssetBundle
     ];
     public $js = [        
     ];
+    
+    public $jsOptions = [
+        'data-cookieconsent' => "ignore"
+    ];
+    
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset',

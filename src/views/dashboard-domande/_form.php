@@ -151,7 +151,17 @@ $this->registerJs($js2, yii\web\View::POS_READY);
             </div>
         <?php } ?>
         <div class="col-sm-12">
-            <?= $form->field($model, 'domanda', ['options' => ['class' => 'nom']])->textarea(['rows' => 4]) ?>
+<!--            --><?php //= $form->field($model, 'domanda', ['options' => ['class' => 'nom']])->textarea(['rows' => 4]) ?>
+            <?=
+            $form->field($model, 'domanda')->widget(TextEditorWidget::className(),
+                [
+                    'clientOptions' => [
+                        'placeholder' => AmosSondaggi::t('amossondaggi',
+                            'Qui si può inserire una descrizione introduttiva alla domanda, essa sarà sempre visibile'),
+                        'lang' => substr(Yii::$app->language, 0, 2)
+                    ]
+                ])
+            ?>
         </div>
         <div class="col-sm-12">
             <?= $form->field($model, 'tooltip', [])->textarea(['rows' => 3]) ?>
@@ -438,7 +448,9 @@ $this->registerJs($js2, yii\web\View::POS_READY);
           <?= $form->field($model, 'parent_id')->dropDownList(
              ArrayHelper::merge(
                 ['prompt' => AmosSondaggi::t('amossondaggi', '#select_parent_id')],
-                ArrayHelper::map($otherQuestions, 'id', 'domanda')
+                ArrayHelper::map($otherQuestions, 'id', function($item) {
+                    return strip_tags($item['domanda']);
+                })
              ),
              [
                 'id' => 'sondaggidomande-parent_id',
@@ -493,7 +505,9 @@ $this->registerJs($js2, yii\web\View::POS_READY);
 
                 <?=
                 $form->field($model, 'condizione_necessaria')->dropDownList(
-                    yii\helpers\ArrayHelper::map($model->getTutteDomandeDellePagine()->all(), 'id', 'risposta', 'domanda'),
+                    yii\helpers\ArrayHelper::map($model->getTutteDomandeDellePagine()->all(), 'id', 'risposta', function($item) {
+                        return strip_tags($item['domanda']);
+                    }),
                     ['prompt' => AmosSondaggi::t('amossondaggi',
                         'Seleziona la risposta o le risposte a cui condizionare la domanda'), 'id' => 'condizione_necessaria-id',
                         'multiple' => true, 'size' => $model->getTutteDomandeDellePagine()->count() + 5]
@@ -523,7 +537,9 @@ $this->registerJs($js2, yii\web\View::POS_READY);
                 <?=
                 $form->field($model, 'domanda_condizionata_testo_libero')->dropDownList(
                     yii\helpers\ArrayHelper::map($model->getTutteDomandeLibere()->orderBy('ordinamento')->all(), 'id',
-                        'domanda'),
+                        function($item) {
+                            return strip_tags($item['domanda']);
+                        }),
                     ['prompt' => AmosSondaggi::t('amossondaggi', 'Selezionare, questa selezione scarterà la precedente'), 'id' => 'condizione_necessaria-libera-id']
                 )
                 ?>

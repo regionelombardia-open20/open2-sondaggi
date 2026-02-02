@@ -16,7 +16,7 @@
         "ext-json": "*",
         "open20/amos-admin":"^2.17.0",
         "open20/amos-layout":"^1.11.2",
-        "open20/amos-attachments":"^1.1.11",
+        "open20/amos-attachments":"^1.20.0",
         "open20/amos-core":"^1.19.0",
         "open20/amos-tag": "^1.10.0",
         "open20/amos-cwh": "^2.9.0",
@@ -26,7 +26,8 @@
         "kartik-v/yii2-detail-view": "*",
         "kartik-v/yii2-dropdown-x": "*",
         "kartik-v/yii2-widget-fileinput": "*",
-        "xj/yii2-tagit-widget" : "*"
+        "xj/yii2-tagit-widget" : "*",
+        "yii2tech/spreadsheet": "*"
     },
     "autoload": {
         "psr-4": {

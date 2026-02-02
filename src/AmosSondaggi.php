@@ -74,6 +74,12 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * @var boolean
      */
     public $orderPages = false;
+    
+    /**
+     * To set the default facilitator when creating a user
+     * @var integer
+     */
+    public $defaultUserIdFacilitator;
 
     /**
      * Zips XLS recap file (with attachments).
@@ -278,6 +284,7 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      */
     public $statisticDisableLoggedUsers = false;
 
+
     /**
      * This param disable name, surname and email from extraction
      * If the survey is of type abilita_registrazione = true this param is irrelevant
@@ -322,12 +329,30 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
     public $sondaggioDataConfirmMessage = '';
 
     /**
+     * Force to show the option of frontend compilation
+     * @var bool $forceEnableFrontendCompilation
+     */
+    public $forceEnableFrontendCompilation = false;
+
+    /**
+     * Disable the progress bar in the frontend
+     * @var bool $disableProgressBar
+     */
+    public $disableProgressBar = false;
+
+    /**
      * @var array $pdfMethods
      * All methods for PDF generation
      */
     public $pdfMethods = [
         'SetFooter' => ['{PAGENO}']
     ];
+
+    /**
+     * Download results via TaskManager with advanced options (split records in multiple files etc.)
+     * @var bool $enableAdvancedResultsDownload
+     */
+    public $enableAdvancedResultsDownload = false;
 
     /**
      * Specifies enabled results download options in dashboard
@@ -367,12 +392,61 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
      * @var bool $enableInvitationsForOrganizations
      */
     public $enableInvitationsForOrganizations = false;
+    
+    /**
+     * Enable the possibility to do anonimous poll
+     * @var bool $enableAnonimousPoll
+     */
+    public $enableAnonimousPoll = false;
 
     /**
      * Enable the possibility to invite platform users
      * @var bool $enableInvitationsForPlatformUsers
      */
     public $enableInvitationsForPlatformUsers = true;
+    
+    /**
+     * Enable the possibility to choose the number of compilations available for
+     * the survey. If true, the user will be able to choose the number of
+     * compilations of the survey, if false it will be set to default value
+     * @var bool $enableChooseNumberOfCompilations
+     */
+    public $enableChooseNumberOfCompilations = false;
+    
+    /**
+     * Default value for Sondaggi model attribute 'compilazioni_disponibili'
+     * @var int $compilazioniDisponibiliDefault
+     */
+    public $defaultCompilazioniDisponibili = 1;
+    
+    
+    public $hideStatusPoll = true;
+
+
+    public $startEndPdfCompleteDate = false;
+    
+    /**
+     * If set to true, it enables the display and management of the back button
+     * when completing surveys
+     * @var type
+     */
+    public $enableGoBackButton = false;
+
+    public $communityManagerRolesList = [
+        'COMMUNITY_MANAGER'
+    ];
+
+    public $cwhNodiIdPrefixToCheck = [
+        'community'
+    ];
+
+    public $userMmTableToCheck = [
+        'community' => 'community_user_mm'
+    ];
+
+    public $customBreadCrumbs = false;
+
+    public $stopEmail = false;
 
     /**
      * @inheritdoc
@@ -558,6 +632,18 @@ class AmosSondaggi extends AmosModule implements ModuleInterface, CmsModuleInter
             if (Yii::$app->user->can($role)) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    public function isNotifyDefaultBehaviorDisabled()
+    {
+        /** @var \open20\amos\notificationmanager\AmosNotify $notifyModule */
+        $notifyModule = Yii::$app->getModule('notify');
+        $sondaggiModelClassname = self::getModelClassName();
+        if ($notifyModule && in_array($sondaggiModelClassname, $notifyModule->disableDefaultBehaviorClasses)) {
+            return true;
         }
 
         return false;

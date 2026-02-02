@@ -33,6 +33,18 @@ class V1 extends AmosModule
      */
     public $controllerNamespace = 'open20\amos\sondaggi\modules\v1\controllers';
 
+
+    public function init()
+    {
+        parent::init();
+
+        // Custom initialization code goes here
+        // Ensure the user component is stateless for this module's requests
+        \Yii::$app->user->enableSession = false;
+
+        // Optionally, configure the loginUrl to return 401 instead of redirecting
+        \Yii::$app->user->loginUrl = null;
+    }
    
 
     /**

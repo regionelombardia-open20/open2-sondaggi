@@ -26,7 +26,7 @@ if (!empty($forzato)) {
     \Yii::$app->language = $forzato;
 }
 ?>
-<div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">
+<div class="sondaggi-index text-center sondaggi-success my-5 m-b-20">
     <?php
     if (!empty($sondaggio->titolo_fine_sondaggio_front) && strlen(trim($sondaggio->titolo_fine_sondaggio_front))) {
         ?>
@@ -35,7 +35,7 @@ if (!empty($forzato)) {
             'class' => 'am-4 success m-t-30'
         ])
         ?>
-        <h2 class="p-t-5 nom-b"><?= $sondaggio->titolo_fine_sondaggio_front ?></h2>
+        <h2 class="mb-3"><?= $sondaggio->titolo_fine_sondaggio_front ?></h2>
         <?php
     } else {
         ?>
@@ -44,7 +44,7 @@ if (!empty($forzato)) {
             'class' => 'am-4 success m-t-30'
         ])
         ?>
-        <h2 class="p-t-5 nom-b"><?= AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il sondaggio.')
+        <h2 class="mb-3"><?= AmosSondaggi::tHtml('amossondaggi', 'Grazie per aver compilato il sondaggio.')
         ?></h2>
         <?php } ?>
 
@@ -72,7 +72,7 @@ if (!empty($forzato)) {
     $closeUrl = trim($sondaggio->url_chiudi_sondaggio);
     ?>
     <?=
-    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), (!empty($closeUrl) && AmosSondaggi::instance()->enableRedirectionUrl) ? $closeUrl: Url::previous(),
+    Html::a(AmosSondaggi::t('amossondaggi', 'Chiudi'), (!empty($closeUrl) && AmosSondaggi::instance()->enableRedirectionUrl) ? 'http://' . $closeUrl: Url::previous(),
         [
         'class' => 'btn btn-secondary undo-edit m-t-30'
     ]);

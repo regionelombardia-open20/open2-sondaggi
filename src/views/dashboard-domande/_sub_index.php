@@ -22,7 +22,18 @@ echo DataProviderView::widget([
         'columns' => [
             //['class' => 'yii\grid\SerialColumn'],
             //'id',
-            'domanda:ntext',
+            //'domanda:ntext',
+            [
+                'attribute' => 'domanda',
+                'format' => 'raw',
+                'value' => function ($model) {
+                    if (preg_match('/<p>(.*?)<\/p>/', $model->domanda, $matches)) {
+                        return $matches[1]; // Restituisce il contenuto del primo paragrafo
+                    } else {
+                        return Yii::$app->formatter->asNtext($model->domanda);
+                    }
+                }
+            ],
             [
                 'class' => 'open20\amos\core\views\grid\ActionColumn',
                 'template' => '{update} {clone} {delete}',

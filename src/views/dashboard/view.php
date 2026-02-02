@@ -1,9 +1,11 @@
 <?php
 
+use open20\amos\core\utilities\ModalUtility;
 use open20\amos\layout\assets\SpinnerWaitAsset;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleSondaggiAsset;
 use open20\amos\sondaggi\utility\SondaggiUtility;
+use open20\amos\workflow\AmosWorkflow;
 use yii\helpers\Html;
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\models\Sondaggi;
@@ -13,13 +15,28 @@ use kartik\dropdown\DropdownX;
 
 /**
  * @var Sondaggi $model
+ * @var string $urlBC
  */
 
 ModuleSondaggiAsset::register($this);
 SpinnerWaitAsset::register($this);
 
-
+/** @var AmosSondaggi $moduleSondaggi */
+$moduleSondaggi = Yii::$app->controller->sondaggiModule;
+$showNotificationConfirmModal = false;
+if ($moduleSondaggi->isNotifyDefaultBehaviorDisabled()) {
+    $showNotificationConfirmModal = true;
+}
+$dataConfirmMessage = AmosSondaggi::t('amossondaggi', '#publish_poll_dialog');
+if (AmosSondaggi::instance()->hasInvitation && (Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI') || Yii::$app->user->can('SONDAGGI_MANAGE'))) {
+    if (empty($list)) {
+        $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_empty_list');
+    } else {
+        $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_invitations', ['list' => $list]);
+    }
+}
 $isStatusValidato = $model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO;
+
 $js = <<<JS
     // Se lo stato è validato mostra il modale
     var isStatusValidato = '{$isStatusValidato}';
@@ -43,16 +60,61 @@ $js = <<<JS
         }
     });
     
-    // show loading spinner on activate poll button
-    $('#publish-poll-btn').on('click', function () {
-        var dataConfirm = $('body .modal.bootstrap-dialog.krajee-amos-modal.type-warning.fade.size-normal.in');
-        if (dataConfirm) {
-            $('body').on('click', '.bootstrap-dialog-footer-buttons .btn.btn-warning', function () {
-                $('.loading').show();
-            });
-        } else {
-            $('.loading').show();
-        }
+    /* When the publish button is clicked */
+    $('#publish-poll-btn').on('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var originalUrl = $(this).attr('href');
+        let showNotificationConfirmModal = !!'{$showNotificationConfirmModal}';
+        
+        /* Mostra il primo modale di conferma personalizzato */
+        BootstrapDialog.show({
+            title: '<span class="text-danger">' + lajax.t('Conferma') + '</span>',
+            message: '{$dataConfirmMessage}',
+            type: BootstrapDialog.TYPE_DEFAULT,
+            closable: false,
+            buttons: [{
+                label: lajax.t('Annulla'),
+                action: function(dialog) {
+                    dialog.close();
+                }
+            }, {
+                label: lajax.t('Conferma'),
+                cssClass: 'btn-primary',
+                action: function(dialog) {
+                    /* Chiudi il primo modale */
+                    dialog.close();
+                    /* Se c'è il modale di conferma notifica */
+                    if (showNotificationConfirmModal) {
+                        /* Mostra il modale di conferma notifica */
+                        $('#notification-confirm-modal').modal('show');
+                        
+                        /* Gestisci click su "No" */
+                        $('#notification-no-btn').off('click').on('click', function() {
+                            $('.loading').show();
+                            var newUrl = originalUrl + (originalUrl.includes('?') ? '&' : '?') + 'sendNotification=0';
+                            $('#notification-confirm-modal').modal('hide');
+                            window.location.href = newUrl;
+                        });
+                        
+                        /* Gestisci click su "Sì" */
+                        $('#notification-yes-btn').off('click').on('click', function() {
+                            $('.loading').show();
+                            var newUrl = originalUrl + (originalUrl.includes('?') ? '&' : '?') + 'sendNotification=1';
+                            $('#notification-confirm-modal').modal('hide');
+                            window.location.href = newUrl;
+                        });
+                    } else {
+                        /* Se non c'è il modale di notifica, procedi direttamente */
+                        $('.loading').show();
+                        window.location.href = originalUrl;
+                    }
+                }
+            }]
+        });
+        
+        return false;
     });
     
 JS;
@@ -71,24 +133,35 @@ if (strlen($model->getTitle()) > 75) {
     $this->title = $model->getTitle();
 }
 
-$numberListTag = \Yii::$app->controller->sondaggiModule->numberListTag;
+$numberListTag = $moduleSondaggi->numberListTag;
 
+if(\Yii::$app->user->can('SONDAGGI_LETTORE_RISULTATI')) {
+    $this->params['forceBreadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => $urlBC];
+    $this->params['forceBreadcrumbs'][] = ['label' => $this->title];
+}
 $this->params['breadcrumbs'][] = ['label' => AmosSondaggi::t('amossondaggi', 'Sondaggi'), 'url' => ['sondaggi/manage']];
 $this->params['breadcrumbs'][] = $this->title;
-if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] = [];
+if (!AmosSondaggi::instance()->enableBreadcrumbs) {
+    $this->params['breadcrumbs'] = [];
+    $this->params['forceBreadcrumbs'] = [];
+}
 
 $url                            = \yii\helpers\Url::current();
 
 $sondaggioPubblicabile = $model->verificaSondaggioPubblicabile();
 $sondaggioPreview = $model->verificaSondaggioPubblicabile(false);
 
-if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
+$actionBtnsShown = false;
+
+if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ||
+    \Yii::$app->getUser()->can('communityManagerAdminSondaggi', ['model' => $model])) {
+    $actionBtnsShown = true;
     $this->params['titleButtons'][] = Html::a(
             AmosIcons::show('delete').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#delete_poll'),
             Yii::$app->urlManager->createUrl([
                 '/'.$this->context->module->id.'/sondaggi/delete',
                 'id' => $model->id,
-                'url' => $url,
+                'url' => '/sondaggi',
             ]),
             [
             'id' => 'delete-poll',
@@ -105,7 +178,7 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
 
     // controllo prima di tutto che l'utente abbia il permesso di portare il sondaggio in stato attivo o disattivo
     // qundi 1) il parametro è settatto 2) se non hai il ruolo per poter getire il pulsante ti blocco subito!
-    if (!Yii::$app->controller->sondaggiModule->currentUserCanActivatePool()) {
+    if (!$moduleSondaggi->currentUserCanActivatePool()) {
         // due blocchi distinti, attiva Sondaggio e Disattiva sondaggio in base allo status
         if ($model->status != Sondaggi::WORKFLOW_STATUS_VALIDATO) {
             $this->params['titleButtons'][] = '<span data-toggle="tooltip" data-placement="bottom" class="m-l-5" title="' . AmosSondaggi::t('amossondaggi', '#no_role_to_activate_pool_message') . '">' . Html::a(AmosIcons::show('check-circle') . '&nbsp;' . AmosSondaggi::t('amossondaggi',
@@ -129,14 +202,23 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
             $list .= '<ul>'.$item->name.'</ul>';
         }
 
-        $dataConfirmMessage = AmosSondaggi::t('amossondaggi', '#publish_poll_dialog');
-        if (AmosSondaggi::instance()->hasInvitation) {
-            if (empty($list)) {
-                $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_empty_list');
-            } else {
-                $dataConfirmMessage .= AmosSondaggi::t('amossondaggi', '#publish_poll_dialog_invitations', ['list' => $list]);
-            }
+        if($model->status == Sondaggi::WORKFLOW_STATUS_DAVALIDARE) {
+            $this->params['titleButtons'][] = Html::a(AmosIcons::show('minus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
+                    '#draft_poll'),
+                Yii::$app->urlManager->createUrl([
+                    '/'.$this->context->module->id.'/pubblicazione/depubblica',
+                    'idSondaggio' => $model->id,
+                    'url' => $url,
+                ]),
+                [
+                    'title' => AmosSondaggi::t('amossondaggi', '#depublish_poll'),
+                    'class' => 'btn btn-danger',
+                    'data' => [
+                        'confirm' => AmosSondaggi::t('amossondaggi', '#depublish_poll_dialog')
+                    ]
+                ]);
         }
+
         $this->params['titleButtons'][] = Html::a(AmosIcons::show('check-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
                     '#publish_poll'),
                 Yii::$app->urlManager->createUrl([
@@ -148,9 +230,6 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                     'title' => AmosSondaggi::t('amossondaggi', '#publish_poll'),
                     'class' => 'btn btn-success',
                     'id' => 'publish-poll-btn',
-                    'data' => [
-                        'confirm' => $dataConfirmMessage
-                    ],
                 ]
         );
     } else if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
@@ -177,6 +256,87 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 ]
             ).'</span>';
     }
+}
+if(
+    (
+        \Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI') ||
+        \Yii::$app->user->can('communityManagerAdminSondaggi', ['model' => $model]) ||
+        \Yii::$app->user->can('removeOwnSondaggi', ['model' => $model])
+    )
+    && !$actionBtnsShown) {
+    $this->params['titleButtons'][] = Html::a(
+        AmosIcons::show('delete').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#delete_poll'),
+        Yii::$app->urlManager->createUrl([
+            '/'.$this->context->module->id.'/sondaggi/delete',
+            'id' => $model->id,
+            'url' => '/sondaggi',
+        ]),
+        [
+            'id' => 'delete-poll',
+            'title' => AmosSondaggi::t('amossondaggi', '#delete_poll'),
+            'class' => 'btn btn-danger-inverse',
+            'data' => [
+                'confirm' => AmosSondaggi::t('amossondaggi', '#delete_poll_dialog')
+            ]
+        ]);
+    // Modal Delete
+    if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+        echo $this->render('parts/_modalDelete', ['model' => $model]);
+    }
+}
+if(Yii::$app->user->can('updateOwnSondaggi', ['model' => $model]) && !$actionBtnsShown){
+    if ($sondaggioPubblicabile && $model->status != Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+        $invitations = SondaggiInvitations::find()->andWhere(['sondaggi_id' => $model->id])->andWhere(['active' => 1])->all();
+        $list = '';
+        foreach($invitations as $item) {
+            $list .= '<ul>'.$item->name.'</ul>';
+        }
+
+        $this->params['titleButtons'][] = Html::a(AmosIcons::show('check-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
+                '#topublish_poll'),
+            Yii::$app->urlManager->createUrl([
+                '/'.$this->context->module->id.'/pubblicazione/pubblica',
+                'idSondaggio' => $model->id,
+                'url' => '/sondaggi/pubblicazione/all',
+            ]),
+            [
+                'title' => AmosSondaggi::t('amossondaggi', '#publish_poll'),
+                'class' => 'btn btn-success',
+                'id' => 'publish-poll-btn',
+            ]
+        );
+    } else if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
+        $this->params['titleButtons'][] = Html::a(AmosIcons::show('minus-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
+                '#depublish_poll'),
+            Yii::$app->urlManager->createUrl([
+                '/'.$this->context->module->id.'/pubblicazione/depubblica',
+                'idSondaggio' => $model->id,
+                'url' => $url,
+            ]),
+            [
+                'title' => AmosSondaggi::t('amossondaggi', '#depublish_poll'),
+                'class' => 'btn btn-danger',
+                'data' => [
+                    'confirm' => AmosSondaggi::t('amossondaggi', '#depublish_poll_dialog')
+                ]
+            ]);
+    } else {
+        $this->params['titleButtons'][] = '<span data-toggle="tooltip" data-placement="bottom" title="'.AmosSondaggi::t('amossondaggi', AmosSondaggi::instance()->enableInvitationList ? '#cannot_publish_no_list' : '#cannot_publish').'">'.Html::a(AmosIcons::show('check-circle').'&nbsp;'.AmosSondaggi::t('amossondaggi',
+                    '#publish_poll'), '#',
+                [
+                    'class' => 'btn btn-default disabled',
+                    'id' => 'publish-poll-btn'
+                ]
+            ).'</span>';
+    }
+}
+?>
+<?php
+if ($moduleSondaggi->forceOnlyFrontend) {
+    $partecipazioni = $model->getNumeroPartecipazioni();
+} else {
+    //partecipazioni totali senza quelli senza stato
+    $partecipazioni = $model->getCompilazioniStatus(null,1);
 }
 ?>
 <div class="sondaggi-dashboard">
@@ -214,12 +374,12 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 </div> -->
                 <p class="mt-0"><strong class="text-uppercase text-success"><?= Amosicons::show('calendar-check') ?>&nbsp;<?=
                         AmosSondaggi::t('amossondaggi', '#publication_date').': '
-                        ?></strong><?= \Yii::$app->formatter->asDate($model->publish_date)
+                        ?></strong><?= \Yii::$app->formatter->asDateTime($model->publish_date, 'php:d/m/Y H:i')
                         ?></p>
                 <?php if (!empty($model->close_date)) : ?>
                     <p class="mt-0"><strong class="text-uppercase text-danger"><?= Amosicons::show('calendar-close') ?>&nbsp;<?=
                             AmosSondaggi::t('amossondaggi', '#closing_date').': '
-                            ?></strong><?= \Yii::$app->formatter->asDate($model->close_date) ?></p>
+                            ?></strong><?= \Yii::$app->formatter->asDateTime($model->close_date, 'php:d/m/Y H:i') ?></p>
                 <?php endif; ?>
                 <!-- <div class="mr-1">
                     <svg class="icon">
@@ -280,7 +440,9 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                             ]);
                     }
                     ?>
-                <?php if ($user->can('AMMINISTRAZIONE_SONDAGGI'))
+                <?php if ($user->can('AMMINISTRAZIONE_SONDAGGI') ||
+                    $user->can('SONDAGGI_MANAGE') ||
+                    $user->can('updateOwnSondaggi', ['model' => $model]))
                 echo Html::a(Amosicons::show('copy').'&nbsp;'.AmosSondaggi::t('amossondaggi', '#duplicate'),
                     Yii::$app->urlManager->createUrl([
                         '/'.$this->context->module->id.'/dashboard/clone',
@@ -310,31 +472,55 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                 }
                 ?>
                 <?php
-                if (!empty(AmosSondaggi::instance()->enabledResultsDownloadOptions)) {
-                    if (count(AmosSondaggi::instance()->enabledResultsDownloadOptions) > 1) {
+                if(AmosSondaggi::instance()->enableAdvancedResultsDownload) {
+                    $surveyPublishedAndClosed = ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO && $model->close_date < date('Y-m-d'));
+                    if ($surveyPublishedAndClosed || AmosSondaggi::instance()->enableExportBeforeClosing) {
+                        echo Html::a(
+                            Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'),
+                            \yii\helpers\Url::to(['results', 'id' => $model->id, 'url' => $urlBC]),
+                            [
+                                'id' => 'download-opage-button-id',
+                                'title' => AmosSondaggi::t('amossondaggi', '#download_participants'),
+                                'class' => 'btn btn-secondary btn-block m-t-5',
+                            ]);
+                    } else {
+                        echo Html::tag('button', Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'), [
+                            'id' => 'download-opage-button-id',
+                            'title' => AmosSondaggi::t('amossondaggi', '#download_participants'),
+                            'class' => 'btn btn-secondary btn-block m-t-5',
+                            'disabled' => 'disabled',
+                        ]);
+                    }
+                }
+                elseif (!empty(AmosSondaggi::instance()->enabledResultsDownloadOptions)) {
+                    $downloadOptions = AmosSondaggi::instance()->enabledResultsDownloadOptions;
+                    if (count($downloadOptions) > 1) {
                         echo Html::tag('a', Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'), [
                             'id' => 'downloadMenuButton',
-                            'title' => AmosSondaggi::t('amossondaggi', 'Scarica i risultati del sondaggio'),
+                            'title' =>$partecipazioni > 0 ? AmosSondaggi::t('amossondaggi', 'Scarica i risultati del sondaggio') :AmosSondaggi::t('amossondaggi', 'Nessun risultato presente'),
                             'class' => 'btn btn-secondary btn-block dropdown-toggle m-t-5',
                             'data-toggle' => 'dropdown',
                             'aria-haspopup' => 'true',
-                            'aria-expanded' => 'false'
+                            'aria-expanded' => 'false',
+                            'disabled' => $partecipazioni > 0 ? false : 'disabled',
                         ]);
                         $items = [];
-                        foreach (AmosSondaggi::instance()->enabledResultsDownloadOptions as $type) {
-                            $items[] = [
-                                'label' => SondaggiUtility::getFileExtensionLabel()[$type],
-                                'url' => Yii::$app->urlManager->createUrl([
-                                    '/' . $this->context->module->id . '/sondaggi/extract-sondaggi',
-                                    'type' => $type,
-                                    'id' => $model->id,
-                                    'url' => $url,
-                                ]),
-                            ];
+                        if($partecipazioni > 0){
+                            foreach (array_unique($downloadOptions) as $type) {
+                                $items[] = [
+                                    'label' => SondaggiUtility::getFileExtensionLabel()[$type],
+                                    'url' => Yii::$app->urlManager->createUrl([
+                                        '/' . $this->context->module->id . '/sondaggi/extract-sondaggi',
+                                        'type' => $type,
+                                        'id' => $model->id,
+                                        'url' => $url,
+                                    ]),
+                                ];
+                            }
+                            echo DropdownX::widget(['items' => $items]);
                         }
-                        echo DropdownX::widget(['items' => $items]);
                     } else {
-                        $type = AmosSondaggi::instance()->enabledResultsDownloadOptions[0];
+                        $type = $downloadOptions[0];
                         echo Html::a(Amosicons::show('table', [], 'dash') . '&nbsp;' . AmosSondaggi::t('amossondaggi', '#download_participants'),
                             Yii::$app->urlManager->createUrl([
                                 '/' . $this->context->module->id . '/sondaggi/extract-sondaggi',
@@ -344,7 +530,8 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
                             ]),
                             [
                                 'title' => AmosSondaggi::t('amossondaggi', 'Scarica i risultati del sondaggio in formato .{type}', ['type' => $type]),
-                                'class' => 'btn btn-secondary btn-block m-t-5'
+                                'class' => 'btn btn-secondary btn-block m-t-5',
+                                'disabled' => $partecipazioni > 0 ? false : 'disabled',
                             ]);
                     }
                 }
@@ -362,14 +549,7 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
     <div class="sondaggi-report-container">
         <div class="row">
             <div class="col-md-12">
-                <?php
-                if (\Yii::$app->controller->sondaggiModule->forceOnlyFrontend) {
-                    $partecipazioni = $model->getNumeroPartecipazioni();
-                } else {
-                //partecipazioni totali senza quelli senza stato
-                $partecipazioni = $model->getCompilazioniStatus(null, [0, 1]);
-                }
-                ?>
+
                 <h4 class="m-t-20 p-t-20"><?= AmosSondaggi::t('amossondaggi', 'Report') ?></h4>
                 <?php
                 if (AmosSondaggi::instance()->hasInvitation) {
@@ -423,3 +603,16 @@ if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI')) {
         </div>
     </div>
 </div>
+
+<?php
+if ($showNotificationConfirmModal) {
+    ModalUtility::createConfirmModal([
+        'id' => 'notification-confirm-modal',
+        'containerOptions' => ['class' => 'modal-utility'],
+        'modalDescriptionText' => AmosWorkflow::tHtml('amosworkflow', 'Vuoi inviare le email di avviso agli utenti per la pubblicazione di questo contenuto?'),
+        'confirmBtnOptions' => ['id' => 'notification-yes-btn', 'class' => 'btn btn-navigation-primary'],
+        'cancelBtnOptions' => ['id' => 'notification-no-btn', 'class' => 'btn btn-secondary', 'data-dismiss' => 'modal'],
+        'cancelBtnLabel' => AmosWorkflow::tHtml('amosworkflow', 'No'),
+        'confirmBtnLabel' => AmosWorkflow::tHtml('amosworkflow', 'Si'),
+    ]);
+} ?>

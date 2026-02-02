@@ -12,6 +12,7 @@
 namespace open20\amos\sondaggi\models;
 
 use open20\amos\sondaggi\AmosSondaggi;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use yii\db\ActiveRecord;
 use yii\helpers\ArrayHelper;
 
@@ -47,6 +48,20 @@ class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\Sond
             [['tipo_domanda', 'ordina_dopo'], 'integer'],
             ['ordine', 'string'],
         ]);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getValidatorRole() {
+        return 'AMMINISTRAZIONE_SONDAGGI';
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFacilitatorRole() {
+        return 'AMMINISTRAZIONE_SONDAGGI';
     }
 
     /**
@@ -122,8 +137,8 @@ class SondaggiRispostePredefinite extends \open20\amos\sondaggi\models\base\Sond
         if (!empty($submitImport)) {
             if ((isset($_FILES['import-file']['tmp_name']) && (!empty($_FILES['import-file']['tmp_name'])))) {
                 $inputFileName = $_FILES['import-file']['tmp_name'];
-                $inputFileType = \PHPExcel_IOFactory::identify($inputFileName);
-                $objReader = \PHPExcel_IOFactory::createReader($inputFileType);
+                $inputFileType = IOFactory::identify($inputFileName);
+                $objReader = IOFactory::createReader($inputFileType);
                 $objPHPExcel = $objReader->load($inputFileName);
 
                 $sheet = $objPHPExcel->getSheet(0);

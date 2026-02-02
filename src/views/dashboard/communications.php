@@ -86,7 +86,7 @@ $this->params['titleButtons'][] = Html::a(AmosIcons::show('plus-circle').'&nbsp;
                                         'data' => [
                                             'id' => $model->id,
                                             'confirm' => AmosSondaggi::t('amossondaggi',
-                                                '#send_communication_to_organizations_confirm'),
+                                                '#send_communication_to_organizations_confirm_1'),
                                         ]
                                 ]);
                             } else {

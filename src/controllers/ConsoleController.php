@@ -124,13 +124,13 @@ class ConsoleController extends \yii\console\Controller
             if (empty($profile)) {
                 $xlsData [$row][0] = ($model->abilita_criteri_valutazione == 1 ? AmosSondaggi::t('amossondaggi',
                         'L\'utente non ha effettuato la registrazione') : AmosSondaggi::t('amossondaggi',
-                        'L\'utente non è stato registrato'));
+                        'Sondaggio anonimo'));
                 $xlsData [$row][1] = ($model->abilita_criteri_valutazione == 1 ? AmosSondaggi::t('amossondaggi',
                         'L\'utente non ha effettuato la registrazione') : AmosSondaggi::t('amossondaggi',
-                        'L\'utente non è stato registrato'));
+                        'Sondaggio anonimo'));
                 $xlsData [$row][2] = ($model->abilita_criteri_valutazione == 1 ? AmosSondaggi::t('amossondaggi',
                         'L\'utente non ha effettuato la registrazione') : AmosSondaggi::t('amossondaggi',
-                        'L\'utente non è stato registrato'));
+                        'Sondaggio anonimo'));
             } else {
                 $xlsData [$row][0] = $profile->nome;
                 $xlsData [$row][1] = $profile->cognome;

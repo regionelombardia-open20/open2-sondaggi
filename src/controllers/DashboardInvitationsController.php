@@ -62,19 +62,19 @@ class DashboardInvitationsController extends CrudController
                         [
                             'allow' => true,
                             'actions' => [
-                                'renderSearchAjaxOrganizations',
-                                'getValues',
-                                'renderSearchAjaxUsers'
+//                                'renderSearchAjaxOrganizations',
+//                                'getValues',
+//                                'renderSearchAjaxUsers'
                             ],
-                            'roles' => ['AMMINISTRAZIONE_SONDAGGI']
+                            'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_MANAGE']
                         ],
-                        [
-                            'allow' => true,
-                            'actions' => [
-
-                            ],
-                            'roles' => ['SONDAGGI_READ']
-                        ],
+//                        [
+//                            'allow' => true,
+//                            'actions' => [
+//
+//                            ],
+//                            'roles' => ['SONDAGGI_READ']
+//                        ],
                         [
                             'allow' => true,
                             'actions' => [
@@ -149,6 +149,8 @@ class DashboardInvitationsController extends CrudController
         //    \Yii::$app->params['bsVersion']                    = '4.x';
         \Yii::$app->view->params['customClassMainContent'] = 'box-container sidebar-setting';
         \Yii::$app->view->params['showSidebarForm']        = true;
+   //     \Yii::$app->view->params['containerFullWidth'] = true;
+
         $this->setUpLayout('form');
     }
 
@@ -156,7 +158,7 @@ class DashboardInvitationsController extends CrudController
      * @param null $layout
      * @return string|\yii\web\Response
      */
-    public function actionIndex($idSondaggio, $layout = null)
+    public function actionIndex($layout = null, $idSondaggio = null, $url = null)
     {
         Url::remember();
         $this->setUrl($url);
@@ -568,11 +570,12 @@ class DashboardInvitationsController extends CrudController
      */
     public function actionActivate($id)
     {
-      $this->model = $this->findModel($id);
-      $this->model->active = true;
-      if ($this->model->save())
-        return;
-      throw new \yii\web\BadRequestHttpException;
+        $this->model = $this->findModel($id);
+        $this->model->active = true;
+        if ($this->model->save()) {
+            return;
+        }
+        throw new \yii\web\BadRequestHttpException;
     }
 
     /**

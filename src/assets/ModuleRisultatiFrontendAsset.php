@@ -14,6 +14,11 @@ class ModuleRisultatiFrontendAsset extends AssetBundle
     public $js = [
         'js/sondaggi-frontend.js'        
     ];
+    
+    public $jsOptions = [
+        'data-cookieconsent' => "ignore"
+    ];
+    
     public $depends = [        
         'yii\web\JqueryAsset',
         'yii\jui\JuiAsset',

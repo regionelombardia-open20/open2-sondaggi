@@ -55,7 +55,7 @@ class SondaggiRispostePredefiniteController extends CrudController
                         'actions' => [
                             'delete-all'
                         ],
-                        'roles' => ['AMMINISTRAZIONE_SONDAGGI']
+                        'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_MANAGE']
                     ],
                 ]
             ],

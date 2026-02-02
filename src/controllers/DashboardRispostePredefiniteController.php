@@ -63,7 +63,35 @@ class DashboardRispostePredefiniteController extends CrudController
                             'delete',
                             'delete-all'
                         ],
-                        'roles' => ['AMMINISTRAZIONE_SONDAGGI']
+                        'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_MANAGE']
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => [
+                            'index',
+                            'create',
+                            'view',
+                            'update',
+                            'delete',
+                            'delete-all'
+                        ],
+                        'roles' => ['CREATORE_SONDAGGI'],
+                        'roleParams' => function () {
+                            $sondaggio = null;
+                            if(!empty(Yii::$app->request->get('id'))) {
+                                $model = SondaggiRispostePredefinite::findOne(Yii::$app->request->get('id'));
+                                $domanda = SondaggiDomande::find()->andWhere(['id' => $model->sondaggi_domande_id])->asArray()->one();
+                                $sondaggio = Sondaggi::find()->andWhere(['id' => $domanda['sondaggi_id']])->asArray()->one();
+                            }
+                            if(!empty(Yii::$app->request->get('idDomanda'))) {
+                                $domanda = SondaggiDomande::find()->andWhere(['id' => Yii::$app->request->get('idDomanda')])->asArray()->one();
+                                $sondaggio = Sondaggi::find()->andWhere(['id' => $domanda['sondaggi_id']])->asArray()->one();
+                            }
+
+                            if($sondaggio['created_by'] !== \Yii::$app->user->id) {
+                                throw new ForbiddenHttpException('User isn\'t the selected sondaggio creator');
+                            }
+                        }
                     ],
                 ]
             ],
@@ -98,6 +126,8 @@ class DashboardRispostePredefiniteController extends CrudController
 
         \Yii::$app->view->params['customClassMainContent'] = 'box-container sidebar-setting';
         \Yii::$app->view->params['showSidebarForm']        = true;
+    //    \Yii::$app->view->params['containerFullWidth'] = true;
+
         $this->setUpLayout('form');
     }
 

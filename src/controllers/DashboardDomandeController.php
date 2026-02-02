@@ -27,6 +27,7 @@ use yii\helpers\Url;
 use yii\helpers\ArrayHelper;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
+use yii\web\ForbiddenHttpException;
 
 /**
  * Class SondaggiDomandeController
@@ -63,7 +64,57 @@ class DashboardDomandeController extends CrudController
                                 'delete',
                                 'clone'
                             ],
-                            'roles' => ['AMMINISTRAZIONE_SONDAGGI']
+                            'roles' => ['AMMINISTRAZIONE_SONDAGGI', 'SONDAGGI_MANAGE']
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'index',
+                                'view',
+                            ],
+                            'roles' => ['CREATORE_SONDAGGI'],
+                            'roleParams' => function () {
+                                $sondaggio = null;
+                                if(!empty(Yii::$app->request->get('id'))) {
+                                    $model = SondaggiDomande::findOne(Yii::$app->request->get('id'));
+                                    $sondaggio = Sondaggi::find()->andWhere(['id' => $model->sondaggi_id])->asArray()->one();
+                                }
+                                if(!empty(Yii::$app->request->get('idSondaggio'))) {
+                                    $sondaggio = Sondaggi::find()->andWhere(['id' => Yii::$app->request->get('idSondaggio')])->asArray()->one();
+                                }
+
+                                if($sondaggio['created_by'] !== \Yii::$app->user->id) {
+                                    throw new ForbiddenHttpException('User isn\'t the selected sondaggio creator');
+                                }
+                            }
+                        ],
+                        [
+                            'allow' => true,
+                            'actions' => [
+                                'create',
+                                'update',
+                                'delete',
+                                'clone'
+                            ],
+                            'roles' => ['CREATORE_SONDAGGI'],
+                            'roleParams' => function () {
+                                $sondaggio = null;
+                                if(!empty(Yii::$app->request->get('id'))) {
+                                    $model = SondaggiDomande::findOne(Yii::$app->request->get('id'));
+                                    $sondaggio = Sondaggi::find()->andWhere(['id' => $model->sondaggi_id])->asArray()->one();
+                                }
+                                if(!empty(Yii::$app->request->get('idSondaggio'))) {
+                                    $sondaggio = Sondaggi::find()->andWhere(['id' => Yii::$app->request->get('idSondaggio')])->asArray()->one();
+                                }
+
+                                if($sondaggio['created_by'] !== \Yii::$app->user->id) {
+                                    throw new ForbiddenHttpException('User isn\'t the selected sondaggio creator');
+                                }
+
+                                if($sondaggio['status'] !== Sondaggi::WORKFLOW_STATUS_BOZZA) {
+                                    throw new ForbiddenHttpException('Cannot execute current action as sondaggio is not in BOZZA status');
+                                }
+                            }
                         ]
                     ]
                 ],
@@ -97,6 +148,8 @@ class DashboardDomandeController extends CrudController
         parent::init();
         \Yii::$app->view->params['customClassMainContent'] = 'box-container sidebar-setting';
         \Yii::$app->view->params['showSidebarForm']        = true;
+      //  \Yii::$app->view->params['containerFullWidth'] = true;
+
 
         $this->setUpLayout('form');
     }
@@ -227,7 +280,9 @@ class DashboardDomandeController extends CrudController
             $this->model->sondaggi_domande_pagine_id = $idPagina;
         }
         if ($this->model->load(Yii::$app->request->post())) {
-            if ($this->model->parent_id == 'prompt') $this->model->parent_id = null;
+            if ($this->model->parent_id == 'prompt') {
+                $this->model->parent_id = null;
+            }
             if (!empty($this->model->parent_id)) {
                 $parent = SondaggiDomande::findOne($this->model->parent_id);
                 $this->model->sondaggi_id = $parent->sondaggi_id;
@@ -253,7 +308,7 @@ class DashboardDomandeController extends CrudController
                 ]);
             }
             $this->model->setOrdinamento($ordinamento, $ordinaDopo,
-                (isset($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
+                (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : 0);
 
             $validazione = [Yii::$app->request->post()['SondaggiDomande']['validazione']];
             $this->model->setValidazione($validazione);
@@ -315,16 +370,34 @@ class DashboardDomandeController extends CrudController
         $this->model->validazione = $validazioni;
 
         if ($this->model->load(Yii::$app->request->post()) && $this->model->validate()) {
-            if ($this->model->parent_id == 'prompt') $this->model->parent_id = null;
+            if ($this->model->parent_id == 'prompt') {
+                $this->model->parent_id = null;
+            }
+            if (empty($this->model->multi_columns)) {
+                $this->model->multi_columns = 'null';
+            }
+            if (empty($this->model->code)) {
+                $this->model->code = null;
+            }
             if (!empty($this->model->parent_id)) {
                 $parent = SondaggiDomande::findOne($this->model->parent_id);
                 $this->model->sondaggi_id = $parent->sondaggi_id;
                 $this->model->sondaggi_domande_pagine_id = $parent->sondaggi_domande_pagine_id;
                 $this->model->sondaggi_domande_tipologie_id = $parent->sondaggi_domande_tipologie_id;
             }
-            foreach ($this->model->getChildren()->all() as $child) {
-                $child->sondaggi_domande_tipologie_id = $this->model->sondaggi_domande_tipologie_id;
-                $child->save(false);
+            elseif ((!empty($this->model->is_parent)) && (
+                ($this->model->isAttributeChanged('sondaggi_id'))
+                || ($this->model->isAttributeChanged('sondaggi_domande_pagine_id'))
+                || ($this->model->isAttributeChanged('sondaggi_domande_tipologie_id')))) {
+                /** @var SondaggiDomande $child */
+                foreach ($this->model->childs as $child) {
+                    $child->sondaggi_id = $this->model->sondaggi_id;
+                    $child->sondaggi_domande_pagine_id =
+                        $this->model->sondaggi_domande_pagine_id;
+                    $child->sondaggi_domande_tipologie_id =
+                        $this->model->sondaggi_domande_tipologie_id;
+                    $child->save(false);
+                }
             }
             $condizioneNecessaria = (!empty($this->model->condizione_necessaria)) ? $this->model->condizione_necessaria : [
             ];

@@ -41,7 +41,7 @@ var Sondaggi = {
                 $(this.submitSelector).show();
                 $('#selezioni-minime-massime').hide();
                 $('#selezioni-minime-massime-label').hide();
-            } else if (risp == 3 || risp == 4) {
+            } else if (risp == 3 || risp == 4 || risp == 15 || risp == 16 || risp == 17) {
                 $('#selezione-classe-validatrice').hide();
                 $('#selezione-modello').hide();
                 $('#sondaggidomande-inline').prop('disabled', true);

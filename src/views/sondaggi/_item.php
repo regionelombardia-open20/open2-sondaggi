@@ -8,7 +8,6 @@
  * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
-
 use open20\amos\core\forms\ContextMenuWidget;
 use open20\amos\core\forms\ItemAndCardHeaderWidget;
 use open20\amos\core\helpers\Html;
@@ -25,56 +24,59 @@ ModuleSondaggiAsset::register($this);
  */
 $hideStatusPoll = (isset($hideStatusPoll)) ? $hideStatusPoll : false;
 $dateStart = $model->publish_date;
-$dayStart   = DateUtility::getDate($dateStart, 'php:d');
-$monthStart = DateUtility::getDate($dateStart, 'php:M');
-$yearStart  = DateUtility::getDate($dateStart, 'php:Y');
-$dateStart  = DateUtility::getDate($dateStart);
-$dateEnd = $model->close_date;
 
+$timeStart = DateUtility::getDate($dateStart, 'php:H:i');
+$dayStart = DateUtility::getDate($dateStart, 'php:d');
+$monthStart = DateUtility::getDate($dateStart, 'php:M');
+$yearStart = DateUtility::getDate($dateStart, 'php:Y');
+$dateStart = DateUtility::getDate($dateStart);
+$dateEnd = $model->close_date;
 
 $hideDateEnd = empty($model->close_date);
 if (isset($dateEnd)) {
-    $dayEnd   = DateUtility::getDate($dateEnd, 'php:d');
+    $timeEnd = DateUtility::getDate($dateEnd, 'php:H:i');
+    $dayEnd = DateUtility::getDate($dateEnd, 'php:d');
     $monthEnd = DateUtility::getDate($dateEnd, 'php:M');
-    $yearEnd  = DateUtility::getDate($dateEnd, 'php:Y');
-    $dateEnd  = DateUtility::getDate($dateEnd);
+    $yearEnd = DateUtility::getDate($dateEnd, 'php:Y');
+    $dateEnd = DateUtility::getDate($dateEnd);
 }
-
 ?>
 
 <div class="sondaggi-item-list-wrapper">
     <div class="card-wrapper">
         <div class="card">
-            <div class="card-body border-bottom border-light px-0">
-                <div class="row">
-                    <div class="col-sm-3">
-                        <div class="content-date-img">
+            <div class="card-body border-bottom border-light px-0">               
+                <div class="flexbox">                    
+                    <div class="date-list">
+                        <div class="content-date">
                             <div class="date-start">
-                                <span class="small"><?= AmosSondaggi::t('amossondaggi', 'Apre il') ?></span>
+                                <span class="small"><?= AmosSondaggi::t('amossondaggi', 'Aperto il') ?></span>
                                 <span class="card-day bold lead"><?= $dayStart ?></span>
                                 <span class="card-mounth bold"><?= $monthStart ?></span>
                                 <span class="card-year"><?= $yearStart ?></span>
+                                <span class="small mt-2">-</span>
+                                <span class="small"><?= $timeStart ?></span>                            
                             </div>
-                            <?php
-                           $url = '/img/img_default.jpg';
-                           if ($model->file) {
-                               $url = $model->file->getUrl('dashboard_news');
-                           }
-
-                            ?>
-                            <div class="img-sondaggio">
-                                <?= Html::img($url, [
-                                    'alt' => AmosSondaggi::t('amossondaggi', 'Immagine del sondaggio'),
-                                    'class' => 'img-responsive'
-                                ]); ?>
-                            </div>
-
                         </div>
                     </div>
-                    <div class="col-sm-9">
+                    <div class="image-list">
+                        <?php
+                        $url = '/img/img_default.jpg';
+                        if ($model->file) {
+                            $url = $model->file->getUrl('dashboard_news');
+                        }
+                        ?>
+                        <div class="img-sondaggio">
+                            <?=
+                            Html::img($url, [
+                                'alt' => AmosSondaggi::t('amossondaggi', 'Immagine del sondaggio'),
+                                'class' => 'img-responsive'
+                            ]);
+                            ?>
+                        </div>
+                    </div>                
+                    <div class="description-list">
                         <div class="content-text-sondaggi">
-
-
                             <?php if (!$hideDateEnd) : ?>
                                 <div class="date-end-poll">
                                     <div class="category-top small text-muted">
@@ -82,42 +84,54 @@ if (isset($dateEnd)) {
                                         <span class="card-day"><?= $dayEnd ?></span>
                                         <span class="card-month"><?= $monthEnd ?></span>
                                         <span class="card-year"><?= $yearEnd ?></span>
+                                        <span class="card-year">- <?= $timeEnd ?></span>
                                     </div>
                                 </div>
                             <?php endif ?>
 
                             <div class="list-title">
                                 <a href="<?php
-                                    $path = 'pubblicazione/compila';
-                                    if (Yii::$app->controller->action->id == 'manage')
-                                        $path = 'dashboard/dashboard';
-                                    echo Yii::$app->urlManager->createUrl([
-                                        '/'.$this->context->module->id.'/'.$path,
-                                        'id' => $model->id,
-                                        'url' => $url,
-                                    ])
+                                $path = 'pubblicazione/compila';
+                                if (Yii::$app->controller->action->id == 'manage')
+                                    $path = 'dashboard/dashboard';
+                                echo Yii::$app->urlManager->createUrl([
+                                    '/' . $this->context->module->id . '/' . $path,
+                                    'id' => $model->id,
+                                    'url' => $url,
+                                ])
                                 ?>" title="<?= $model->titolo ?>" class="link-list-title title-two-line">
-                                    <h5 class="card-title font-weight-bold big-heading mb-2 "><strong><?= $model->titolo ?></strong></h5>
+                                    <h5 class="card-title font-weight-bold big-heading mb-2 ">
+                                        <strong><?= $model->titolo ?></strong>
+                                    </h5>
                                 </a>
                                 <?php
                                 if ($model->isCommunitySurvey()) {
                                     $community = \open20\amos\community\models\Community::findOne($model->community_id);
-                                    if ($community && $community->name) { ?>
-                                        <a href="javascript:void(0)" data-toggle="tooltip" title="dalla community <?= $community->name ?>">
+                                    if ($community && $community->name) {
+                                        ?>
+                                        <a href="javascript:void(0)" data-toggle="tooltip"
+                                           title="dalla community <?= $community->name ?>">
 
                                             <span class="mdi mdi-account-supervisor-circle text-muted m-l-5"></span>
 
                                             <span class="sr-only"><?= $community->name ?></span>
                                         </a>
-                                    <?php }
-                                } ?>
+                                        <?php
+                                    }
+                                }
+                                ?>
 
                                 <div class="ml-auto">
 
-                                    <?php if(\Yii::$app->getUser()->can('DASHBOARD_VIEW')): ?>
+                                    <?php
+                                    if (
+                                            \Yii::$app->getUser()->can('DASHBOARD_VIEW') ||
+                                            \Yii::$app->getUser()->can('SONDAGGI_UPDATE', ['model' => $model])
+                                    ):
+                                        ?>
                                         <?php
                                         $labelDeleteConfirm = null;
-                                        $actionDelete = '/sondaggi/sondaggi/delete?id=' . $model->id;
+                                        $actionDelete = '/sondaggi/sondaggi/delete?id=' . $model->id . '&url=' . \yii\helpers\Url::current();
                                         $checkDeletePermission = true;
                                         if ($model->status == Sondaggi::WORKFLOW_STATUS_VALIDATO) {
                                             $labelDeleteConfirm = AmosSondaggi::t('amossondaggi', 'E\' necessario disattivare il sondaggio per procedere con l\'eliminazione. Procedere con la disattivazione del sondaggio?');
@@ -125,7 +139,8 @@ if (isset($dateEnd)) {
                                             $checkDeletePermission = false;
                                         }
                                         ?>
-                                        <?= ContextMenuWidget::widget([
+                                        <?=
+                                        ContextMenuWidget::widget([
                                             'model' => $model,
                                             'actionModify' => "/sondaggi/dashboard/dashboard?id=" . $model->id,
                                             'actionDelete' => $actionDelete,
@@ -134,13 +149,14 @@ if (isset($dateEnd)) {
                                             'checkModifyPermission' => false,
                                             'checkDeletePermission' => $checkDeletePermission,
                                             'labelModify' => \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') ? AmosSondaggi::t('amossondaggi', 'Modifica') : AmosSondaggi::t('amossondaggi', 'Gestisci')
-                                        ]) ?>
+                                        ])
+                                        ?>
                                     <?php endif; ?>
                                 </div>
                             </div>
                             <?php
                             if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_READ', ['model' => $model])) {
-                            ?>
+                                ?>
                                 <div class="desc-poll text-muted">
                                     <p>
                                         <?php
@@ -153,11 +169,16 @@ if (isset($dateEnd)) {
                                         ?>
                                     </p>
                                 </div>
-                            <?php
+                                <?php
                             }
                             ?>
                             <div class="footer-list">
-                                <?php if (\Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_MANAGE')) { ?>
+                                <?php
+                                if (
+                                        \Yii::$app->getUser()->can('AMMINISTRAZIONE_SONDAGGI') || \Yii::$app->getUser()->can('SONDAGGI_MANAGE') ||
+                                        \Yii::$app->getUser()->can('SONDAGGI_UPDATE', ['model' => $model, 'bypassStatusCheck' => true])
+                                ) {
+                                    ?>
                                     <span class="partecipanti-poll"><?= AmosSondaggi::t('amossondaggi', 'Partecipanti') . ':' ?><strong> <?= $model->getNumeroPartecipazioni() ?></strong></span>
                                     <?php
                                     if (!$hideStatusPoll) {
@@ -170,44 +191,51 @@ if (isset($dateEnd)) {
                                             }
                                         }
                                         ?>
-                                        <span class="status-poll"><?=  AmosSondaggi::t('amossondaggi', 'Stato') ?>:
+                                        <span class="status-poll"><?= AmosSondaggi::t('amossondaggi', 'Stato') ?>:
                                             <strong>
                                                 <?= $statusLabel ?>
                                             </strong>
                                         </span>
                                     <?php }; ?>
-                                <?php }
+                                    <?php
+                                }
                                 /** @var \open20\amos\sondaggi\models\search\SondaggiSearch $model */
                                 $url = \yii\helpers\Url::current();
                                 //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
                                 if (\Yii::$app->getUser()->can('RESPONSABILE_ENTE')) {
                                     echo Html::a(
-                                        AmosSondaggi::tHtml('amossondaggi', '#assign_compiler'), '#',
-                                        [
-                                            'class' => 'assign-compiler',
-                                            'title' => AmosSondaggi::t('amossondaggi', '#assign_compiler'),
-                                            'data' => ['id' => $model->id]
-                                        ]
-                                    ).'&nbsp;';
+                                            AmosSondaggi::tHtml('amossondaggi', '#assign_compiler'),
+                                            '#',
+                                            [
+                                                'class' => 'assign-compiler',
+                                                'title' => AmosSondaggi::t('amossondaggi', '#assign_compiler'),
+                                                'data' => ['id' => $model->id]
+                                            ]
+                                    ) . '&nbsp;';
                                 }
                                 if ($model->isCompilable() && \Yii::$app->user->can('COMPILA_SONDAGGIO', ['model' => $model])) {
-                                    echo Html::a(
-                                        AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
-                                        Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/pubblicazione/compila',
-                                            'id' => $model->id,
-                                            'url' => $url,
-                                        ]),
-                                        [
-                                            'class' => 'read-more',
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
-                                        ]
-                                    );
-                                }
+                                    ?>
+                                    <div class="read-more-container">
+                                        <?php
+                                        echo Html::a(
+                                                AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
+                                                Yii::$app->urlManager->createUrl([
+                                                    '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                    'id' => $model->id,
+                                                    'url' => $url,
+                                                ]),
+                                                [
+                                                    'class' => 'read-more',
+                                                    'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
+                                                ]
+                                        );
+                                        ?>
+                                    </div>
+                                <?php }
                                 ?>
                             </div>
                         </div>
-                    </div>
+                    </div>              
                 </div>
             </div>
         </div>

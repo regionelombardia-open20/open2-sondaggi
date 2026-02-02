@@ -30,7 +30,7 @@ class WidgetGraphicsUltimiSondaggi extends WidgetGraphic
         parent::init();
         
         $this->setCode('ULTIMI_SONDAGGI_GRAPHIC');
-        $this->setLabel(AmosSondaggi::t('amossondaggi', '#widget_graphic_cms_last_surveys_label'));
+        $this->setLabel(AmosSondaggi::t('amossondaggi', 'Ultimi sondaggi'));
         $this->setDescription(AmosSondaggi::t('amossondaggi', '#widget_graphic_cms_last_surveys_description'));
     }
     

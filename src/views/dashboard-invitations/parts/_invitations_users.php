@@ -37,7 +37,7 @@ $communityId = $model->sondaggi->community_id;
 
 $js = <<<JS
 
-    var targetUsers = {$targetUsers};
+    var targetUsers = '{$targetUsers}';
     $('input[name="SondaggiUsersInvitations[type]"]').on('change', function(){
         if($(this).val() == targetUsers) {
             $('#invitations-users-filter').show();

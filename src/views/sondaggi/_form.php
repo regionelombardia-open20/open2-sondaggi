@@ -30,6 +30,10 @@ use yii\web\View;
  * @var \open20\amos\cwh\AmosCwh $moduleCwh
  * @var array $scope
  */
+
+/** @var AmosSondaggi $sondaggiModule */
+$sondaggiModule = AmosSondaggi::instance();
+
 ModuleSondaggiPublicAsset::register($this);
 
 $postPublic = 'null';
@@ -281,12 +285,24 @@ WorkflowTransitionStateDescriptorWidget::widget([
         <div class="col-md-6 container-not-live">
             <?= $form->field($model, 'url_chiudi_sondaggio')->textInput() ?>
         </div>
+        
+        <?php if (is_null($model->compilazioni_disponibili)) {
+            $model->compilazioni_disponibili = $sondaggiModule->defaultCompilazioniDisponibili;
+        } ?>
+        <?php if (empty($sondaggiModule->enableChooseNumberOfCompilations)): ?>
+        <?= Html::activeHiddenInput($model, 'compilazioni_disponibili') ?>
+        <?php else: ?>
         <div class="col-lg-6 col-sm-6 container-not-live">
-            <?= $form->field($model, 'compilazioni_disponibili')->textInput() ?>
+            <?= $form->field($model, 'compilazioni_disponibili')->input('number', [
+                'min' => 0,
+                'step' => 1,
+            ])->hint(AmosSondaggi::t('amossondaggi', '#compilazioni_disponibili_hint')) ?>
         </div>
+        <?php endif; ?>
+        
         <?php
-        if (!AmosSondaggi::instance()->forceOnlyFrontend) { // Se non è settata l'intenzione di forzare il campo frontend forzatamente a 1
-            if (AmosSondaggi::instance()->enableFrontendCompilation) {
+        if (!$sondaggiModule->forceOnlyFrontend) { // Se non è settata l'intenzione di forzare il campo frontend forzatamente a 1
+            if ($sondaggiModule->enableFrontendCompilation) {
                 ?>
                 <div class="col-lg-6 col-sm-6 container-not-live">
                     <?=

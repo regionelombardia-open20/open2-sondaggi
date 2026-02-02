@@ -8,6 +8,7 @@
  * @package    open20\amos\sondaggi\views\pubblicazione
  * @category   CategoryName
  */
+
 use open20\amos\core\icons\AmosIcons;
 use open20\amos\sondaggi\AmosSondaggi;
 use yii\helpers\Html;
@@ -22,6 +23,9 @@ use yii\helpers\Url;
 $this->title                   = ($pubblicazioni->one()->sondaggi->visualizza_solo_titolo == 1 ? $pubblicazioni->one()->sondaggi->titolo
         : AmosSondaggi::t('amossondaggi', '#sondaggioterminato'));
 $this->params['breadcrumbs'][] = $this->title;
+if (AmosSondaggi::instance()->customBreadCrumbs) {
+    $this->params['forceBreadcrumbs'][] = ['label' => $this->title];
+}
 if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs']   = [];
 ?>
 <div class="sondaggi-index text-center sondaggi-success m-t-30 m-b-20">

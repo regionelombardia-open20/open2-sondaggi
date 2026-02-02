@@ -48,8 +48,8 @@ abstract class SondaggiInvitationMm extends \open20\amos\core\record\Record
     public function rules()
     {
         return [
-            [['sondaggi_id', 'invitation_class', 'invitation_id'], 'integer'],
-            [['sondaggi_id', 'invitation_class', 'invitation_id'], 'required'],
+            [['sondaggi_id', 'invitation_id', 'invitation_class', 'to_id'], 'integer'],
+            [['sondaggi_id', 'invitation_id', 'invitation_class', 'to_id'], 'required'],
             [['created_at', 'updated_at', 'deleted_at'], 'safe']
         ];
     }
@@ -62,8 +62,9 @@ abstract class SondaggiInvitationMm extends \open20\amos\core\record\Record
         return [
             'id' => AmosSondaggi::t('amossondaggi', 'ID'),
             'sondaggi_id' => AmosSondaggi::t('amossondaggi', 'Poll ID'),
-            'invitation_class' => AmosSondaggi::t('amossondaggi', 'Classe To'),
-            'invitation_id' => AmosSondaggi::t('amossondaggi', 'ID To')
+            'invitation_id' => AmosSondaggi::t('amossondaggi', 'Invitation ID'),
+            'invitation_class' => AmosSondaggi::t('amossondaggi', 'Invitation Class'),
+            'to_id' => AmosSondaggi::t('amossondaggi', 'ID To')
         ];
     }
 }

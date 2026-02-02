@@ -12,10 +12,7 @@
 use open20\amos\attachments\components\AttachmentsInput;
 use open20\amos\core\forms\ActiveForm;
 use open20\amos\core\forms\AccordionWidget;
-use open20\amos\core\forms\CreatedUpdatedWidget;
 use open20\amos\core\forms\RequiredFieldsTipWidget;
-use open20\amos\core\forms\Tabs;
-use open20\amos\core\forms\TextEditorWidget;
 use open20\amos\core\helpers\Html;
 use open20\amos\sondaggi\AmosSondaggi;
 use open20\amos\sondaggi\assets\ModuleSondaggiPublicAsset;
@@ -184,7 +181,9 @@ $form = ActiveForm::begin([
         'enctype' => 'multipart/form-data'
     ]
 ]);
-?>
+
+$dateTootlip = AmosSondaggi::t('amossondaggi', "Data impostata in automatico, è possibile in qualsiasi momento modificare tale data, ma in fase di pubblicazione sondaggio sarà necessario che la data di pubblicazione sia maggiore o uguale alla data in corso");
+$iconDate = " <span  data-toggle=\"tooltip\" data-html=\"true\" data-placement=\"top\" title=\"$dateTootlip\">" . \open20\amos\core\icons\AmosIcons::show('info') . "</span>"; ?>
 
 <!-- <?=
 WorkflowTransitionStateDescriptorWidget::widget([
@@ -277,16 +276,22 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
     <div class="row">
        <div class="col-md-6">
-          <?php if (empty($model->publish_date)) $model->publish_date = (new \Datetime())->format('Y-m-d'); ?>
+          <?php if (empty($model->publish_date)) $model->publish_date = (new \Datetime('+30 minutes'))->format('Y-m-d H:i:00'); ?>
           <?= $form->field($model, 'publish_date')->widget(\kartik\datecontrol\DateControl::className(), [
-           'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
-       ]) ?>
+           'type' => \kartik\datecontrol\DateControl::FORMAT_DATETIME
+       ])->label(AmosSondaggi::t('amossondaggi', "Data di pubblicazione sondaggio") . $iconDate) ?>
        </div>
        <div class="col-md-6">
            <?= $form->field($model, 'close_date')->widget(\kartik\datecontrol\DateControl::className(), [
-            'type' => \kartik\datecontrol\DateControl::FORMAT_DATE
+            'type' => \kartik\datecontrol\DateControl::FORMAT_DATETIME
         ]) ?>
         </div>
+    </div>
+     <div class="row">
+       <div class="col-md-6">
+          <?php if ($sondaggiModule->enableAnonimousPoll) ?>
+            <?= $form->field($model, 'anonimous_poll')->checkbox(['disabled' => (!($model->isNewRecord))]) ?>
+       </div>
     </div>
 
     <div class="row">
@@ -361,6 +366,13 @@ WorkflowTransitionStateDescriptorWidget::widget([
 
     <?= RequiredFieldsTipWidget::widget() ?>
 
+    <?php
+        if(
+            Yii::$app->user->can('AMMINISTRAZIONE_SONDAGGI') ||
+            (Yii::$app->user->can('CREATORE_SONDAGGI') && $model->status !== Sondaggi::WORKFLOW_STATUS_VALIDATO)
+        ) :
+    ?>
+
    <?= Html::submitButton($model->id ? AmosSondaggi::t('amossondaggi', 'Salva') : AmosSondaggi::t('amossondaggi', 'Crea'),
      ['class' => 'btn btn-primary pull-right']) ?>
 
@@ -394,6 +406,8 @@ WorkflowTransitionStateDescriptorWidget::widget([
         ]
     ]);
     ?> -->
+
+    <?php endif; ?>
 
     <?php ActiveForm::end(); ?>
 </div>

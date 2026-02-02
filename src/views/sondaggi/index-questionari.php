@@ -81,7 +81,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                     'attribute' => 'publish_date',
                     'value' => function($model) {
                         if ($model->publish_date) {
-                            return \Yii::$app->formatter->asDate($model->publish_date);
+                            return \Yii::$app->formatter->asDateTime($model->publish_date, 'php:d/m/Y H:i');
                         }
                         return '';
                     }
@@ -91,7 +91,7 @@ if (!AmosSondaggi::instance()->enableBreadcrumbs) $this->params['breadcrumbs'] =
                     'attribute' => 'close_date',
                     'value' => function($model) {
                         if ($model->close_date) {
-                            return \Yii::$app->formatter->asDate($model->close_date);
+                            return \Yii::$app->formatter->asDateTime($model->close_date, 'php:d/m/Y H:i');
                         }
                         return '';
                     }

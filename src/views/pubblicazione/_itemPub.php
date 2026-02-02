@@ -137,20 +137,24 @@ if (isset($dateEnd)) {
                                 $url = \yii\helpers\Url::current();
                                 //if (\Yii::$app->getUser()->can('PARTECIPANTE') || TRUE) {
 
-                                if (!$model->hasCompilazioniSuperate()) {
-                                    echo Html::a(
-                                        AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
-                                        Yii::$app->urlManager->createUrl([
-                                            '/' . $this->context->module->id . '/pubblicazione/compila',
-                                            'id' => $model->id,
-                                            'url' => $url,
-                                        ]),
-                                        [
-                                            'class' => 'read-more',
-                                            'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
-                                        ]
-                                    );
-                                }
+                                if (!$model->hasCompilazioniSuperate()) { ?>
+                                    <div class="read-more-container">
+
+                                        <?php echo Html::a(
+                                            AmosSondaggi::tHtml('amossondaggi', 'Partecipa'),
+                                            Yii::$app->urlManager->createUrl([
+                                                '/' . $this->context->module->id . '/pubblicazione/compila',
+                                                'id' => $model->id,
+                                                'url' => $url,
+                                            ]),
+                                            [
+                                                'class' => 'read-more',
+                                                'title' => AmosSondaggi::t('amossondaggi', 'Partecipa'),
+                                            ]
+                                        ); ?>
+                                    </div>
+
+                                <?php }
                                 ?>
                             </div>
                         </div>
