@@ -1,5 +1,6 @@
 {
     "name": "open20/amos-sondaggi",
+    "license": "GPL-3.0-or-later",
     "description": "Sistema AMOS per gestire i sondaggi",
     "keywords": ["amos", "yii2", "sondaggi"],
     "homepage": "http://www.open20.it/",
